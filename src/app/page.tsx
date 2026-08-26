@@ -737,7 +737,18 @@ export default function EngineSimulator() {
 
           {activeTab === "source-analysis" && ["TEACHER", "ADMIN"].includes(session.role) && <SourceAnalysisExplorer />}
 
-          {activeTab === "student" && <StudentHome curriculumName={selectedCurriculum.identity.name} onBrowseServices={() => setActiveTab("services")} onStartLesson={() => setActiveTab("carousel")} />}
+          {activeTab === "student" && (
+            <StudentHome
+              curriculumName={selectedCurriculum.identity.name}
+              selectedCurriculumId={selectedCurriculumId}
+              onBrowseServices={() => setActiveTab("services")}
+              onStartLesson={() => setActiveTab("carousel")}
+              onSelectTrack={(currId) => {
+                selectCurriculum(currId as CurriculumId);
+                setActiveTab("carousel");
+              }}
+            />
+          )}
 
           {activeTab === "student-diagnostic" && <StudentDiagnostic curriculumId={selectedCurriculum.identity.id} curriculumName={selectedCurriculum.identity.name} />}
 
