@@ -107,6 +107,7 @@ export default function EngineSimulator() {
   const [loginPassword, setLoginPassword] = useState("");
   const [loginError, setLoginError] = useState("");
   const [loginBusy, setLoginBusy] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [curriculumOptions, setCurriculumOptions] = useState<Record<string, CurriculumPackage>>(initialCurriculumOptions);
   const [selectedCurriculumId, setSelectedCurriculumId] = useState<CurriculumId>("cambridge-igcse-0580");
   const [hasCurriculumAssignment, setHasCurriculumAssignment] = useState(false);
@@ -402,16 +403,41 @@ export default function EngineSimulator() {
       )}
 
       <main className="flex-1 flex flex-col md:flex-row overflow-hidden">
-        {/* Sidebar */}
-        <nav className="w-full md:w-64 border-b md:border-b-0 md:border-r border-neutral-800 bg-neutral-950 p-2 md:p-4 flex flex-row md:flex-col gap-2 shrink-0 overflow-x-auto">
-          {navigationItems.filter(({ roles }) => !roles || roles.includes(session.role)).map(({ key, icon: Icon, label }) => (
-            <button key={key} onClick={() => setActiveTab(key)}
-              className={`w-auto md:w-full shrink-0 flex items-center gap-3 px-3 md:px-4 py-3 rounded-lg text-sm transition ${activeTab === key ? "bg-neutral-800 text-amber-400 border border-neutral-700 font-semibold" : "text-neutral-400 hover:bg-neutral-900 hover:text-white"}`}>
-              <Icon className="h-5 w-5" />
-              {label}
+        {/* Collapsible Sidebar */}
+        <nav className={`border-b md:border-b-0 md:border-r border-neutral-800 bg-neutral-950 shrink-0 transition-all duration-300 flex flex-col ${sidebarCollapsed ? "md:w-14" : "md:w-56"} w-full`}>
+          {/* Collapse toggle — desktop only */}
+          <div className="hidden md:flex items-center justify-end px-2 py-3 border-b border-neutral-800">
+            <button
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="rounded-lg p-1.5 text-neutral-500 hover:bg-neutral-800 hover:text-white transition"
+              title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {sidebarCollapsed ? (
+                <ArrowRight className="h-4 w-4" />
+              ) : (
+                <ListFilter className="h-4 w-4" />
+              )}
             </button>
-          ))}
+          </div>
+
+          {/* Nav items */}
+          <div className="flex flex-row md:flex-col gap-1 p-2 overflow-x-auto md:overflow-x-visible">
+            {navigationItems.filter(({ roles }) => !roles || roles.includes(session.role)).map(({ key, icon: Icon, label }) => (
+              <button key={key} onClick={() => setActiveTab(key)}
+                title={label}
+                className={`shrink-0 flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
+                  activeTab === key
+                    ? "bg-neutral-800 text-amber-400 border border-neutral-700 font-semibold"
+                    : "text-neutral-400 hover:bg-neutral-900 hover:text-white"
+                } ${sidebarCollapsed ? "md:justify-center" : ""}`}>
+                <Icon className="h-4 w-4 shrink-0" />
+                {!sidebarCollapsed && <span className="hidden md:inline truncate text-xs">{label}</span>}
+                <span className="md:hidden text-xs truncate">{label}</span>
+              </button>
+            ))}
+          </div>
         </nav>
+
 
         {/* Canvas */}
         <section className="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto bg-neutral-900">
