@@ -11,7 +11,9 @@ import {
   RotateCcw,
   Save,
   Upload,
+  Crop,
 } from "lucide-react";
+import PdfCropAssistant from "./PdfCropAssistant";
 import EducationalCarousel from "../EducationalCarousel";
 import { applyStandardStepDefaults, validateLearningProcess } from "../CarouselValidation";
 import type { EduCarouselConfig, EduSlide, EduSlideType } from "../CarouselTypes";
@@ -91,6 +93,7 @@ export default function CarouselStudio({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [mode, setMode] = useState<"edit" | "preview">("edit");
   const [isDirty, setIsDirty] = useState(false);
+  const [pdfCropOpen, setPdfCropOpen] = useState(false);
 
   // Registry state
   const [registryDraftId, setRegistryDraftId] = useState<string | null>(null);
@@ -338,6 +341,12 @@ export default function CarouselStudio({
             </div>
           )}
 
+          {/* PDF Snippet */}
+          <button onClick={() => setPdfCropOpen(true)} title="Capture screenshot from PDF"
+            className="flex items-center gap-1.5 rounded-lg border border-neutral-700 px-3 py-1.5 text-xs font-semibold text-neutral-300 hover:border-amber-500 hover:text-white transition-colors">
+            <Crop className="h-3.5 w-3.5 text-amber-500" /> PDF Snippet
+          </button>
+
           {/* Import JSON */}
           <label title="Import carousel from JSON file"
             className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-neutral-700 px-3 py-1.5 text-xs font-semibold text-neutral-300 hover:border-emerald-500 hover:text-white transition-colors">
@@ -450,6 +459,16 @@ export default function CarouselStudio({
       {/* Click-away to close library dropdown */}
       {libraryOpen && (
         <div className="fixed inset-0 z-40" onClick={() => setLibraryOpen(false)} />
+      )}
+
+      {/* PDF Screenshot Crop assistant */}
+      {pdfCropOpen && (
+        <PdfCropAssistant
+          onClose={() => setPdfCropOpen(false)}
+          onCapture={(croppedUrl) => {
+            updateSlide({ imageUrl: croppedUrl });
+          }}
+        />
       )}
     </div>
   );
