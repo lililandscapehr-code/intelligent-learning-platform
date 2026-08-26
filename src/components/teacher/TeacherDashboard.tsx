@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { fetchTeacherDashboard, getSession, login } from "../../app/actions";
 import TeacherAIDesk from "./TeacherAIDesk";
+import DiagnosticReport from "./DiagnosticReport";
 import {
   AlertTriangle,
   ArrowRight,
@@ -84,6 +85,7 @@ const NAV_ITEMS = [
   { id: "assignments", label: "Assignments", icon: ClipboardList },
   { id: "sessions", label: "Sessions", icon: CalendarClock },
   { id: "reviews", label: "Reviews", icon: FileCheck2 },
+  { id: "diagnostics", label: "Diagnostics", icon: Sparkles },
   { id: "reports", label: "Reports", icon: BarChart3 },
   { id: "parents", label: "Parents Link", icon: MessageSquare }
 ] as const;
@@ -663,6 +665,11 @@ export default function TeacherDashboard({ onOpenAuthoring }: { onOpenAuthoring:
                 ))}
               </div>
             </div>
+          )}
+
+          {/* Diagnostics View */}
+          {view === "diagnostics" && (
+            <DiagnosticReport />
           )}
 
           {/* Reports View */}

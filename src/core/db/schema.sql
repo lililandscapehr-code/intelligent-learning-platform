@@ -350,3 +350,25 @@ CREATE TABLE IF NOT EXISTS learning_sessions (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (enrollment_id) REFERENCES student_enrollments(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS question_attempt_logs (
+  id VARCHAR(36) PRIMARY KEY,
+  student_id VARCHAR(36) NOT NULL,
+  class_id VARCHAR(36),
+  carousel_id VARCHAR(100) NOT NULL,
+  slide_id VARCHAR(100) NOT NULL,
+  alternative_group ENUM('MAIN', 'A', 'B') NOT NULL DEFAULT 'MAIN',
+  alternative_level INT NOT NULL DEFAULT 1,
+  language_used VARCHAR(10) NOT NULL DEFAULT 'en',
+  answer_text TEXT,
+  is_correct BOOLEAN NOT NULL,
+  diagnostic_target VARCHAR(100),
+  time_spent_seconds INT DEFAULT 0,
+  attempt_number INT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_attempt_student (student_id),
+  INDEX idx_attempt_carousel (carousel_id, slide_id),
+  INDEX idx_attempt_created (created_at)
+);
+

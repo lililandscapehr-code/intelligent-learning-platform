@@ -156,6 +156,29 @@ export type QuestionImageLayout =
   | "bottom"        // Question above, image full-width below
   | "fullscreen";   // Image fills slide background, question overlaid
 
+// ── Question alternatives & translations ──────────────────────
+export interface QuestionAlternative {
+  id: string;
+  group: "A" | "B";              // A = scaffold down (diagnostic & practice), B = challenge up
+  level: number;                 // A: 2-10 (2=simpler, 10=simplest arithmetic), B: 1-10 (1=reverse, 10=most brilliant)
+  questionText: string;
+  placeholder?: string;
+  analogy?: string;
+  diagnosticTarget?: string;     // e.g. "vocabulary" | "concept" | "arithmetic" | "procedure" | "representation"
+  simplificationNote?: string;   // teacher note: what was simplified and why
+  challengeNote?: string;        // teacher note: what was escalated
+  choices?: MCQChoice[];
+  correctValue?: number;
+}
+
+export interface QuestionTranslations {
+  [languageCode: string]: {
+    questionText: string;
+    placeholder?: string;
+    alternatives?: { [altIdOrLevel: string]: string };
+  };
+}
+
 export interface QuestionMCQSlide extends BaseSlide {
   type: "question_mcq";
   questionText: string;
@@ -169,6 +192,8 @@ export interface QuestionMCQSlide extends BaseSlide {
   diagramSvg?: string;
   imageLayout?: QuestionImageLayout; // default: "left"
   imageSizePct?: number;             // width% for left/right layouts (20-70), default 42
+  alternatives?: QuestionAlternative[];
+  translations?: QuestionTranslations;
 }
 
 export interface QuestionTextSlide extends BaseSlide {
@@ -177,6 +202,8 @@ export interface QuestionTextSlide extends BaseSlide {
   placeholder?: string;
   sampleAnswer?: string;
   points?: number;
+  alternatives?: QuestionAlternative[];
+  translations?: QuestionTranslations;
 }
 
 export interface QuestionNumericSlide extends BaseSlide {
@@ -186,6 +213,8 @@ export interface QuestionNumericSlide extends BaseSlide {
   tolerance?: number;                  // ± acceptable range
   unit?: string;
   points?: number;
+  alternatives?: QuestionAlternative[];
+  translations?: QuestionTranslations;
 }
 
 // ── Evaluation slide ─────────────────────────────────────────

@@ -12,6 +12,7 @@ import { LessonTextSlideView } from "./slides/LessonSlide";
 import { LessonImageSlideView } from "./slides/LessonSlide";
 import { YouTubeSlideView } from "./slides/YouTubeSlide";
 import { QuestionMCQSlideView } from "./slides/QuestionMCQSlide";
+import { QuestionTextSlideView } from "./slides/QuestionTextSlide";
 import { EvaluationSlideView } from "./slides/EvaluationSlide";
 import { UploadZoneSlideView } from "./slides/UploadZoneSlide";
 import { 
@@ -30,7 +31,8 @@ import {
   XCircle,
   Lightbulb,
   Radio,
-  BookOpen
+  BookOpen,
+  Globe
 } from "lucide-react";
 
 interface Props {
@@ -58,6 +60,7 @@ export default function EducationalCarousel({ config, onComplete, viewerRole = "
   const [streak, setStreak] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("en");
   const [showCommentary, setShowCommentary] = useState<{ text: string; type: "combo" | "speed" | "first_try" | "misconception"; points: number } | null>(null);
   const [lifeline5050Used, setLifeline5050Used] = useState(false);
   const [lifelineClueUsed, setLifelineClueUsed] = useState(false);
@@ -531,6 +534,23 @@ export default function EducationalCarousel({ config, onComplete, viewerRole = "
             </div>
           )}
 
+          {/* Language Selector */}
+          <div className="flex items-center gap-1 bg-neutral-900 border border-neutral-700 px-2 py-1 rounded-lg text-xs">
+            <Globe className="h-3.5 w-3.5 text-emerald-400" />
+            <select
+              value={selectedLanguage}
+              onChange={(e) => setSelectedLanguage(e.target.value)}
+              className="bg-transparent text-white text-xs outline-none cursor-pointer"
+            >
+              <option value="en" className="bg-neutral-950 text-white">English (Original)</option>
+              <option value="ar" className="bg-neutral-950 text-white">العربية (Arabic)</option>
+              <option value="fr" className="bg-neutral-950 text-white">Français (French)</option>
+              <option value="de" className="bg-neutral-950 text-white">Deutsch (German)</option>
+              <option value="es" className="bg-neutral-950 text-white">Español (Spanish)</option>
+              <option value="tr" className="bg-neutral-950 text-white">Türkçe (Turkish)</option>
+            </select>
+          </div>
+
           {/* Sound Toggle */}
           <button
             onClick={toggleSound}
@@ -680,6 +700,16 @@ export default function EducationalCarousel({ config, onComplete, viewerRole = "
             onAnswer={handleAnswer} 
             startTime={slideStartTime.current}
             viewerRole={viewerRole}
+          />
+        )}
+        {(slide?.type === "question_text" || slide?.type === "question_numeric") && (
+          <QuestionTextSlideView
+            slide={slide}
+            existingAnswer={answers.find((a) => a.slideId === slide.id)}
+            onAnswer={handleAnswer}
+            startTime={slideStartTime.current}
+            viewerRole={viewerRole}
+            activeLanguage={selectedLanguage}
           />
         )}
         {slide?.type === "evaluation" && <EvaluationSlideView slide={slide} answers={answers} policy={policy} />}
