@@ -17,20 +17,80 @@ export const lesson110CircularCarousel: EduCarouselConfig = {
     nextStepRule: "Complete all questions and review the mastery checklist."
   },
   processSteps: [
-    { id: "connect", title: "Connect", type: "intro" },
-    { id: "predict", title: "Predict", type: "assessment" },
-    { id: "explain", title: "Explain", type: "instruction" },
-    { id: "practice", title: "Practice", type: "assessment" },
-    { id: "evaluate", title: "Evaluate", type: "summary" }
+    {
+      id: "connect",
+      title: "Connect",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    },
+    {
+      id: "predict",
+      title: "Predict",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    },
+    {
+      id: "explain",
+      title: "Explain",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    },
+    {
+      id: "practice",
+      title: "Practice",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    },
+    {
+      id: "evaluate",
+      title: "Evaluate",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    }
   ],
   slides: [
     {
-      slideId: "slide-1",
+      id: "slide-1",
       processStepId: "connect",
       type: "lesson_text",
       title: "Uniform Circular Motion",
-      content: {
-        markdownBody: `### Constantly Accelerating (Without Speeding Up)
+      
+        body: `### Constantly Accelerating (Without Speeding Up)
 
 In **Uniform Circular Motion**, an object travels in a circle at a *constant speed*. However, because its **direction** is constantly changing, its velocity is changing. Therefore, the object is continuously **accelerating**.
 
@@ -42,18 +102,15 @@ In **Uniform Circular Motion**, an object travels in a circle at a *constant spe
 *   **Centripetal Force ($F_c$):** $F_c = \\frac{mv^2}{r} = m\\omega^2 r$
 
 This force is always directed **toward the center** of the circle and can be provided by tension, normal force, gravity, or friction.`,
-        keyTerms: [
-          { term: "Centripetal Force", definition: "A net force directed toward the center of a circular path." },
-          { term: "Angular Velocity", definition: "The rate of change of angular position, measured in rad/s." }
-        ]
-      }
+        keyTerms: ["Centripetal Force", "Angular Velocity"]
+      
     },
     {
-      slideId: "slide-2",
+      id: "slide-2",
       processStepId: "predict",
       type: "question_mcq",
       title: "Predict: The Broken String",
-      content: {
+      
         questionText: "A stone on a string is whirled in a horizontal circle. When the string suddenly breaks, what path does the stone take?",
         imageLayout: "left",
         imageCaption: "A top-down view of a stone whirled on a string.",
@@ -115,15 +172,15 @@ This force is always directed **toward the center** of the circle and can be pro
             explanation: "An object does not require a continuous force to keep moving; it requires force to change its direction or speed."
           }
         ]
-      }
+      
     },
     {
-      slideId: "slide-3",
+      id: "slide-3",
       processStepId: "explain",
       type: "lesson_text",
       title: "Centripetal Force Examples",
-      content: {
-        markdownBody: `### Finding the Force
+      
+        body: `### Finding the Force
 
 Centripetal force is not a "new" type of force; it is just the name for whatever net force keeps an object moving in a circle.
 
@@ -140,14 +197,14 @@ A 1000 kg car rounds a circular bend of radius 50 m at 20 m/s. What frictional f
 
 Friction provides 8000 N of force directed toward the center of the curve.`,
         keyTerms: []
-      }
+      
     },
     {
-      slideId: "slide-4",
+      id: "slide-4",
       processStepId: "practice",
       type: "question_mcq",
       title: "Practice: The Whirling Ball",
-      content: {
+      
         questionText: "A 0.2 kg ball on a 0.5 m string is whirled in a horizontal circle at 4 revolutions per second. Find the centripetal force. (Hint: find angular velocity ω = 2πf first)",
         imageLayout: "left",
         imageCaption: "Ball whirling on a string with angular velocity labeled.",
@@ -205,15 +262,15 @@ Friction provides 8000 N of force directed toward the center of the curve.`,
             explanation: "You may have forgotten to multiply by the mass (0.2kg). 31.5 N is half of the correct force."
           }
         ]
-      }
+      
     },
     {
-      slideId: "slide-5",
+      id: "slide-5",
       processStepId: "evaluate",
       type: "lesson_text",
       title: "Mastery Checklist",
-      content: {
-        markdownBody: `### Summary: Uniform Circular Motion
+      
+        body: `### Summary: Uniform Circular Motion
 
 Great job! Check off the concepts you've mastered:
 *   [x] **Angular vs Linear:** Converting frequency to angular velocity ($\\omega = 2\\pi f$).
@@ -223,7 +280,7 @@ Great job! Check off the concepts you've mastered:
 
 **Next Up (1-11):** We will apply these circular motion concepts to the grand scale of the universe in **Gravitation and Orbits**!`,
         keyTerms: []
-      }
+      
     }
   ]
 };

@@ -21,10 +21,58 @@ export const lesson112KeplerCarousel: EduCarouselConfig = {
     nextStepRule: "Proceed to Part 2: Gases and Heat."
   },
   processSteps: [
-    { id: "STEP-1", title: "Phenomenon" },
-    { id: "STEP-2", title: "Explanation" },
-    { id: "STEP-3", title: "Practice" },
-    { id: "STEP-4", title: "Summary" }
+    {
+      id: "STEP-1",
+      title: "Phenomenon",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    },
+    {
+      id: "STEP-2",
+      title: "Explanation",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    },
+    {
+      id: "STEP-3",
+      title: "Practice",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    },
+    {
+      id: "STEP-4",
+      title: "Summary",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    }
   ],
   slides: [
     {
@@ -32,14 +80,14 @@ export const lesson112KeplerCarousel: EduCarouselConfig = {
       type: "lesson_text",
       processStepId: "STEP-1",
       title: "Orbits in the Cosmos",
-      content: "### How do things stay in orbit?\n\nThe Moon has been orbiting the Earth for billions of years, and now human-made satellites like the International Space Station (ISS) do the same. But they move very differently.\n\nIn this lesson, we will uncover the universal laws that govern all orbital motion.\n\n**Learning Outcomes:**\n- State and apply Kepler's three laws of planetary motion.\n- Use Newton's Law of Universal Gravitation.\n- Derive and calculate orbital speed and period for satellites.\n\nKey terms: `Kepler's Laws`, `Universal Gravitation`, `Orbital Period`, `Ellipse`"
+      body: "### How do things stay in orbit?\n\nThe Moon has been orbiting the Earth for billions of years, and now human-made satellites like the International Space Station (ISS) do the same. But they move very differently.\n\nIn this lesson, we will uncover the universal laws that govern all orbital motion.\n\n**Learning Outcomes:**\n- State and apply Kepler's three laws of planetary motion.\n- Use Newton's Law of Universal Gravitation.\n- Derive and calculate orbital speed and period for satellites.\n\nKey terms: `Kepler's Laws`, `Universal Gravitation`, `Orbital Period`, `Ellipse`"
     },
     {
       id: "SLIDE-2-PREDICT",
       type: "question_mcq",
       processStepId: "STEP-1",
       title: "Predict: Orbital Times",
-      text: "The Moon orbits Earth in ~27 days. The ISS, at a much lower altitude, orbits Earth in just ~90 minutes. Why does a LOWER orbit mean a SHORTER period (and faster speed)?",
+      questionText: "The Moon orbits Earth in ~27 days. The ISS, at a much lower altitude, orbits Earth in just ~90 minutes. Why does a LOWER orbit mean a SHORTER period (and faster speed)?",
       points: 2,
       imageLayout: "left",
       imageCaption: "Earth orbits: ISS vs Moon",
@@ -72,14 +120,14 @@ export const lesson112KeplerCarousel: EduCarouselConfig = {
       type: "lesson_text",
       processStepId: "STEP-2",
       title: "Kepler's Laws and Newton's Gravitation",
-      content: "### Kepler's 3 Laws of Planetary Motion\n1. **Law of Ellipses:** Planets move in elliptical orbits with the Sun at one focus.\n2. **Law of Equal Areas:** A line segment joining a planet and the Sun sweeps out equal areas during equal intervals of time (planets move faster when closer to the Sun).\n3. **Law of Harmonies:** The square of the orbital period $T$ is proportional to the cube of the semi-major axis (or mean radius) $r$:\n   $$T^2 \\propto r^3 \\implies \\frac{T^2}{r^3} = \\frac{4\\pi^2}{GM}$$\n\n### Newton's Law of Universal Gravitation\nThe gravitational force between two masses $m_1$ and $m_2$ separated by distance $r$ is:\n$$F_g = G\\frac{m_1 m_2}{r^2}$$\nwhere $G = 6.67 \\times 10^{-11} \\text{ N}\\cdot\\text{m}^2/\\text{kg}^2$.\n\n### Orbital Speed and Period\nFor a circular orbit, gravity provides the centripetal force ($F_c = F_g$):\n$$m\\frac{v^2}{r} = G\\frac{Mm}{r^2} \\implies v = \\sqrt{\\frac{GM}{r}}$$\nThe period is the time for one orbit: $T = \\frac{2\\pi r}{v}$.\n\n*Worked Example:* Satellite at $r = 6.8 \\times 10^6$ m, $GM_E = 4 \\times 10^{14} \\text{ N}\\cdot\\text{m}^2/\\text{kg}$.\n$v = \\sqrt{\\frac{4 \\times 10^{14}}{6.8 \\times 10^6}} \\approx 7668$ m/s.\n$T = \\frac{2\\pi(6.8 \\times 10^6)}{7668} \\approx 5571$ s (approx 92.8 min)."
+      body: "### Kepler's 3 Laws of Planetary Motion\n1. **Law of Ellipses:** Planets move in elliptical orbits with the Sun at one focus.\n2. **Law of Equal Areas:** A line segment joining a planet and the Sun sweeps out equal areas during equal intervals of time (planets move faster when closer to the Sun).\n3. **Law of Harmonies:** The square of the orbital period $T$ is proportional to the cube of the semi-major axis (or mean radius) $r$:\n   $$T^2 \\propto r^3 \\implies \\frac{T^2}{r^3} = \\frac{4\\pi^2}{GM}$$\n\n### Newton's Law of Universal Gravitation\nThe gravitational force between two masses $m_1$ and $m_2$ separated by distance $r$ is:\n$$F_g = G\\frac{m_1 m_2}{r^2}$$\nwhere $G = 6.67 \\times 10^{-11} \\text{ N}\\cdot\\text{m}^2/\\text{kg}^2$.\n\n### Orbital Speed and Period\nFor a circular orbit, gravity provides the centripetal force ($F_c = F_g$):\n$$m\\frac{v^2}{r} = G\\frac{Mm}{r^2} \\implies v = \\sqrt{\\frac{GM}{r}}$$\nThe period is the time for one orbit: $T = \\frac{2\\pi r}{v}$.\n\n*Worked Example:* Satellite at $r = 6.8 \\times 10^6$ m, $GM_E = 4 \\times 10^{14} \\text{ N}\\cdot\\text{m}^2/\\text{kg}$.\n$v = \\sqrt{\\frac{4 \\times 10^{14}}{6.8 \\times 10^6}} \\approx 7668$ m/s.\n$T = \\frac{2\\pi(6.8 \\times 10^6)}{7668} \\approx 5571$ s (approx 92.8 min)."
     },
     {
       id: "SLIDE-4-PRACTICE",
       type: "question_mcq",
       processStepId: "STEP-3",
       title: "Practice: Applying Kepler's Third Law",
-      text: "Planet X orbits its star with a period of 8 years and a mean orbital radius $r$. Planet Y orbits the same star with a mean orbital radius of $4r$. Using Kepler's 3rd Law, find Planet Y's orbital period.",
+      questionText: "Planet X orbits its star with a period of 8 years and a mean orbital radius $r$. Planet Y orbits the same star with a mean orbital radius of $4r$. Using Kepler's 3rd Law, find Planet Y's orbital period.",
       points: 2,
       imageLayout: "left",
       imageCaption: "Two planets around the same star",
@@ -119,7 +167,7 @@ export const lesson112KeplerCarousel: EduCarouselConfig = {
       type: "lesson_text",
       processStepId: "STEP-4",
       title: "Chapter 1 Complete!",
-      content: "### Congratulations! 🎉\n\nYou have successfully completed all lessons in **Chapter 1: Mechanics**!\n\n**Mastery Checklist:**\n- [x] Analyzed horizontal and vertical circular motion.\n- [x] Calculated forces and minimum speeds.\n- [x] Applied Newton's Universal Gravitation.\n- [x] Mastered Kepler's Three Laws of Planetary Motion.\n\n**What's Next?**\nYou are now ready to embark on **Part 2**, where we transition from the mechanics of solids and orbits into the fascinating world of **Gases and Heat**."
+      body: "### Congratulations! 🎉\n\nYou have successfully completed all lessons in **Chapter 1: Mechanics**!\n\n**Mastery Checklist:**\n- [x] Analyzed horizontal and vertical circular motion.\n- [x] Calculated forces and minimum speeds.\n- [x] Applied Newton's Universal Gravitation.\n- [x] Mastered Kepler's Three Laws of Planetary Motion.\n\n**What's Next?**\nYou are now ready to embark on **Part 2**, where we transition from the mechanics of solids and orbits into the fascinating world of **Gases and Heat**."
     }
   ]
 };

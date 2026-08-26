@@ -17,11 +17,71 @@ export const lesson13AngledProjectileCarousel: EduCarouselConfig = {
     nextStepRule: "Proceed to moments."
   },
   processSteps: [
-    { id: "step-1", label: "Connect" },
-    { id: "step-2", label: "Predict Phenomenon" },
-    { id: "step-3", label: "Concept & Derivation" },
-    { id: "step-4", label: "Practice Problem" },
-    { id: "step-5", label: "Mastery Checklist" }
+    {
+      id: "step-1",
+      title: "Connect",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    },
+    {
+      id: "step-2",
+      title: "Predict Phenomenon",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    },
+    {
+      id: "step-3",
+      title: "Concept & Derivation",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    },
+    {
+      id: "step-4",
+      title: "Practice Problem",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    },
+    {
+      id: "step-5",
+      title: "Mastery Checklist",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    }
   ],
   slides: [
     {
@@ -29,14 +89,14 @@ export const lesson13AngledProjectileCarousel: EduCarouselConfig = {
       type: "lesson_text",
       processStepId: "step-1",
       body: "### Angled Projectiles\n\nComponents at launch:\n- $v_{0x} = v_0\\cos\\theta$ (constant)\n- $v_{0y} = v_0\\sin\\theta$ (decelerates to 0 at top)\n\nAt max height: $v_y = 0$, $v_x = v_0\\cos\\theta$\n- Time to top: $t_{top} = \\frac{v_0\\sin\\theta}{g}$\n- Max Height: $H_{max} = \\frac{v_0^2\\sin^2\\theta}{2g}$\n- Total time: $T = 2t_{top}$\n- Range: $R = \\frac{v_0^2\\sin2\\theta}{g}$ (Max range at $\\theta = 45^{\\circ}$)",
-      objectives: ["Decompose velocity vectors", "Apply projectile formulas"],
+      
       keyTerms: ["Launch Angle", "Max Height", "Range"]
     },
     {
       id: "slide-2",
       type: "question_mcq",
       processStepId: "step-2",
-      question: "A footballer kicks a ball at 20 m/s at 30° angle. Is 45° always the angle for max range? What if there's a wall?",
+      questionText: "A footballer kicks a ball at 20 m/s at 30° angle. Is 45° always the angle for max range? What if there's a wall?",
       points: 2,
       imageLayout: "left",
       imageCaption: "Launch components",
@@ -76,14 +136,14 @@ export const lesson13AngledProjectileCarousel: EduCarouselConfig = {
       type: "lesson_text",
       processStepId: "step-3",
       body: "### Worked Example\n\nBall launched at 20 m/s, $30^{\\circ}$, $g = 10$ m/s$^2$.\n\n1. **Components:**\n   - $v_{0x} = 20\\cos(30^{\\circ}) \\approx 17.3$ m/s\n   - $v_{0y} = 20\\sin(30^{\\circ}) = 10$ m/s\n2. **Time to Top & Height:**\n   - $t_{top} = 1$ s\n   - $H = 5$ m\n3. **Total Time & Range:**\n   - $T = 2$ s\n   - $R = 17.3 \\times 2 = 34.6$ m",
-      objectives: ["Decompose velocity components", "Calculate max height, time, and range"],
+      
       keyTerms: ["Launch Angle", "Max Height", "Range"]
     },
     {
       id: "slide-4",
       type: "question_mcq",
       processStepId: "step-4",
-      question: "A projectile is launched at 40m/s at 60° above horizontal. Find: (a) max height, (b) total time of flight. (g=10m/s²).",
+      questionText: "A projectile is launched at 40m/s at 60° above horizontal. Find: (a) max height, (b) total time of flight. (g=10m/s²).",
       points: 2,
       imageLayout: "left",
       imageCaption: "Range vs Angle",
@@ -116,7 +176,7 @@ export const lesson13AngledProjectileCarousel: EduCarouselConfig = {
       type: "lesson_text",
       processStepId: "step-5",
       body: "### Mastery Checklist\n\n- [x] I can decompose initial velocity into $v_{0x}$ and $v_{0y}$.\n- [x] I know horizontal velocity is constant while vertical decelerates.\n- [x] I can calculate max height and range for angled launches.\n\n**Next up:** Lesson 1-4 Moments.",
-      objectives: ["Review concepts"],
+      
       keyTerms: ["Mastery"]
     }
   ]

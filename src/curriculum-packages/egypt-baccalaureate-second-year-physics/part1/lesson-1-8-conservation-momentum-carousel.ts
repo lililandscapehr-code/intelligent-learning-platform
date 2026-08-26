@@ -17,20 +17,80 @@ export const lesson18ConservationMomentumCarousel: EduCarouselConfig = {
     nextStepRule: "Complete all questions and review the mastery checklist."
   },
   processSteps: [
-    { id: "connect", title: "Connect", type: "intro" },
-    { id: "predict", title: "Predict", type: "assessment" },
-    { id: "explain", title: "Explain", type: "instruction" },
-    { id: "practice", title: "Practice", type: "assessment" },
-    { id: "evaluate", title: "Evaluate", type: "summary" }
+    {
+      id: "connect",
+      title: "Connect",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    },
+    {
+      id: "predict",
+      title: "Predict",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    },
+    {
+      id: "explain",
+      title: "Explain",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    },
+    {
+      id: "practice",
+      title: "Practice",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    },
+    {
+      id: "evaluate",
+      title: "Evaluate",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    }
   ],
   slides: [
     {
-      slideId: "slide-1",
+      id: "slide-1",
       processStepId: "connect",
       type: "lesson_text",
       title: "The Law of Conservation of Momentum",
-      content: {
-        markdownBody: `### Total Momentum is Conserved
+      
+        body: `### Total Momentum is Conserved
 
 The **Law of Conservation of Momentum** states that in an isolated system (no external forces acting on it), the total momentum before an event equals the total momentum after the event. 
 
@@ -41,18 +101,15 @@ This universal law applies to:
 *   **Collisions:** Objects bounce off each other and separate.
 *   **Perfectly Inelastic Collisions:** Objects stick together after impact.
 *   **Explosions/Recoil:** Objects initially together push apart.`,
-        keyTerms: [
-          { term: "Conservation of Momentum", definition: "Total momentum in a closed system remains constant." },
-          { term: "Isolated System", definition: "A physical system with zero net external forces acting upon it." }
-        ]
-      }
+        keyTerms: ["Conservation of Momentum", "Isolated System"]
+      
     },
     {
-      slideId: "slide-2",
+      id: "slide-2",
       processStepId: "predict",
       type: "question_mcq",
       title: "Predict: The Skater's Recoil",
-      content: {
+      
         questionText: "A 70 kg skater at rest pushes off a 5 kg skateboard. The skateboard flies forward at 14 m/s. What happens to the skater, and at what speed?",
         imageLayout: "left",
         imageCaption: "Skater pushing a skateboard.",
@@ -104,15 +161,15 @@ This universal law applies to:
             explanation: "If the skater stayed at rest, the total momentum would be non-zero (just the skateboard moving), violating conservation of momentum."
           }
         ]
-      }
+      
     },
     {
-      slideId: "slide-3",
+      id: "slide-3",
       processStepId: "explain",
       type: "lesson_text",
       title: "Explaining Conservation",
-      content: {
-        markdownBody: `### Calculating Collisions and Recoil
+      
+        body: `### Calculating Collisions and Recoil
 
 **Recoil (Explosions):**
 Initially, objects are at rest, so total initial momentum $P_i = 0$.
@@ -129,14 +186,14 @@ A 2 kg cart moving at 6 m/s hits a 4 kg cart at rest. They stick together. What 
 2. Final Momentum: $P_f = (2 + 4) V = 6V$
 3. Conservation: $12 = 6V \\implies V = 2 \\text{ m/s}$`,
         keyTerms: []
-      }
+      
     },
     {
-      slideId: "slide-4",
+      id: "slide-4",
       processStepId: "practice",
       type: "question_mcq",
       title: "Practice: Perfectly Inelastic Collision",
-      content: {
+      
         questionText: "A 2 kg cart moving to the right at 5 m/s collides with a stationary 3 kg cart. They stick together (perfectly inelastic). Find their common velocity after the collision.",
         imageLayout: "left",
         imageCaption: "Two carts colliding and sticking together.",
@@ -190,15 +247,15 @@ A 2 kg cart moving at 6 m/s hits a 4 kg cart at rest. They stick together. What 
             explanation: "You calculated the total momentum, not the final velocity. Divide momentum (10 kg·m/s) by the total mass (5 kg)."
           }
         ]
-      }
+      
     },
     {
-      slideId: "slide-5",
+      id: "slide-5",
       processStepId: "evaluate",
       type: "lesson_text",
       title: "Mastery Checklist",
-      content: {
-        markdownBody: `### Summary: Conservation of Momentum
+      
+        body: `### Summary: Conservation of Momentum
 
 You have reached the end of this lesson! Review your mastery of the following concepts:
 *   [x] **Law of Conservation of Momentum:** $\\sum \\vec{p}_{\\text{before}} = \\sum \\vec{p}_{\\text{after}}$
@@ -208,7 +265,7 @@ You have reached the end of this lesson! Review your mastery of the following co
 
 **Next Up (1-9):** We will explore how Kinetic Energy behaves during collisions, separating "Elastic" from "Inelastic" interactions!`,
         keyTerms: []
-      }
+      
     }
   ]
 };

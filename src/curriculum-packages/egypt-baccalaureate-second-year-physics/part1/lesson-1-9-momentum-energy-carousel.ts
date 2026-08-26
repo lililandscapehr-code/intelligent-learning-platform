@@ -17,20 +17,80 @@ export const lesson19MomentumEnergyCarousel: EduCarouselConfig = {
     nextStepRule: "Complete all questions and review the mastery checklist."
   },
   processSteps: [
-    { id: "connect", title: "Connect", type: "intro" },
-    { id: "predict", title: "Predict", type: "assessment" },
-    { id: "explain", title: "Explain", type: "instruction" },
-    { id: "practice", title: "Practice", type: "assessment" },
-    { id: "evaluate", title: "Evaluate", type: "summary" }
+    {
+      id: "connect",
+      title: "Connect",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    },
+    {
+      id: "predict",
+      title: "Predict",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    },
+    {
+      id: "explain",
+      title: "Explain",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    },
+    {
+      id: "practice",
+      title: "Practice",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    },
+    {
+      id: "evaluate",
+      title: "Evaluate",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    }
   ],
   slides: [
     {
-      slideId: "slide-1",
+      id: "slide-1",
       processStepId: "connect",
       type: "lesson_text",
       title: "Elastic vs Inelastic Collisions",
-      content: {
-        markdownBody: `### Not All Collisions Are the Same!
+      
+        body: `### Not All Collisions Are the Same!
 
 While **Momentum is ALWAYS conserved** in an isolated collision, Kinetic Energy ($KE = \\frac{1}{2}mv^2$) behaves differently depending on the collision type.
 
@@ -43,18 +103,15 @@ Measures how elastic a collision is.
 $$ e = \\frac{v_2' - v_1'}{v_1 - v_2} $$
 *   $e = 1$: Perfectly Elastic
 *   $e = 0$: Perfectly Inelastic`,
-        keyTerms: [
-          { term: "Elastic Collision", definition: "A collision in which both total momentum and total kinetic energy are conserved." },
-          { term: "Coefficient of Restitution", definition: "The ratio of the final relative velocity to the initial relative velocity." }
-        ]
-      }
+        keyTerms: ["Elastic Collision", "Coefficient of Restitution"]
+      
     },
     {
-      slideId: "slide-2",
+      id: "slide-2",
       processStepId: "predict",
       type: "question_mcq",
       title: "Predict: The Bouncing Balls",
-      content: {
+      
         questionText: "A rubber ball and a clay ball of equal mass are dropped from 1m height. The rubber ball bounces back to ~0.9m. The clay ball doesn't bounce at all. Why does one bounce and the other doesn't?",
         imageLayout: "left",
         imageCaption: "Rubber and clay balls hitting the floor.",
@@ -109,15 +166,15 @@ $$ e = \\frac{v_2' - v_1'}{v_1 - v_2} $$
             explanation: "Gravity accelerates both objects equally at 9.8 m/s². The difference in bounce is purely due to the material's elasticity during the collision."
           }
         ]
-      }
+      
     },
     {
-      slideId: "slide-3",
+      id: "slide-3",
       processStepId: "explain",
       type: "lesson_text",
       title: "Equal Mass Elastic Collisions",
-      content: {
-        markdownBody: `### Trading Velocities!
+      
+        body: `### Trading Velocities!
 
 In a 1D elastic collision where **Kinetic Energy is fully conserved**:
 $$ \\frac{1}{2}m_1v_1^2 + \\frac{1}{2}m_2v_2^2 = \\frac{1}{2}m_1v_1'^2 + \\frac{1}{2}m_2v_2'^2 $$
@@ -133,14 +190,14 @@ Because it's an elastic collision of equal masses:
 *   The first ball stops completely ($v_1' = 0$ m/s).
 *   The second ball shoots forward at the exact same speed ($v_2' = 4$ m/s).`,
         keyTerms: []
-      }
+      
     },
     {
-      slideId: "slide-4",
+      id: "slide-4",
       processStepId: "practice",
       type: "question_mcq",
       title: "Practice: Elastic Collision Calculation",
-      content: {
+      
         questionText: "Ball A (2 kg, 6 m/s) collides elastically with ball B (2 kg, at rest). After the collision, what are their respective velocities?",
         imageLayout: "left",
         imageCaption: "Two equal mass balls on a track undergoing an elastic collision.",
@@ -196,15 +253,15 @@ Because it's an elastic collision of equal masses:
             explanation: "While this conserves momentum, it does not conserve Kinetic Energy (KE would actually increase, which is impossible without an explosion)."
           }
         ]
-      }
+      
     },
     {
-      slideId: "slide-5",
+      id: "slide-5",
       processStepId: "evaluate",
       type: "lesson_text",
       title: "Mastery Checklist",
-      content: {
-        markdownBody: `### Summary: Momentum and Kinetic Energy
+      
+        body: `### Summary: Momentum and Kinetic Energy
 
 Excellent work! Let's review what you've learned:
 *   [x] **Elastic Collisions:** Both momentum and kinetic energy are fully conserved.
@@ -214,7 +271,7 @@ Excellent work! Let's review what you've learned:
 
 **Next Up (1-10):** We will step away from straight lines and collisions to study **Uniform Circular Motion**!`,
         keyTerms: []
-      }
+      
     }
   ]
 };

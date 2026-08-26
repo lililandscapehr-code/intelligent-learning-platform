@@ -17,11 +17,71 @@ export const lesson14MomentCarousel: EduCarouselConfig = {
     nextStepRule: "Proceed to lesson 1-5."
   },
   processSteps: [
-    { id: "step-1", label: "Connect" },
-    { id: "step-2", label: "Predict Phenomenon" },
-    { id: "step-3", label: "Concept & Derivation" },
-    { id: "step-4", label: "Practice Problem" },
-    { id: "step-5", label: "Mastery Checklist" }
+    {
+      id: "step-1",
+      title: "Connect",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    },
+    {
+      id: "step-2",
+      title: "Predict Phenomenon",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    },
+    {
+      id: "step-3",
+      title: "Concept & Derivation",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    },
+    {
+      id: "step-4",
+      title: "Practice Problem",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    },
+    {
+      id: "step-5",
+      title: "Mastery Checklist",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    }
   ],
   slides: [
     {
@@ -29,14 +89,14 @@ export const lesson14MomentCarousel: EduCarouselConfig = {
       type: "lesson_text",
       processStepId: "step-1",
       body: "### Moment of a Force (Torque)\n\n$M = F \\times d_{\\perp}$\nWhere $d_{\\perp}$ is the **perpendicular distance** from pivot to line of action.\n\n- Unit: N·m\n- Convention: Clockwise = negative, Anticlockwise = positive\n- Principle of Moments: For equilibrium, sum of clockwise moments = sum of anticlockwise moments",
-      objectives: ["Calculate moment of a force", "Apply Principle of Moments"],
+      
       keyTerms: ["Moment", "Torque", "Equilibrium"]
     },
     {
       id: "slide-2",
       type: "question_mcq",
       processStepId: "step-2",
-      question: "A 60N force at 40cm from a pivot acts against a smaller force at 15cm. Can a smaller force balance a larger force on a lever?",
+      questionText: "A 60N force at 40cm from a pivot acts against a smaller force at 15cm. Can a smaller force balance a larger force on a lever?",
       points: 2,
       imageLayout: "left",
       imageCaption: "Forces on a Spanner",
@@ -76,14 +136,14 @@ export const lesson14MomentCarousel: EduCarouselConfig = {
       type: "lesson_text",
       processStepId: "step-3",
       body: "### Worked Example\n\n$M = F \\times d_{\\perp}$\n\nExample: $F_1 = 60$ N, $d_1 = 0.4$ m $\\rightarrow M_1 = 24$ N·m.\n\nFor balance:\n$F_2 \\times 0.15 = 24 \\rightarrow F_2 = 160$ N.\n\nRemember: Moment depends on PERPENDICULAR distance. If a force acts at an angle, resolve it into components or calculate the true perpendicular distance.",
-      objectives: ["Calculate moment of a force", "Apply Principle of Moments"],
+      
       keyTerms: ["Perpendicular Distance", "Equilibrium"]
     },
     {
       id: "slide-4",
       type: "question_mcq",
       processStepId: "step-4",
-      question: "A uniform seesaw (length 4m) has child A (weight 300N) at left end, pivot at center. Where must child B (weight 200N) sit on the right to balance?",
+      questionText: "A uniform seesaw (length 4m) has child A (weight 300N) at left end, pivot at center. Where must child B (weight 200N) sit on the right to balance?",
       points: 2,
       imageLayout: "left",
       imageCaption: "Seesaw balance",
@@ -116,7 +176,7 @@ export const lesson14MomentCarousel: EduCarouselConfig = {
       type: "lesson_text",
       processStepId: "step-5",
       body: "### Mastery Checklist\n\n- [x] I know that moment = Force $\\times$ perpendicular distance.\n- [x] I can identify clockwise and anticlockwise moments.\n- [x] I can use the principle of moments to solve equilibrium problems.\n\n**Next up:** Lesson 1-5.",
-      objectives: ["Review concepts"],
+      
       keyTerms: ["Mastery"]
     }
   ]

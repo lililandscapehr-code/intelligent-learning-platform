@@ -97,6 +97,7 @@ export interface BaseSlide {
   skillId?: string;
   blueprintId?: string;
   sourceReferences?: string[];
+  timerSeconds?: number;               // Per-slide countdown timer (0 = no timer)
 }
 
 // ── Media slides ─────────────────────────────────────────────
@@ -105,6 +106,7 @@ export interface LessonTextSlide extends BaseSlide {
   body: string;                        // Rich markdown-like text
   keyTerms?: string[];                 // Highlighted amber terms
   learningObjective?: string;
+  theme?: "default" | "amber" | "sky" | "emerald" | "violet" | "rose"; // Background color theme
 }
 
 export interface LessonImageSlide extends BaseSlide {
@@ -117,17 +119,24 @@ export interface YouTubeSlide extends BaseSlide {
   type: "youtube";
   youtubeUrl: string;
   startAt?: number;                    // Seconds to start at
+  endAt?: number;                      // Seconds to end clip
   maxDuration?: number;
+  mandatoryWatchSeconds?: number;      // Student must watch N seconds before advancing
+  autoAdvance?: boolean;               // Auto-advance when video ends
 }
 
 export interface VideoSlide extends BaseSlide {
   type: "video";
   videoUrl: string;
+  autoAdvance?: boolean;               // Auto-advance when video ends
 }
 
 export interface ImageSlide extends BaseSlide {
   type: "image";
   imageUrl: string;
+  imageAlt?: string;
+  imageLayout?: QuestionImageLayout;
+  imageSizePct?: number;
 }
 
 // ── Question slides ───────────────────────────────────────────
@@ -152,6 +161,7 @@ export interface QuestionMCQSlide extends BaseSlide {
   questionText: string;
   choices: MCQChoice[];
   allowMultiple?: boolean;
+  shuffleChoices?: boolean;            // Randomize choice order for students
   points?: number;
   imageUrl?: string;
   imageAlt?: string;

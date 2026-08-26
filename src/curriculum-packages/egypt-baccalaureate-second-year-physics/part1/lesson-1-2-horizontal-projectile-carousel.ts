@@ -17,11 +17,71 @@ export const lesson12HorizontalProjectileCarousel: EduCarouselConfig = {
     nextStepRule: "Proceed to angled projectiles."
   },
   processSteps: [
-    { id: "step-1", label: "Connect" },
-    { id: "step-2", label: "Predict Phenomenon" },
-    { id: "step-3", label: "Concept & Derivation" },
-    { id: "step-4", label: "Practice Problem" },
-    { id: "step-5", label: "Mastery Checklist" }
+    {
+      id: "step-1",
+      title: "Connect",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    },
+    {
+      id: "step-2",
+      title: "Predict Phenomenon",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    },
+    {
+      id: "step-3",
+      title: "Concept & Derivation",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    },
+    {
+      id: "step-4",
+      title: "Practice Problem",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    },
+    {
+      id: "step-5",
+      title: "Mastery Checklist",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    }
   ],
   slides: [
     {
@@ -29,14 +89,14 @@ export const lesson12HorizontalProjectileCarousel: EduCarouselConfig = {
       type: "lesson_text",
       processStepId: "step-1",
       body: "### The Core Law of Projectiles\n\nHorizontal and vertical motions are **INDEPENDENT**.\n- Horizontal: $x = v_0t$ (constant velocity, $a_x = 0$)\n- Vertical: $y = \\frac{1}{2}gt^2$ (free fall, $a_y = g$ downward)\n\nTime of flight from height $h$: $t = \\sqrt{\\frac{2h}{g}}$.\nRange: $R = v_0 \\times t$",
-      objectives: ["Understand independence of axes", "Apply equations of motion"],
+      
       keyTerms: ["Horizontal Projectile", "Time of Flight", "Range"]
     },
     {
       id: "slide-2",
       type: "question_mcq",
       processStepId: "step-2",
-      question: "A stone thrown horizontally off a cliff AND a stone dropped vertically from the same height. Which hits the ground first?",
+      questionText: "A stone thrown horizontally off a cliff AND a stone dropped vertically from the same height. Which hits the ground first?",
       points: 2,
       imageLayout: "left",
       imageCaption: "Dropped vs. Thrown Stone",
@@ -76,14 +136,14 @@ export const lesson12HorizontalProjectileCarousel: EduCarouselConfig = {
       type: "lesson_text",
       processStepId: "step-3",
       body: "### Worked Example\n\nA ball rolls off a table ($h = 1.25$ m) at $v_0 = 4$ m/s. Let $g = 10$ m/s$^2$.\n\n1. **Time of flight:**\n   $$t = \\sqrt{\\frac{2h}{g}} = \\sqrt{\\frac{2 \\times 1.25}{10}} = \\sqrt{0.25} = 0.5 \\text{ s}$$\n2. **Range:**\n   $$R = v_0 \\times t = 4 \\times 0.5 = 2 \\text{ m}$$",
-      objectives: ["Calculate time of flight", "Calculate horizontal range"],
+      
       keyTerms: ["Free Fall", "Constant Velocity"]
     },
     {
       id: "slide-4",
       type: "question_mcq",
       processStepId: "step-4",
-      question: "A package is dropped from a plane flying horizontally at 200 m/s at a height of 500m. Find the time to hit the ground and horizontal distance from the drop point. (g = 10 m/s²).",
+      questionText: "A package is dropped from a plane flying horizontally at 200 m/s at a height of 500m. Find the time to hit the ground and horizontal distance from the drop point. (g = 10 m/s²).",
       points: 2,
       imageLayout: "left",
       imageCaption: "Package dropped from plane",
@@ -116,7 +176,7 @@ export const lesson12HorizontalProjectileCarousel: EduCarouselConfig = {
       type: "lesson_text",
       processStepId: "step-5",
       body: "### Mastery Checklist\n\n- [x] I know horizontal and vertical motion are independent.\n- [x] I can calculate time of flight using $t = \\sqrt{\\frac{2h}{g}}$.\n- [x] I can calculate horizontal range using $x = v_xt$.\n\n**Next up:** Lesson 1-3 Angled Projectile Motion.",
-      objectives: ["Review concepts"],
+      
       keyTerms: ["Mastery"]
     }
   ]

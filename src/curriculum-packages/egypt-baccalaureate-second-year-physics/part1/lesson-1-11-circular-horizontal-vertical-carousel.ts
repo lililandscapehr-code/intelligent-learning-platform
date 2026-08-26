@@ -21,10 +21,58 @@ export const lesson111CircularHVCarousel: EduCarouselConfig = {
     nextStepRule: "Proceed to lesson 1-12 on Kepler and Gravitation."
   },
   processSteps: [
-    { id: "STEP-1", title: "Phenomenon" },
-    { id: "STEP-2", title: "Explanation" },
-    { id: "STEP-3", title: "Practice" },
-    { id: "STEP-4", title: "Summary" }
+    {
+      id: "STEP-1",
+      title: "Phenomenon",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    },
+    {
+      id: "STEP-2",
+      title: "Explanation",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    },
+    {
+      id: "STEP-3",
+      title: "Practice",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    },
+    {
+      id: "STEP-4",
+      title: "Summary",
+      subtitle: "Complete this step to advance.",
+      mission: "Engage with the material and demonstrate understanding.",
+      brief: "Work through the slide carefully before moving on.",
+      studentOutcome: "You will be able to answer questions about this concept.",
+      parentHint: "Ask your child to explain the key idea from this step in their own words.",
+      preparationStages: ["Read the explanation", "Note key terms"],
+      evaluationStages: ["Answer the practice question", "Check the evaluation slide"],
+      successSignal: "Student answers correctly on the first attempt.",
+      supportDecision: "If incorrect, review the explanation slide and retry."
+    }
   ],
   slides: [
     {
@@ -32,14 +80,14 @@ export const lesson111CircularHVCarousel: EduCarouselConfig = {
       type: "lesson_text",
       processStepId: "STEP-1",
       title: "The Physics of Roller Coasters",
-      content: "### How do roller coasters defy gravity?\n\nHave you ever wondered why you don't fall out of a roller coaster car at the top of a vertical loop? Or why you feel heavier at the bottom of the loop? It's all about **centripetal force** and **apparent weight**.\n\nIn this lesson, we will explore vertical and horizontal circular motion.\n\n**Learning Outcomes:**\n- Analyze forces in vertical circular motion (tension, normal force).\n- Calculate the minimum speed required to complete a vertical circle.\n- Differentiate between horizontal and vertical circular motion.\n\nKey terms: `Tension`, `Normal Force`, `Apparent Weight`, `Centripetal Force`"
+      body: "### How do roller coasters defy gravity?\n\nHave you ever wondered why you don't fall out of a roller coaster car at the top of a vertical loop? Or why you feel heavier at the bottom of the loop? It's all about **centripetal force** and **apparent weight**.\n\nIn this lesson, we will explore vertical and horizontal circular motion.\n\n**Learning Outcomes:**\n- Analyze forces in vertical circular motion (tension, normal force).\n- Calculate the minimum speed required to complete a vertical circle.\n- Differentiate between horizontal and vertical circular motion.\n\nKey terms: `Tension`, `Normal Force`, `Apparent Weight`, `Centripetal Force`"
     },
     {
       id: "SLIDE-2-PREDICT",
       type: "question_mcq",
       processStepId: "STEP-1",
       title: "Predict: Roller Coaster Loop",
-      text: "A roller-coaster car goes around a vertical loop. At the TOP of the loop, the passengers feel lighter than normal — or even 'weightless'. Why does this happen, and what determines the minimum speed to stay on track?",
+      questionText: "A roller-coaster car goes around a vertical loop. At the TOP of the loop, the passengers feel lighter than normal — or even 'weightless'. Why does this happen, and what determines the minimum speed to stay on track?",
       points: 2,
       imageLayout: "left",
       imageCaption: "Vertical Loop Forces",
@@ -72,14 +120,14 @@ export const lesson111CircularHVCarousel: EduCarouselConfig = {
       type: "lesson_text",
       processStepId: "STEP-2",
       title: "Analyzing Vertical Circles",
-      content: "### Forces at the Top and Bottom\n\nIn a vertical circle, the tension (or normal force) varies with position because gravity always points downward.\n\n**At the top:**\nBoth Tension ($T$) and weight ($mg$) point toward the center.\n$$T_{top} + mg = \\frac{mv^2}{r} \\implies T_{top} = \\frac{mv^2}{r} - mg$$\nFor a minimum speed where the string just goes slack (or normal force becomes zero), $T = 0$:\n$$v_{min} = \\sqrt{gr}$$\n\n*Example:* If $r=20$ m, $v_{min} = \\sqrt{10 \\times 20} = \\sqrt{200} \\approx 14.1$ m/s.\n\n**At the bottom:**\nTension points up (toward center), weight points down (away from center).\n$$T_{bottom} - mg = \\frac{mv^2}{r} \\implies T_{bottom} = \\frac{mv^2}{r} + mg$$\nThe tension at the bottom is much larger than at the top! This is why you feel 'heavier' at the bottom of a loop.\n\n*Conical pendulum (Horizontal circle):*\nThe string sweeps a cone. Horizontal component $T \\sin\\theta = m\\omega^2r$ provides centripetal force, and vertical $T \\cos\\theta = mg$ balances gravity."
+      body: "### Forces at the Top and Bottom\n\nIn a vertical circle, the tension (or normal force) varies with position because gravity always points downward.\n\n**At the top:**\nBoth Tension ($T$) and weight ($mg$) point toward the center.\n$$T_{top} + mg = \\frac{mv^2}{r} \\implies T_{top} = \\frac{mv^2}{r} - mg$$\nFor a minimum speed where the string just goes slack (or normal force becomes zero), $T = 0$:\n$$v_{min} = \\sqrt{gr}$$\n\n*Example:* If $r=20$ m, $v_{min} = \\sqrt{10 \\times 20} = \\sqrt{200} \\approx 14.1$ m/s.\n\n**At the bottom:**\nTension points up (toward center), weight points down (away from center).\n$$T_{bottom} - mg = \\frac{mv^2}{r} \\implies T_{bottom} = \\frac{mv^2}{r} + mg$$\nThe tension at the bottom is much larger than at the top! This is why you feel 'heavier' at the bottom of a loop.\n\n*Conical pendulum (Horizontal circle):*\nThe string sweeps a cone. Horizontal component $T \\sin\\theta = m\\omega^2r$ provides centripetal force, and vertical $T \\cos\\theta = mg$ balances gravity."
     },
     {
       id: "SLIDE-4-PRACTICE",
       type: "question_mcq",
       processStepId: "STEP-3",
       title: "Practice: Whirling a Ball",
-      text: "A 0.5 kg ball on a 0.8 m string is whirled in a VERTICAL circle. Using $g=10 \\text{ m/s}^2$, find:\n(a) The minimum speed at the top so the string doesn't go slack.\n(b) The tension at the bottom when the speed there is 6 m/s.",
+      questionText: "A 0.5 kg ball on a 0.8 m string is whirled in a VERTICAL circle. Using $g=10 \\text{ m/s}^2$, find:\n(a) The minimum speed at the top so the string doesn't go slack.\n(b) The tension at the bottom when the speed there is 6 m/s.",
       points: 2,
       imageLayout: "left",
       imageCaption: "Whirling ball in vertical plane",
@@ -119,7 +167,7 @@ export const lesson111CircularHVCarousel: EduCarouselConfig = {
       type: "lesson_text",
       processStepId: "STEP-4",
       title: "Summary & Mastery Checklist",
-      content: "### Lesson Summary\n\nGreat job! Let's review what we learned about vertical circular motion:\n- **Tension is not constant:** It is greatest at the bottom ($T = \\frac{mv^2}{r} + mg$) and smallest at the top ($T = \\frac{mv^2}{r} - mg$).\n- **Minimum speed:** To maintain a vertical circle without string going slack, $v_{min} = \\sqrt{gr}$ at the top.\n- **Apparent Weight:** You feel heavier at the bottom because the normal force pushing up on you must overcome both gravity and provide centripetal acceleration.\n\n**Next Up:** We'll dive into the grand scale of circular motion with **Lesson 1-12: Kepler's Laws and Gravitation**!"
+      body: "### Lesson Summary\n\nGreat job! Let's review what we learned about vertical circular motion:\n- **Tension is not constant:** It is greatest at the bottom ($T = \\frac{mv^2}{r} + mg$) and smallest at the top ($T = \\frac{mv^2}{r} - mg$).\n- **Minimum speed:** To maintain a vertical circle without string going slack, $v_{min} = \\sqrt{gr}$ at the top.\n- **Apparent Weight:** You feel heavier at the bottom because the normal force pushing up on you must overcome both gravity and provide centripetal acceleration.\n\n**Next Up:** We'll dive into the grand scale of circular motion with **Lesson 1-12: Kepler's Laws and Gravitation**!"
     }
   ]
 };

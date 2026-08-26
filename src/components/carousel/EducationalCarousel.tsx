@@ -133,6 +133,40 @@ export default function EducationalCarousel({ config, onComplete, viewerRole = "
     };
   }, [currentIndex, isPaused, isInteractive, isComplete]);
 
+  // ── Per-slide question countdown timer ───────────────────────
+  const [slideTimerSecondsLeft, setSlideTimerSecondsLeft] = useState<number | null>(null);
+  const slideTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    // Clear any previous timer
+    if (slideTimerRef.current) clearInterval(slideTimerRef.current);
+    setSlideTimerSecondsLeft(null);
+
+    const timerSecs = slide?.timerSeconds ?? 0;
+    if (!timerSecs || timerSecs <= 0) return;
+    if (!isInteractive) return;
+    if (isAnswered) return;
+
+    let remaining = timerSecs;
+    setSlideTimerSecondsLeft(remaining);
+
+    slideTimerRef.current = setInterval(() => {
+      remaining -= 1;
+      setSlideTimerSecondsLeft(remaining);
+      if (remaining <= 0) {
+        clearInterval(slideTimerRef.current!);
+        setSlideTimerSecondsLeft(0);
+        // Auto-advance past question when timer runs out
+        goToNext();
+      }
+    }, 1000);
+
+    return () => {
+      if (slideTimerRef.current) clearInterval(slideTimerRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentIndex]);
+
   const toggleSound = () => {
     const muted = gameAudio.toggleMute();
     setIsMuted(muted);
@@ -617,6 +651,22 @@ export default function EducationalCarousel({ config, onComplete, viewerRole = "
           transition: "opacity 0.25s ease, transform 0.25s ease",
         }}
       >
+        {/* Per-slide countdown timer ring */}
+        {slideTimerSecondsLeft !== null && slideTimerSecondsLeft > 0 && (
+          <div className={`absolute right-4 top-4 z-20 flex h-12 w-12 items-center justify-center rounded-full border-4 ${
+            slideTimerSecondsLeft <= 10 ? "border-red-500 bg-red-500/10" : "border-amber-500 bg-amber-500/10"
+          }`}>
+            <span className={`text-sm font-bold tabular-nums ${slideTimerSecondsLeft <= 10 ? "text-red-400" : "text-amber-400"}`}>
+              {slideTimerSecondsLeft}
+            </span>
+          </div>
+        )}
+        {slideTimerSecondsLeft === 0 && (
+          <div className="absolute right-4 top-4 z-20 flex h-12 w-12 items-center justify-center rounded-full border-4 border-red-500 bg-red-500/20">
+            <Clock className="h-5 w-5 text-red-400" />
+          </div>
+        )}
+
         {slide?.type === "lesson_text" && <LessonTextSlideView slide={slide} />}
         {slide?.type === "lesson_image" && <LessonImageSlideView slide={slide} />}
         {slide?.type === "youtube" && <YouTubeSlideView slide={slide} />}
