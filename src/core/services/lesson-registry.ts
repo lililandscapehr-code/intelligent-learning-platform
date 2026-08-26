@@ -228,6 +228,36 @@ const dynamicCarouselRegistry: Record<string, Record<string, EduCarouselConfig>>
     "LES-PHYS-EB-GAS-1-1": boyleCharlesCarousel,
     "CAROUSEL-PHYS-EB-BOYLE-CHARLES": boyleCharlesCarousel
   },
+  "egypt-baccalaureate-second-year-physics-part1": {
+    "LES-PHYS-EB-MECH-1-1": lesson11VelocityCarousel,
+    "CAROUSEL-PHYS-EB-MECH-1-1": lesson11VelocityCarousel,
+    "LES-PHYS-EB-MECH-1-2": lesson12HorizontalProjectileCarousel,
+    "CAROUSEL-PHYS-EB-MECH-1-2": lesson12HorizontalProjectileCarousel,
+    "LES-PHYS-EB-MECH-1-3": lesson13AngledProjectileCarousel,
+    "CAROUSEL-PHYS-EB-MECH-1-3": lesson13AngledProjectileCarousel,
+    "LES-PHYS-EB-MECH-1-4": lesson14MomentCarousel,
+    "CAROUSEL-PHYS-EB-MECH-1-4": lesson14MomentCarousel,
+    "LES-PHYS-EB-MECH-1-5": lesson15EquilibriumCarousel,
+    "CAROUSEL-PHYS-EB-MECH-1-5": lesson15EquilibriumCarousel,
+    "LES-PHYS-EB-MECH-1-6": lesson16PowerCarousel,
+    "CAROUSEL-PHYS-EB-MECH-1-6": lesson16PowerCarousel,
+    "LES-PHYS-EB-MECH-1-7": lesson17MomentumImpulseCarousel,
+    "CAROUSEL-PHYS-EB-MECH-1-7": lesson17MomentumImpulseCarousel,
+    "LES-PHYS-EB-MECH-1-8": lesson18ConservationMomentumCarousel,
+    "CAROUSEL-PHYS-EB-MECH-1-8": lesson18ConservationMomentumCarousel,
+    "LES-PHYS-EB-MECH-1-9": lesson19MomentumEnergyCarousel,
+    "CAROUSEL-PHYS-EB-MECH-1-9": lesson19MomentumEnergyCarousel,
+    "LES-PHYS-EB-MECH-1-10": lesson110CircularCarousel,
+    "CAROUSEL-PHYS-EB-MECH-1-10": lesson110CircularCarousel,
+    "LES-PHYS-EB-MECH-1-11": lesson111CircularHVCarousel,
+    "CAROUSEL-PHYS-EB-MECH-1-11": lesson111CircularHVCarousel,
+    "LES-PHYS-EB-MECH-1-12": lesson112KeplerCarousel,
+    "CAROUSEL-PHYS-EB-MECH-1-12": lesson112KeplerCarousel
+  },
+  "egypt-baccalaureate-second-year-physics-part2": {
+    "LES-PHYS-EB-GAS-1-1": boyleCharlesCarousel,
+    "CAROUSEL-PHYS-EB-BOYLE-CHARLES": boyleCharlesCarousel
+  },
   "arts-drama-201": {
     "LES-DRAMA-VOCAL-01": dramaVocalCarousel,
     "CAROUSEL-DRAMA-VOCAL": dramaVocalCarousel
@@ -275,6 +305,32 @@ const dynamicQuestionBankRegistry: Record<string, GenericQuestionItem[]> = {
         { id: "A", text: "p = 1.2 × 10⁵ Pa; T = 300 K", isCorrect: true },
         { id: "B", text: "p = 20,000 Pa; T = 27 K (missed atmospheric p0 & Kelvin conversion)", isCorrect: false, misconceptionId: "PHYS-GAUGE-VS-ABSOLUTE" },
         { id: "C", text: "p = 1.2 × 10⁵ Pa; T = 27 K (missed Kelvin conversion)", isCorrect: false, misconceptionId: "PHYS-TEMP-CELSIUS-KELVIN" }
+      ]
+    }
+  ],
+  "egypt-baccalaureate-second-year-physics-part1": [
+    {
+      id: "QI-PHYS-EB-MECH-VELOCITY-01",
+      skillId: "SK-EGYPT-PHY-MECH-VELOCITY",
+      blueprintId: "QB-PHYS-EB-MECH-VELOCITY",
+      promptText: "Car A moves east at 25 m/s and Car B moves east at 15 m/s. What is the velocity of Car A relative to Car B?",
+      choices: [
+        { id: "A", text: "10 m/s East", isCorrect: true },
+        { id: "B", text: "40 m/s East", isCorrect: false, misconceptionId: "PHYS-RELATIVE-VEL-ADDITION" },
+        { id: "C", text: "10 m/s West", isCorrect: false }
+      ]
+    }
+  ],
+  "egypt-baccalaureate-second-year-physics-part2": [
+    {
+      id: "QI-PHYS-EB-GAS-1-1-PREDICT",
+      skillId: "SK-EGYPT-PHY-GAS-BOYLE-CHARLES",
+      blueprintId: "QB-PHYS-EB-GAS-1-1",
+      promptText: "A sealed bag of chips swells in an airplane at cruising altitude because cabin pressure is lower. When volume increases at constant temperature, what happens to internal gas pressure?",
+      choices: [
+        { id: "A", text: "Gas pressure falls proportionally as volume expands.", isCorrect: true },
+        { id: "B", text: "Gas pressure rises because molecules move faster.", isCorrect: false, misconceptionId: "PHYS-PRESSURE-VOLUME-DIRECT" },
+        { id: "C", text: "Gas pressure stays identical to ground level.", isCorrect: false }
       ]
     }
   ],

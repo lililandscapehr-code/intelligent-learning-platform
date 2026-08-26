@@ -265,4 +265,27 @@ export const curriculumEgyptBaccalaureateSecondYearPhysics: CurriculumPackage = 
   }]
 };
 
+export const curriculumEgyptBaccalaureateSecondYearPhysicsPart1: CurriculumPackage = {
+  ...curriculumEgyptBaccalaureateSecondYearPhysics,
+  identity: {
+    id: "egypt-baccalaureate-second-year-physics-part1",
+    name: "Egyptian Baccalaureate 2nd Year Physics · Part 1 (Mechanics & Vectors)",
+    publisher: "Egyptian Ministry of Education and Technical Education"
+  },
+  stages: [curriculumEgyptBaccalaureateSecondYearPhysics.stages[0]],
+  topics: [curriculumEgyptBaccalaureateSecondYearPhysics.topics[0]],
+};
+
+export const curriculumEgyptBaccalaureateSecondYearPhysicsPart2: CurriculumPackage = {
+  ...curriculumEgyptBaccalaureateSecondYearPhysics,
+  identity: {
+    id: "egypt-baccalaureate-second-year-physics-part2",
+    name: "Egyptian Baccalaureate 2nd Year Physics · Part 2 (Gases, Electricity & Quantum)",
+    publisher: "Egyptian Ministry of Education and Technical Education"
+  },
+  stages: [curriculumEgyptBaccalaureateSecondYearPhysics.stages[1]],
+  topics: [curriculumEgyptBaccalaureateSecondYearPhysics.topics[1]],
+};
+
 export default curriculumEgyptBaccalaureateSecondYearPhysics;
+

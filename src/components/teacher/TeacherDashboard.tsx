@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { fetchTeacherDashboard, getSession, login } from "../../app/actions";
 import TeacherAIDesk from "./TeacherAIDesk";
 import DiagnosticReport from "./DiagnosticReport";
@@ -502,8 +502,8 @@ export default function TeacherDashboard({ onOpenAuthoring }: { onOpenAuthoring:
                     {visibleStudents.map((student) => {
                       const isExpanded = expandedStudentId === student.id;
                       return (
-                        <>
-                          <tr key={student.id} className="hover:bg-neutral-900/40 transition">
+                        <React.Fragment key={student.id}>
+                          <tr className="hover:bg-neutral-900/40 transition">
                             <td className="px-5 py-4 font-bold text-white">{student.name}</td>
                             <td className="px-5 py-4 text-neutral-400">{student.className}</td>
                             <td className="px-5 py-4 text-neutral-400">{student.stage}</td>
@@ -539,7 +539,7 @@ export default function TeacherDashboard({ onOpenAuthoring }: { onOpenAuthoring:
                           </tr>
                           {/* Collapsible student detail row */}
                           {isExpanded && (
-                            <tr key={`${student.id}-detail`} className="bg-neutral-900/50">
+                            <tr className="bg-neutral-900/50">
                               <td colSpan={7} className="px-6 py-4">
                                 <div className="grid gap-4 md:grid-cols-3 text-xs">
                                   <div className="rounded-lg bg-neutral-950 p-3.5 border border-neutral-800">
@@ -570,7 +570,7 @@ export default function TeacherDashboard({ onOpenAuthoring }: { onOpenAuthoring:
                               </td>
                             </tr>
                           )}
-                        </>
+                        </React.Fragment>
                       );
                     })}
                   </tbody>

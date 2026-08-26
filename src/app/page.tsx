@@ -34,7 +34,11 @@ import {
 import { curriculum0580 } from "../curriculum-packages/0580";
 import { curriculumDrama201 } from "../curriculum-packages/drama-201";
 import { curriculumEgyptSecondary1IntegratedScience } from "../curriculum-packages/egypt-secondary1-integrated-science";
-import { curriculumEgyptBaccalaureateSecondYearPhysics } from "../curriculum-packages/egypt-baccalaureate-second-year-physics";
+import { 
+  curriculumEgyptBaccalaureateSecondYearPhysics,
+  curriculumEgyptBaccalaureateSecondYearPhysicsPart1,
+  curriculumEgyptBaccalaureateSecondYearPhysicsPart2
+} from "../curriculum-packages/egypt-baccalaureate-second-year-physics";
 import { validateCurriculumPackage } from "../curriculum-packages/validator";
 import {
   scoreReadinessAssessment,
@@ -75,10 +79,12 @@ import {
 } from "../core/services/lesson-registry";
 
 const initialCurriculumOptions: Record<string, CurriculumPackage> = {
+  "egypt-baccalaureate-second-year-physics-part1": curriculumEgyptBaccalaureateSecondYearPhysicsPart1,
+  "egypt-baccalaureate-second-year-physics-part2": curriculumEgyptBaccalaureateSecondYearPhysicsPart2,
+  "egypt-baccalaureate-second-year-physics": curriculumEgyptBaccalaureateSecondYearPhysics,
   "cambridge-igcse-0580": curriculum0580,
-  "arts-drama-201": curriculumDrama201,
   "egypt-secondary1-integrated-science": curriculumEgyptSecondary1IntegratedScience,
-  "egypt-baccalaureate-second-year-physics": curriculumEgyptBaccalaureateSecondYearPhysics
+  "arts-drama-201": curriculumDrama201
 };
 
 type CurriculumId = string;
