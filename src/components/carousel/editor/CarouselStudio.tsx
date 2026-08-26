@@ -102,6 +102,7 @@ export default function CarouselStudio({
   const [storyboardOpen, setStoryboardOpen] = useState(false);
   const [materialsOpen, setMaterialsOpen] = useState(false);
   const [storyboardPrefill, setStoryboardPrefill] = useState<{ lessonName: string; books: string[] } | null>(null);
+  const [mobileTab, setMobileTab] = useState<"slides" | "editor" | "settings">("editor");
 
   // Registry state
   const [registryDraftId, setRegistryDraftId] = useState<string | null>(null);
@@ -431,83 +432,119 @@ export default function CarouselStudio({
           <EducationalCarousel config={draft} viewerRole={viewerRole} />
         </div>
       ) : (
-        <div className="flex h-[calc(100vh-180px)] min-h-[600px] overflow-hidden">
+        <div className="flex flex-col h-[calc(100vh-160px)] min-h-[550px] overflow-hidden">
+          {/* Mobile Panel Switcher Bar */}
+          <div className="flex md:hidden border-b border-neutral-800 bg-neutral-900/90 px-2 py-1.5 gap-1 shrink-0">
+            <button
+              onClick={() => setMobileTab("slides")}
+              className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${
+                mobileTab === "slides" ? "bg-amber-500 text-neutral-950" : "text-neutral-400 hover:text-white"
+              }`}
+            >
+              📑 Slides ({draft.slides.length})
+            </button>
+            <button
+              onClick={() => setMobileTab("editor")}
+              className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${
+                mobileTab === "editor" ? "bg-violet-600 text-white" : "text-neutral-400 hover:text-white"
+              }`}
+            >
+              ✏️ Slide {selectedIndex + 1}
+            </button>
+            <button
+              onClick={() => setMobileTab("settings")}
+              className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${
+                mobileTab === "settings" ? "bg-sky-600 text-white" : "text-neutral-400 hover:text-white"
+              }`}
+            >
+              ⚙️ Settings
+            </button>
+          </div>
 
-          {/* Materials Library side drawer */}
-          {materialsOpen && (
-            <div className="flex w-72 shrink-0 flex-col border-r border-neutral-800 bg-neutral-950 overflow-hidden">
-              <div className="flex items-center justify-between border-b border-neutral-800 px-4 py-3">
-                <span className="text-xs font-bold text-sky-300">📚 Curriculum Books</span>
-                <button onClick={() => setMaterialsOpen(false)} className="rounded p-1 text-neutral-600 hover:text-white transition">
-                  <X className="h-3.5 w-3.5" />
-                </button>
+          <div className="flex flex-1 overflow-hidden relative">
+            {/* Materials Library side drawer */}
+            {materialsOpen && (
+              <div className="fixed inset-0 z-50 md:relative md:inset-auto md:w-72 flex shrink-0 flex-col border-r border-neutral-800 bg-neutral-950 overflow-hidden">
+                <div className="flex items-center justify-between border-b border-neutral-800 px-4 py-3">
+                  <span className="text-xs font-bold text-sky-300">📚 Curriculum Books</span>
+                  <button onClick={() => setMaterialsOpen(false)} className="rounded p-1 text-neutral-600 hover:text-white transition">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-3">
+                  <MaterialsLibraryPanel
+                    onGenerateLesson={(lessonName, books) => {
+                      setStoryboardPrefill({ lessonName, books });
+                      setStoryboardOpen(true);
+                      setMaterialsOpen(false);
+                    }}
+                  />
+                </div>
               </div>
-              <div className="flex-1 overflow-y-auto p-3">
-                <MaterialsLibraryPanel
-                  onGenerateLesson={(lessonName, books) => {
-                    setStoryboardPrefill({ lessonName, books });
-                    setStoryboardOpen(true);
-                  }}
-                />
+            )}
+
+            <div className="flex flex-col md:grid md:grid-cols-[220px_minmax(0,1fr)_300px] flex-1 min-w-0 divide-y md:divide-y-0 md:divide-x divide-neutral-800 overflow-hidden">
+              {/* Left — Slide Manager */}
+              <div className={`${mobileTab === "slides" ? "flex" : "hidden"} md:flex flex-col overflow-hidden bg-neutral-950 flex-1`}>
+                <Suspense fallback={<PanelLoader />}>
+                  <SlideManagerPanel
+                    slides={draft.slides}
+                    selectedIndex={selectedIndex}
+                    onSelect={(i) => {
+                      setSelectedIndex(i);
+                      setMobileTab("editor"); // Auto-switch to editor on mobile selection
+                    }}
+                    onMoveUp={(i) => moveSlide(i, "up")}
+                    onMoveDown={(i) => moveSlide(i, "down")}
+                    onDuplicate={duplicateSlide}
+                    onDelete={deleteSlide}
+                    onAddSlide={(type) => {
+                      addSlide(type);
+                      setMobileTab("editor");
+                    }}
+                  />
+                </Suspense>
+              </div>
+
+              {/* Center — Slide Editor */}
+              <div className={`${mobileTab === "editor" ? "flex" : "hidden"} md:flex flex-col overflow-y-auto bg-neutral-950 p-4 md:p-5 flex-1`}>
+                {selectedSlide && (
+                  <Suspense fallback={<PanelLoader />}>
+                    <SlideEditorPanel
+                      slide={selectedSlide}
+                      onChange={updateSlide}
+                      slideIndex={selectedIndex}
+                      totalSlides={draft.slides.length}
+                    />
+                  </Suspense>
+                )}
+              </div>
+
+              {/* Right — Settings */}
+              <div className={`${mobileTab === "settings" ? "flex" : "hidden"} md:flex flex-col overflow-y-auto bg-neutral-950 flex-1`}>
+                <Suspense fallback={<PanelLoader />}>
+                  <CarouselSettingsPanel
+                    draft={draft}
+                    onChange={updateDraft}
+                    registryDraftId={registryDraftId}
+                    registryStatus={registryStatus}
+                    registryBusy={registryBusy}
+                    reviewNote={reviewNote}
+                    onReviewNoteChange={setReviewNote}
+                    onSaveDraft={saveDraftToRegistry}
+                    onApprove={() => handleRegistryDecision("APPROVE")}
+                    onReject={() => handleRegistryDecision("REJECT")}
+                    onRequestChanges={() => handleRegistryDecision("REQUEST_CHANGES")}
+                    onPublish={publishDraft}
+                    validationErrors={validationErrors}
+                  />
+                </Suspense>
               </div>
             </div>
-          )}
-
-          <div className="grid flex-1 min-w-0 grid-cols-[220px_minmax(0,1fr)_300px] divide-x divide-neutral-800 overflow-hidden">
-
-          {/* Left — Slide Manager */}
-          <div className="flex flex-col overflow-hidden bg-neutral-950">
-            <Suspense fallback={<PanelLoader />}>
-              <SlideManagerPanel
-                slides={draft.slides}
-                selectedIndex={selectedIndex}
-                onSelect={setSelectedIndex}
-                onMoveUp={(i) => moveSlide(i, "up")}
-                onMoveDown={(i) => moveSlide(i, "down")}
-                onDuplicate={duplicateSlide}
-                onDelete={deleteSlide}
-                onAddSlide={addSlide}
-              />
-            </Suspense>
           </div>
-
-          {/* Center — Slide Editor */}
-          <div className="flex flex-col overflow-y-auto bg-neutral-950 p-5">
-            {selectedSlide && (
-              <Suspense fallback={<PanelLoader />}>
-                <SlideEditorPanel
-                  slide={selectedSlide}
-                  onChange={updateSlide}
-                  slideIndex={selectedIndex}
-                  totalSlides={draft.slides.length}
-                />
-              </Suspense>
-            )}
-          </div>
-
-          {/* Right — Settings */}
-          <div className="flex flex-col overflow-y-auto bg-neutral-950">
-            <Suspense fallback={<PanelLoader />}>
-              <CarouselSettingsPanel
-                draft={draft}
-                onChange={updateDraft}
-                registryDraftId={registryDraftId}
-                registryStatus={registryStatus}
-                registryBusy={registryBusy}
-                reviewNote={reviewNote}
-                onReviewNoteChange={setReviewNote}
-                onSaveDraft={saveDraftToRegistry}
-                onApprove={() => handleRegistryDecision("APPROVE")}
-                onReject={() => handleRegistryDecision("REJECT")}
-                onRequestChanges={() => handleRegistryDecision("REQUEST_CHANGES")}
-                onPublish={publishDraft}
-                validationErrors={validationErrors}
-              />
-            </Suspense>
-          </div>
-        </div>
         </div>
       )}
+
 
 
 
