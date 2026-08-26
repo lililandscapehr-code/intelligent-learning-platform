@@ -47,12 +47,11 @@ export default function SlideEditorPanel({
       case "evaluation":
         return <EvaluationEditor slide={slide as any} onChange={onChange as any} />;
       case "lesson_image":
+        return <ImageEditor slide={slide as any} onChange={onChange as any} />;
       case "upload_zone":
         return (
           <div className="py-20 text-center text-neutral-500">
-            {slide.type === "lesson_image"
-              ? "Use the Image editor for images."
-              : "Upload zone slide (Not implemented yet)"}
+            Upload zone slide: students upload evidence images or documents.
           </div>
         );
       default:
