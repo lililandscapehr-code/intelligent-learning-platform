@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { fetchTeacherDashboard, getSession, login } from "../../app/actions";
 import TeacherAIDesk from "./TeacherAIDesk";
 import DiagnosticReport from "./DiagnosticReport";
+import TeacherDNAReview from "./TeacherDNAReview";
 import {
   AlertTriangle,
   ArrowRight,
@@ -84,7 +85,7 @@ const NAV_ITEMS = [
   { id: "students", label: "Students", icon: Users },
   { id: "assignments", label: "Assignments", icon: ClipboardList },
   { id: "sessions", label: "Sessions", icon: CalendarClock },
-  { id: "reviews", label: "Reviews", icon: FileCheck2 },
+  { id: "reviews", label: "Question Banks", icon: FileCheck2 },
   { id: "diagnostics", label: "Diagnostics", icon: Sparkles },
   { id: "reports", label: "Reports", icon: BarChart3 },
   { id: "parents", label: "Parents Link", icon: MessageSquare }
@@ -638,33 +639,7 @@ export default function TeacherDashboard({ onOpenAuthoring }: { onOpenAuthoring:
 
           {/* Reviews View */}
           {view === "reviews" && (
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-bold text-white">Draft Review Queue</h3>
-                <p className="text-xs text-neutral-400">Verify content carousels before releasing to classrooms.</p>
-              </div>
-              <div className="space-y-2.5">
-                {contentReviews.map((review) => (
-                  <div key={review.title} className="flex flex-wrap items-center gap-4 rounded-xl border border-neutral-800 bg-neutral-900/30 p-5 hover:border-neutral-700 transition">
-                    <FileCheck2 className="h-5 w-5 text-violet-400" />
-                    <div className="min-w-48 flex-1">
-                      <p className="text-xs font-bold text-white">{review.title}</p>
-                      <p className="mt-0.5 text-[11px] text-neutral-400">{review.type} • {review.source}</p>
-                    </div>
-                    <span className={`rounded px-2 py-0.5 text-[9px] font-bold uppercase ${
-                      review.status === "APPROVED" 
-                        ? "bg-emerald-500/10 text-emerald-400" 
-                        : "bg-amber-500/10 text-amber-400"
-                    }`}>
-                      {review.status}
-                    </span>
-                    <button onClick={onOpenAuthoring} className="rounded bg-amber-500/15 hover:bg-amber-500/25 px-3 py-1.5 text-[10px] font-bold text-amber-300 transition">
-                      Open Review
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <TeacherDNAReview />
           )}
 
           {/* Diagnostics View */}

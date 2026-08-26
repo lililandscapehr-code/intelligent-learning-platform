@@ -61,6 +61,34 @@ import ServiceCatalog from "../components/services/ServiceCatalog";
 import StudentHome from "../components/student/StudentHome";
 import ParentHome from "../components/parent/ParentHome";
 import StudentDiagnostic from "../components/student/StudentDiagnostic";
+import { lesson11QuestionDNA } from "../curriculum-packages/egypt-baccalaureate-second-year-physics/part1/question-dna/lesson-1-1-question-dna";
+import { lesson12QuestionDNA } from "../curriculum-packages/egypt-baccalaureate-second-year-physics/part1/question-dna/lesson-1-2-question-dna";
+import { lesson13QuestionDNA } from "../curriculum-packages/egypt-baccalaureate-second-year-physics/part1/question-dna/lesson-1-3-question-dna";
+import { lesson14QuestionDNA } from "../curriculum-packages/egypt-baccalaureate-second-year-physics/part1/question-dna/lesson-1-4-question-dna";
+import { lesson15QuestionDNA } from "../curriculum-packages/egypt-baccalaureate-second-year-physics/part1/question-dna/lesson-1-5-question-dna";
+import { lesson16QuestionDNA } from "../curriculum-packages/egypt-baccalaureate-second-year-physics/part1/question-dna/lesson-1-6-question-dna";
+import { lesson17QuestionDNA } from "../curriculum-packages/egypt-baccalaureate-second-year-physics/part1/question-dna/lesson-1-7-question-dna";
+import { lesson18QuestionDNA } from "../curriculum-packages/egypt-baccalaureate-second-year-physics/part1/question-dna/lesson-1-8-question-dna";
+import { lesson19QuestionDNA } from "../curriculum-packages/egypt-baccalaureate-second-year-physics/part1/question-dna/lesson-1-9-question-dna";
+import { lesson110QuestionDNA } from "../curriculum-packages/egypt-baccalaureate-second-year-physics/part1/question-dna/lesson-1-10-question-dna";
+import { lesson111QuestionDNA } from "../curriculum-packages/egypt-baccalaureate-second-year-physics/part1/question-dna/lesson-1-11-question-dna";
+import { lesson112QuestionDNA } from "../curriculum-packages/egypt-baccalaureate-second-year-physics/part1/question-dna/lesson-1-12-question-dna";
+
+const dnaMap: Record<string, any[]> = {
+  "CAROUSEL-PHYS-EB-MECH-1-1": lesson11QuestionDNA,
+  "CAROUSEL-PHYS-EB-MECH-1-2": lesson12QuestionDNA,
+  "CAROUSEL-PHYS-EB-MECH-1-3": lesson13QuestionDNA,
+  "CAROUSEL-PHYS-EB-MECH-1-4": lesson14QuestionDNA,
+  "CAROUSEL-PHYS-EB-MECH-1-5": lesson15QuestionDNA,
+  "CAROUSEL-PHYS-EB-MECH-1-6": lesson16QuestionDNA,
+  "CAROUSEL-PHYS-EB-MECH-1-7": lesson17QuestionDNA,
+  "CAROUSEL-PHYS-EB-MECH-1-8": lesson18QuestionDNA,
+  "CAROUSEL-PHYS-EB-MECH-1-9": lesson19QuestionDNA,
+  "CAROUSEL-PHYS-EB-MECH-1-10": lesson110QuestionDNA,
+  "CAROUSEL-PHYS-EB-MECH-1-11": lesson111QuestionDNA,
+  "CAROUSEL-PHYS-EB-MECH-1-12": lesson112QuestionDNA,
+};
+
 import AdminControlCenter from "../components/admin/AdminControlCenter";
 import SourceAnalysisExplorer from "../components/admin/SourceAnalysisExplorer";
 import { CarouselSessionResult } from "../components/carousel/CarouselTypes";
@@ -340,20 +368,17 @@ export default function EngineSimulator() {
   }
 
   const navigationItems: Array<{ key: typeof activeTab; icon: typeof User; label: string; roles?: string[] }> = [
-    { key: "student", icon: User, label: "Student Home" },
-    { key: "student-diagnostic", icon: ClipboardCheck, label: "Student Diagnostic" },
-    { key: "parent", icon: UserRound, label: "Parent Home", roles: ["PARENT"] },
-    { key: "services", icon: ShoppingBag, label: "Services & Enrollment" },
+    { key: "student", icon: User, label: "My Study Tracks", roles: ["STUDENT"] },
+    { key: "carousel", icon: Tv, label: "Lesson & Quiz Carousel", roles: ["STUDENT", "TEACHER", "ADMIN"] },
+    { key: "student-diagnostic", icon: ClipboardCheck, label: "Readiness & 3-Case Diagnostics", roles: ["STUDENT"] },
+    { key: "curriculum", icon: BookOpen, label: "Curriculum Syllabus", roles: ["STUDENT", "TEACHER", "ADMIN"] },
     { key: "teacher", icon: Users, label: "Teacher Dashboard", roles: ["TEACHER", "ADMIN"] },
-    { key: "admin", icon: ShieldCheck, label: "Admin Control", roles: ["ADMIN"] },
-    { key: "readiness", icon: Compass, label: "Readiness & Top Carousel", roles: ["STUDENT", "TEACHER", "ADMIN"] },
-    { key: "carousel", icon: Tv, label: "Lesson & Quiz Studio", roles: ["STUDENT", "TEACHER", "ADMIN"] },
-    { key: "authoring", icon: Sparkles, label: "Teacher Authoring", roles: ["TEACHER", "ADMIN"] },
+    { key: "authoring", icon: Sparkles, label: "Teacher Authoring Studio", roles: ["TEACHER", "ADMIN"] },
     { key: "source-analysis", icon: FileSearch, label: "Source Analysis", roles: ["TEACHER", "ADMIN"] },
-    { key: "curriculum", icon: BookOpen, label: "Curriculum Graph", roles: ["STUDENT", "TEACHER", "ADMIN"] },
-    { key: "diagnostic", icon: Activity, label: "Diagnostic & Gaps", roles: ["STUDENT", "TEACHER", "ADMIN"] },
-    { key: "state", icon: FileText, label: "Student State JSON", roles: ["STUDENT", "TEACHER", "ADMIN"] },
-    { key: "platform", icon: Database, label: "Platform Core & Audit", roles: ["ADMIN"] }
+    { key: "services", icon: ShoppingBag, label: "Services & Enrollment", roles: ["TEACHER", "ADMIN", "PARENT"] },
+    { key: "parent", icon: UserRound, label: "Parent Portal", roles: ["PARENT"] },
+    { key: "admin", icon: ShieldCheck, label: "Admin Control Center", roles: ["ADMIN"] },
+    { key: "platform", icon: Database, label: "Platform Core & DB", roles: ["ADMIN"] }
   ];
 
   return (
@@ -366,41 +391,70 @@ export default function EngineSimulator() {
             <h1 className="text-base md:text-lg font-black tracking-tight text-white flex items-center gap-2">
               EDUCATIONAL ENGINE SIMULATOR
               <span className="hidden sm:inline text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold">
-                DYNAMIC CURRICULUM ENGINE
+                {session.role === "STUDENT" ? "STUDENT LEARNING HUB" : "DYNAMIC CURRICULUM ENGINE"}
               </span>
             </h1>
-            <p className="text-xs text-neutral-400">{selectedCurriculum.identity.name} Learning Platform</p>
+            <p className="text-xs text-neutral-400">{selectedCurriculum.identity.name} · Active Track</p>
           </div>
         </div>
         <div className="flex w-full md:w-auto items-center gap-2 text-xs overflow-x-auto">
           <label className="flex items-center gap-2 text-neutral-400">
-            Curriculum
+            Active Track
             <select value={selectedCurriculumId} onChange={(event) => selectCurriculum(event.target.value as CurriculumId)} className="rounded-lg border border-neutral-700 bg-neutral-900 px-2 py-1.5 text-xs text-neutral-200 outline-none focus:border-amber-500">
               {Object.entries(curriculumOptions).map(([id, curriculum]) => (
                 <option key={id} value={id}>{curriculum.identity.name}</option>
               ))}
             </select>
           </label>
-          <div onClick={loadPlatformState} className="cursor-pointer px-3 py-1.5 rounded-full bg-neutral-800 border border-neutral-700 flex items-center gap-2 hover:bg-neutral-700 transition">
-            <span className={`h-2 w-2 rounded-full ${dbStatus === "CONNECTED" ? "bg-emerald-500" : "bg-red-500"} animate-pulse`}></span>
-            DB: {dbStatus}
+          
+          {["TEACHER", "ADMIN"].includes(session.role) && (
+            <div onClick={loadPlatformState} className="cursor-pointer px-3 py-1.5 rounded-full bg-neutral-800 border border-neutral-700 flex items-center gap-2 hover:bg-neutral-700 transition">
+              <span className={`h-2 w-2 rounded-full ${dbStatus === "CONNECTED" ? "bg-emerald-500" : "bg-red-500"} animate-pulse`}></span>
+              DB: {dbStatus}
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 rounded-full border border-neutral-700 bg-neutral-800 px-3 py-1.5 text-neutral-400">
+            <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${
+              session.role === "STUDENT" ? "bg-sky-500/20 text-sky-300" : "bg-amber-500/20 text-amber-300"
+            }`}>
+              {session.role}
+            </span>
+            <button onClick={signOut} className="font-semibold text-amber-400 hover:text-amber-300">Sign out</button>
           </div>
-          <div className="flex items-center gap-2 rounded-full border border-neutral-700 bg-neutral-800 px-3 py-1.5 text-neutral-400"><span>{session.role}</span><button onClick={signOut} className="font-semibold text-amber-400 hover:text-amber-300">Sign out</button></div>
         </div>
       </header>
 
-      {/* Dynamic Case Selector Banner */}
-      {session.role === "STUDENT" && Object.keys(studentCases).length > 0 && (
-        <section className="bg-neutral-800 border-b border-neutral-700 px-6 py-3 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-sm">
-            <User className="h-4 w-4 text-amber-500" />
-            <span className="font-semibold">Simulated Student Case:</span>
+      {/* Student Enrolled Track Header */}
+      {session.role === "STUDENT" && (
+        <section className="bg-neutral-950/80 border-b border-neutral-800 px-6 py-2.5 flex flex-wrap items-center justify-between gap-4 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="text-neutral-400">Enrolled Track:</span>
+            <span className="font-bold text-amber-400">{selectedCurriculum.identity.name}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setActiveTab("student")}
+              className="text-[11px] font-semibold text-sky-400 hover:text-sky-300 underline"
+            >
+              Switch Enrolled Track / Register Part
+            </button>
+          </div>
+        </section>
+      )}
+
+      {/* Dynamic Simulated Case Selector for Teachers & Admins */}
+      {["TEACHER", "ADMIN"].includes(session.role) && Object.keys(studentCases).length > 0 && (
+        <section className="bg-neutral-800 border-b border-neutral-700 px-6 py-2.5 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-2 text-xs">
+            <User className="h-3.5 w-3.5 text-amber-500" />
+            <span className="font-semibold text-neutral-300">Simulate Student Profile:</span>
             <span className="text-amber-400">{currentCase.label}</span>
           </div>
           <div className="flex gap-2">
             {Object.entries(studentCases).map(([key, c]) => (
               <button key={key} onClick={() => switchCase(key)}
-                className={`px-3 py-1 rounded text-xs font-medium transition ${activeCaseKey === key ? "bg-amber-500 text-neutral-950 font-semibold" : "bg-neutral-700 text-neutral-300 hover:bg-neutral-600"}`}>
+                className={`px-2.5 py-1 rounded text-xs font-medium transition ${activeCaseKey === key ? "bg-amber-500 text-neutral-950 font-semibold" : "bg-neutral-700 text-neutral-300 hover:bg-neutral-600"}`}>
                 {c.label.split(":")[0]}
               </button>
             ))}
@@ -756,7 +810,18 @@ export default function EngineSimulator() {
             />
           )}
 
-          {activeTab === "student-diagnostic" && <StudentDiagnostic curriculumId={selectedCurriculum.identity.id} curriculumName={selectedCurriculum.identity.name} />}
+          {activeTab === "student-diagnostic" && (
+            <StudentDiagnostic
+              lessonId={selectedLessonId || "CAROUSEL-PHYS-EB-MECH-1-1"}
+              lessonTitle={
+                currentLessonCatalog.find((l) => l.lessonId === selectedLessonId)?.title ||
+                "Lesson 1-1 · Velocity Vectors & Relative Velocity"
+              }
+              questionDNA={dnaMap[selectedLessonId] || lesson11QuestionDNA}
+              onComplete={() => setActiveTab("curriculum")}
+              onBack={() => setActiveTab("curriculum")}
+            />
+          )}
 
           {activeTab === "parent" && <ParentHome onChooseProgram={() => setActiveTab("services")} />}
 

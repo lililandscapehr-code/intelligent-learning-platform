@@ -31,3 +31,6 @@ Thumbs.db
 # Test and coverage output
 coverage/
 
+# CI / Workflows
+.github/
+

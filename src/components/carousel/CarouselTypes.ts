@@ -180,6 +180,44 @@ export interface QuestionTranslations {
   };
 }
 
+// ── Teacher-authored extra slide injected into a question DNA ──
+export interface TeacherAddedSlide {
+  id: string;
+  insertAfterCase: "PRE" | "B" | "C";
+  insertAfterIndex: number;           // 0-based index within that case group
+  slide: LessonTextSlide | YouTubeSlide | ImageSlide;
+  addedBy: string;                    // teacher user id
+  addedAt: string;                    // ISO date
+  note?: string;
+}
+
+// ── Question DNA — one B question + its Pre/C ecosystem ────────
+export interface QuestionDNA {
+  id: string;                         // e.g. "DNA-L1-1-B1"
+  lessonId: string;                   // e.g. "CAROUSEL-PHYS-EB-MECH-1-1"
+  bIndex: number;                     // 1-based position in lesson (1 of 7)
+  concept: string;                    // human label e.g. "Resultant of perpendicular velocities"
+  bQuestion: QuestionMCQSlide | QuestionNumericSlide | QuestionTextSlide;
+  preTrials: QuestionAlternative[];   // 10 scaffold trials, ordered 1→10 (simplest→harder)
+  cQuestions: QuestionAlternative[];  // 5 default higher questions (teacher can add more)
+  teacherExtras?: TeacherAddedSlide[];
+  lastEditedBy?: string;
+  lastEditedAt?: string;
+}
+
+// ── Adaptive case phase for student diagnostic engine ──────────
+// Mandatory loop: B → (wrong) → Pre → B_RETRY → (correct) → C (min 1) → next B
+//                              → (wrong) → Pre again → B_RETRY → …
+export type CasePhase =
+  | "CASE_B"           // first attempt at the B question
+  | "CASE_PRE"         // sequential Pre scaffold trials (one by one)
+  | "PRE_MASTERED"     // mastered a Pre trial — must retry B
+  | "CASE_B_RETRY"     // B question shown again after Pre mastery
+  | "CASE_C"           // mandatory C question(s) after any B pass
+  | "C_SOLVED_CHOICE"  // solved C — offer: more C (optional) or next B
+  | "C_EXHAUSTED"      // all C questions done — auto-advance to next B
+  | "LESSON_COMPLETE"; // all B questions passed (each with min 1 C)
+
 export interface QuestionMCQSlide extends BaseSlide {
   type: "question_mcq";
   questionText: string;
