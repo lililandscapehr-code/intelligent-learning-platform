@@ -12,8 +12,10 @@ import {
   Save,
   Upload,
   Crop,
+  Sparkles,
 } from "lucide-react";
 import PdfCropAssistant from "./PdfCropAssistant";
+import AIStoryboardBuilder from "./AIStoryboardBuilder";
 import EducationalCarousel from "../EducationalCarousel";
 import { applyStandardStepDefaults, validateLearningProcess } from "../CarouselValidation";
 import type { EduCarouselConfig, EduSlide, EduSlideType } from "../CarouselTypes";
@@ -94,6 +96,7 @@ export default function CarouselStudio({
   const [mode, setMode] = useState<"edit" | "preview">("edit");
   const [isDirty, setIsDirty] = useState(false);
   const [pdfCropOpen, setPdfCropOpen] = useState(false);
+  const [storyboardOpen, setStoryboardOpen] = useState(false);
 
   // Registry state
   const [registryDraftId, setRegistryDraftId] = useState<string | null>(null);
@@ -312,6 +315,15 @@ export default function CarouselStudio({
             <FilePlus2 className="h-3.5 w-3.5" /> New
           </button>
 
+          {/* AI Storyboard Builder */}
+          <button
+            onClick={() => setStoryboardOpen(true)}
+            title="Generate lesson slides from curriculum PDFs using AI"
+            className="flex items-center gap-1.5 rounded-lg border border-violet-600/60 bg-violet-600/10 px-3 py-1.5 text-xs font-bold text-violet-300 hover:bg-violet-600/20 hover:border-violet-400 hover:text-white transition-colors"
+          >
+            <Sparkles className="h-3.5 w-3.5" /> AI Builder
+          </button>
+
           {/* Load from library */}
           {library.length > 0 && (
             <div className="relative">
@@ -467,6 +479,22 @@ export default function CarouselStudio({
           onClose={() => setPdfCropOpen(false)}
           onCapture={(croppedUrl) => {
             updateSlide({ imageUrl: croppedUrl });
+          }}
+        />
+      )}
+
+      {/* AI Storyboard Builder */}
+      {storyboardOpen && (
+        <AIStoryboardBuilder
+          onClose={() => setStoryboardOpen(false)}
+          onBuildSlides={(aiSlides: EduSlide[]) => {
+            setDraft((prev) => ({
+              ...prev,
+              slides: [...prev.slides, ...aiSlides],
+            }));
+            setSelectedIndex(draft.slides.length);
+            setIsDirty(true);
+            setRegistryStatus(`AI added ${aiSlides.length} new slide${aiSlides.length !== 1 ? "s" : ""} to this carousel. Review and adjust as needed.`);
           }}
         />
       )}

@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/app/actions";
+import { requireRole } from "@/core/services/auth";
 import { extractTextFromPdf } from "@/core/services/pdf-service";
-import { generateGeminiText } from "@/core/services/ai-provider";
+import { generateText } from "@/core/services/ai-provider";
+
+export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
-    const session = await getSession();
-    if (!session || (session.role !== "TEACHER" && session.role !== "ADMIN")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    await requireRole(["TEACHER", "ADMIN"]);
 
     const body = await request.json();
     const { lessonName, books } = body as { lessonName: string; books: string[] };
@@ -22,20 +21,22 @@ export async function POST(request: Request) {
     for (const book of books) {
       try {
         const text = await extractTextFromPdf(book);
-        // We limit the text to avoid exceeding token limits if the books are massive,
-        // or rely on Gemini 1.5's massive context window.
-        combinedContext += `\n\n--- EXCERPT FROM BOOK: ${book} ---\n${text.substring(0, 150000)}\n`; // Taking first ~150k chars for safety
+        // Limit to ~150k chars per book to avoid token overflow
+        combinedContext += `\n\n--- EXCERPT FROM BOOK: ${book} ---\n${text.substring(0, 150000)}\n`;
       } catch (err) {
-        console.warn(`Could not read book ${book}`);
+        console.warn(`Could not read book ${book}:`, err);
       }
     }
 
-    if (!combinedContext) {
-      return NextResponse.json({ error: "Could not extract text from the selected books." }, { status: 500 });
+    if (!combinedContext.trim()) {
+      return NextResponse.json(
+        { error: "Could not extract text from the selected books. Make sure they are valid PDF files." },
+        { status: 500 }
+      );
     }
 
     // 2. Ask Gemini to synthesize and optimize the lesson from the multiple sources
-    const prompt = `
+    const instruction = `
 You are an expert master-teacher and curriculum architect.
 I am providing you with raw educational material extracted from multiple textbooks regarding a specific lesson topic.
 
@@ -43,51 +44,55 @@ TARGET LESSON: "${lessonName}"
 
 YOUR MISSION:
 Analyze the provided textbook excerpts. Cross-reference the explanations, definitions, and examples from the multiple books.
-Synthesize this information into a highly optimized, step-by-step Socratic learning sequence. 
+Synthesize this information into a highly optimized, step-by-step Socratic learning sequence.
 
-Output a JSON array representing the ideal interactive sequence for this lesson.
-Each step should build upon the last. Use this JSON schema:
-[
-  {
-    "stepNumber": 1,
-    "stepType": "HOOK_QUESTION" | "CORE_CONCEPT" | "INTERACTIVE_SCENARIO" | "MISCONCEPTION_CHECK",
-    "content": "The actual explanation or question text...",
-    "interactiveOptions": [ "Option A", "Option B" ], // if it's a question
-    "teachingNote": "Why you designed this step and how it synthesizes the textbooks."
-  }
-]
+Output ONLY a valid JSON array (no markdown, no explanation outside the JSON) representing the ideal interactive sequence for this lesson.
+Each step must build upon the last. Use this exact JSON schema for each element:
+{
+  "stepNumber": 1,
+  "stepType": "HOOK_QUESTION",
+  "content": "The actual explanation or question text",
+  "interactiveOptions": ["Option A", "Option B", "Option C"],
+  "teachingNote": "Why you designed this step and what the student should understand."
+}
 
-RAW TEXTBOOK CONTEXT:
-${combinedContext}
-    `;
+stepType must be one of: "HOOK_QUESTION" | "CORE_CONCEPT" | "INTERACTIVE_SCENARIO" | "MISCONCEPTION_CHECK"
+Only HOOK_QUESTION and MISCONCEPTION_CHECK steps need interactiveOptions. For CORE_CONCEPT and INTERACTIVE_SCENARIO, set interactiveOptions to [].
 
-    const aiResponse = await generateGeminiText(prompt);
+Generate 5 to 8 steps maximum. Start with a compelling HOOK_QUESTION.`;
 
-    // Try to parse the JSON output
+    const answer = await generateText({
+      instruction,
+      context: combinedContext,
+    });
+
+    // 3. Try to parse the JSON output
     let parsedSequence = [];
     try {
-      // Find the JSON array in the response (stripping markdown backticks if present)
-      const jsonMatch = aiResponse.match(/\[[\s\S]*\]/);
+      const jsonMatch = answer.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
         parsedSequence = JSON.parse(jsonMatch[0]);
       } else {
-        throw new Error("Could not find JSON array in response");
+        throw new Error("Could not find JSON array in AI response");
       }
     } catch (parseError) {
-      console.error("Failed to parse AI sequence JSON:", aiResponse);
-      return NextResponse.json({ 
-        error: "AI produced invalid JSON.",
-        rawAiResponse: aiResponse 
-      }, { status: 500 });
+      console.error("Failed to parse AI sequence JSON:", answer);
+      return NextResponse.json(
+        { error: "AI produced an unexpected response format. Please try again.", rawAiResponse: answer },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
       lessonName,
       sourcesUsed: books,
-      optimizedSequence: parsedSequence
+      optimizedSequence: parsedSequence,
     });
 
   } catch (error: any) {
+    if (error?.message === "AUTHORIZATION_REQUIRED") {
+      return NextResponse.json({ error: "Teacher access required." }, { status: 403 });
+    }
     console.error("Synthesize lesson API Error:", error);
     return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
