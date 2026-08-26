@@ -13,9 +13,12 @@ import {
   Upload,
   Crop,
   Sparkles,
+  Library,
+  X,
 } from "lucide-react";
 import PdfCropAssistant from "./PdfCropAssistant";
 import AIStoryboardBuilder from "./AIStoryboardBuilder";
+import MaterialsLibraryPanel from "./MaterialsLibraryPanel";
 import EducationalCarousel from "../EducationalCarousel";
 import { applyStandardStepDefaults, validateLearningProcess } from "../CarouselValidation";
 import type { EduCarouselConfig, EduSlide, EduSlideType } from "../CarouselTypes";
@@ -97,6 +100,8 @@ export default function CarouselStudio({
   const [isDirty, setIsDirty] = useState(false);
   const [pdfCropOpen, setPdfCropOpen] = useState(false);
   const [storyboardOpen, setStoryboardOpen] = useState(false);
+  const [materialsOpen, setMaterialsOpen] = useState(false);
+  const [storyboardPrefill, setStoryboardPrefill] = useState<{ lessonName: string; books: string[] } | null>(null);
 
   // Registry state
   const [registryDraftId, setRegistryDraftId] = useState<string | null>(null);
@@ -324,6 +329,19 @@ export default function CarouselStudio({
             <Sparkles className="h-3.5 w-3.5" /> AI Builder
           </button>
 
+          {/* Materials Library */}
+          <button
+            onClick={() => setMaterialsOpen((v) => !v)}
+            title="Browse curriculum books and lessons"
+            className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors ${
+              materialsOpen
+                ? "border-sky-500 bg-sky-500/15 text-sky-300"
+                : "border-sky-600/50 bg-sky-600/10 text-sky-400 hover:bg-sky-600/20 hover:border-sky-400 hover:text-white"
+            }`}
+          >
+            <Library className="h-3.5 w-3.5" /> Books
+          </button>
+
           {/* Load from library */}
           {library.length > 0 && (
             <div className="relative">
@@ -413,7 +431,29 @@ export default function CarouselStudio({
           <EducationalCarousel config={draft} viewerRole={viewerRole} />
         </div>
       ) : (
-        <div className="grid h-[calc(100vh-180px)] min-h-[600px] grid-cols-[220px_minmax(0,1fr)_300px] divide-x divide-neutral-800 overflow-hidden">
+        <div className="flex h-[calc(100vh-180px)] min-h-[600px] overflow-hidden">
+
+          {/* Materials Library side drawer */}
+          {materialsOpen && (
+            <div className="flex w-72 shrink-0 flex-col border-r border-neutral-800 bg-neutral-950 overflow-hidden">
+              <div className="flex items-center justify-between border-b border-neutral-800 px-4 py-3">
+                <span className="text-xs font-bold text-sky-300">📚 Curriculum Books</span>
+                <button onClick={() => setMaterialsOpen(false)} className="rounded p-1 text-neutral-600 hover:text-white transition">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-3">
+                <MaterialsLibraryPanel
+                  onGenerateLesson={(lessonName, books) => {
+                    setStoryboardPrefill({ lessonName, books });
+                    setStoryboardOpen(true);
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="grid flex-1 min-w-0 grid-cols-[220px_minmax(0,1fr)_300px] divide-x divide-neutral-800 overflow-hidden">
 
           {/* Left — Slide Manager */}
           <div className="flex flex-col overflow-hidden bg-neutral-950">
@@ -466,7 +506,10 @@ export default function CarouselStudio({
             </Suspense>
           </div>
         </div>
+        </div>
       )}
+
+
 
       {/* Click-away to close library dropdown */}
       {libraryOpen && (
@@ -486,7 +529,9 @@ export default function CarouselStudio({
       {/* AI Storyboard Builder */}
       {storyboardOpen && (
         <AIStoryboardBuilder
-          onClose={() => setStoryboardOpen(false)}
+          onClose={() => { setStoryboardOpen(false); setStoryboardPrefill(null); }}
+          prefillLesson={storyboardPrefill?.lessonName ?? ""}
+          prefillBooks={storyboardPrefill?.books}
           onBuildSlides={(aiSlides: EduSlide[]) => {
             setDraft((prev) => ({
               ...prev,

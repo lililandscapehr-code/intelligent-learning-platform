@@ -38,6 +38,9 @@ interface SynthesisResult {
 interface AIStoryboardBuilderProps {
   onClose: () => void;
   onBuildSlides: (slides: EduSlide[]) => void;
+  /** Optional prefill from Materials Library */
+  prefillLesson?: string;
+  prefillBooks?: string[];
 }
 
 // ── Helpers ────────────────────────────────────────────────────
@@ -101,6 +104,8 @@ function buildSlideFromStep(step: StoryboardStep, index: number): EduSlide {
 export default function AIStoryboardBuilder({
   onClose,
   onBuildSlides,
+  prefillLesson = "",
+  prefillBooks,
 }: AIStoryboardBuilderProps) {
   // Step state
   const [phase, setPhase] = useState<"setup" | "generating" | "review">(
@@ -109,8 +114,10 @@ export default function AIStoryboardBuilder({
 
   // Setup phase
   const [availableBooks, setAvailableBooks] = useState<string[]>([]);
-  const [selectedBooks, setSelectedBooks] = useState<Set<string>>(new Set());
-  const [lessonName, setLessonName] = useState("");
+  const [selectedBooks, setSelectedBooks] = useState<Set<string>>(
+    prefillBooks ? new Set(prefillBooks) : new Set()
+  );
+  const [lessonName, setLessonName] = useState(prefillLesson);
   const [loadingBooks, setLoadingBooks] = useState(true);
   const [booksError, setBooksError] = useState("");
 
