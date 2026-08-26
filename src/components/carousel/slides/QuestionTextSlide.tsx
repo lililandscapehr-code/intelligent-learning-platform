@@ -169,19 +169,19 @@ export function QuestionTextSlideView({
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-800 pb-3">
         <div className="flex items-center gap-2">
           {activeAlt ? (
-            activeAlt.group === "A" ? (
+            activeAlt.group === "A" || activeAlt.group === "PRE" ? (
               <span className="flex items-center gap-1 rounded-lg bg-amber-500/20 px-2.5 py-1 text-xs font-bold text-amber-300 border border-amber-500/30">
-                <Lightbulb className="h-3.5 w-3.5" /> Scaffold Level A-{activeAlt.level}
-                {activeAlt.diagnosticTarget && ` (${activeAlt.diagnosticTarget.toUpperCase()})`}
+                <Lightbulb className="h-3.5 w-3.5" /> 🌱 Case Pre · Trial {activeAlt.level} (Scaffold)
+                {activeAlt.diagnosticTarget && ` [${activeAlt.diagnosticTarget.toUpperCase()}]`}
               </span>
             ) : (
               <span className="flex items-center gap-1 rounded-lg bg-violet-500/20 px-2.5 py-1 text-xs font-bold text-violet-300 border border-violet-500/30">
-                <Rocket className="h-3.5 w-3.5" /> Challenge Level B-{activeAlt.level}
+                <Rocket className="h-3.5 w-3.5" /> 🚀 Case C · Higher Trial {activeAlt.level} (Advanced)
               </span>
             )
           ) : (
             <span className="flex items-center gap-1 rounded-lg bg-sky-500/20 px-2.5 py-1 text-xs font-bold text-sky-300 border border-sky-500/30">
-              <Brain className="h-3.5 w-3.5" /> Master Assessment
+              <Brain className="h-3.5 w-3.5" /> ⭐ Case B · Core Standard Question
             </span>
           )}
 

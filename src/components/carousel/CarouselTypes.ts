@@ -159,8 +159,9 @@ export type QuestionImageLayout =
 // ── Question alternatives & translations ──────────────────────
 export interface QuestionAlternative {
   id: string;
-  group: "A" | "B";              // A = scaffold down (diagnostic & practice), B = challenge up
-  level: number;                 // A: 2-10 (2=simpler, 10=simplest arithmetic), B: 1-10 (1=reverse, 10=most brilliant)
+  group: "A" | "B" | "C" | "PRE" | "HIGHER"; // A/PRE = Case Pre (10 scaffold trials), B = Case B (Standard), C/HIGHER = Case C (Higher question)
+  level: number;                 // Level 1-10 within that tier
+  tierName?: "Case Pre" | "Case B" | "Case C";
   questionText: string;
   placeholder?: string;
   analogy?: string;

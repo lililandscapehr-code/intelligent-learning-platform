@@ -168,14 +168,14 @@ export default function TextQuestionEditor({ slide, onChange }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* ── Core Question Content ────────────────────────────── */}
+      {/* ── Core Question Content (Case B) ────────────────────── */}
       <div className="space-y-4 rounded-xl border border-neutral-800 bg-neutral-900/40 p-4">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-violet-400">
-          ⭐ Master Question
+        <h3 className="text-xs font-bold uppercase tracking-wider text-violet-400 flex items-center gap-2">
+          ⭐ Case B: Core Master Standard Question (Basic / Mid Level)
         </h3>
 
         <RichTextEditor
-          label="Question prompt"
+          label="Question prompt (Standard Curriculum Level)"
           value={slide.questionText || ""}
           onChange={(val) => onChange({ questionText: val })}
           accentColor="violet"
@@ -226,13 +226,13 @@ export default function TextQuestionEditor({ slide, onChange }: Props) {
         </div>
       </div>
 
-      {/* ── AI Alternatives Authoring ─────────────────────────── */}
+      {/* ── AI Alternatives Authoring (Case Pre & Case C) ──────── */}
       <div className="space-y-4 rounded-xl border border-violet-800/40 bg-violet-950/20 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-violet-400" />
             <h3 className="text-xs font-bold uppercase tracking-wider text-violet-300">
-              Adaptive Alternatives & Diagnostic Ladders
+              3-Tier Question DNA: Case Pre (10 Trials) & Case C (Higher Questions)
             </h3>
           </div>
           <span className="rounded bg-violet-900/50 px-2 py-0.5 text-[10px] font-bold text-violet-300">
@@ -241,14 +241,14 @@ export default function TextQuestionEditor({ slide, onChange }: Props) {
         </div>
 
         <p className="text-[11px] text-neutral-400 leading-relaxed">
-          Pre-generate up to 10 diagnostic scaffold versions (Group A) that probe specific misconceptions when students struggle, plus optional challenge escalations (Group B).
+          Pre-generate up to 10 progressive practice trials (<strong>Case Pre</strong>) that simplify the same question step by step when students struggle, plus higher-level challenge escalations (<strong>Case C</strong>).
         </p>
 
         {/* Generation Controls */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 rounded-lg border border-neutral-800 bg-neutral-900/60 p-3">
           <div>
-            <label className="text-[11px] font-semibold text-neutral-300">
-              🌱 Group A: Scaffold Down ({groupACount})
+            <label className="text-[11px] font-semibold text-amber-300">
+              🌱 Case Pre: Scaffolding ({groupACount} Trials)
             </label>
             <input
               type="range"
@@ -256,16 +256,16 @@ export default function TextQuestionEditor({ slide, onChange }: Props) {
               max="10"
               value={groupACount}
               onChange={(e) => setGroupACount(parseInt(e.target.value))}
-              className="w-full accent-violet-500"
+              className="w-full accent-amber-500"
             />
             <p className="text-[10px] text-neutral-500">
-              Probes vocabulary, formula, arithmetic & concept steps
+              Simplifies the same question step-by-step for practice & diagnosis
             </p>
           </div>
 
           <div>
-            <label className="text-[11px] font-semibold text-neutral-300">
-              🚀 Group B: Challenge Up ({groupBCount})
+            <label className="text-[11px] font-semibold text-sky-300">
+              🚀 Case C: Higher Complexity ({groupBCount} Trials)
             </label>
             <input
               type="range"
@@ -273,10 +273,10 @@ export default function TextQuestionEditor({ slide, onChange }: Props) {
               max="10"
               value={groupBCount}
               onChange={(e) => setGroupBCount(parseInt(e.target.value))}
-              className="w-full accent-violet-500"
+              className="w-full accent-sky-500"
             />
             <p className="text-[10px] text-neutral-500">
-              Reverse unknown variable & multi-step mastery
+              Higher / reverse questions testing the same concept in depth
             </p>
           </div>
         </div>
