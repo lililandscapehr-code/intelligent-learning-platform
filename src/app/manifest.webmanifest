@@ -1,0 +1,10 @@
+{
+  "name": "Educational Learning Platform",
+  "short_name": "Learning Platform",
+  "description": "Governed learning, assessment, and teacher authoring platform.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#171717",
+  "theme_color": "#f59e0b",
+  "icons": []
+}

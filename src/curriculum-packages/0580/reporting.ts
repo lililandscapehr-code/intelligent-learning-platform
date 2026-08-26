@@ -1,0 +1,23 @@
+import { ReportingRequirements } from "../../contracts/curriculum";
+
+export const reportingRequirements: ReportingRequirements = {
+  student: [
+    "STAGE_PROGRESSION_RADAR",
+    "MASTERY_HEATMAP_BY_TOPIC",
+    "ACTIVE_PREREQUISITE_GAPS",
+    "NEXT_RECOMMENDED_PRACTICE_TARGET",
+    "EXAM_CONFIDENCE_SCORE"
+  ],
+  parent: [
+    "STAGE_COMPLETION_CERTIFICATE",
+    "ATTENDANCE_AND_FLUENCY_TREND",
+    "TERM_MASTERY_SUMMARY",
+    "EXAM_READINESS_PROJECTION"
+  ],
+  teacher: [
+    "CLASS_SKILL_MASTERY_MATRIX",
+    "COMMON_MISCONCEPTION_CLUSTERS",
+    "DIAGNOSTIC_STARTING_STAGE_DISTRIBUTION",
+    "INTERVENTION_RECOMMENDATION_LIST"
+  ]
+};

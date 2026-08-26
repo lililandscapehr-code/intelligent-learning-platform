@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+:root {
+  --primary: #FFB700;       /* Gold */
+  --primary-hover: #FF9500; /* Darker Gold */
+  --dark: #1a1a2e;          /* Navy Dark */
+  --bg: #FAF6F0;            /* Warm cream sand */
+  --bg-alt: #F2F4F0;        /* Soft sage */
+  --card: #ffffff;
+  --text: #111827;
+  --text-muted: #4b5563;
+  --border: #E8DFD3;
+  --radius: 0.75rem;
+  --radius-lg: 1rem;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, sans-serif;
+}

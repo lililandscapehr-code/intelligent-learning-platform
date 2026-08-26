@@ -1,0 +1,32 @@
+
+> educational-platform@0.1.0 build
+> next build
+
+   Gû¦ Next.js 15.1.11
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ G£ô Compiled successfully
+   Skipping linting
+   Checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/4) ...
+   Generating static pages (1/4) 
+   Generating static pages (2/4) 
+   Generating static pages (3/4) 
+ G£ô Generating static pages (4/4)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+Göî Gùï /                                    27.6 kB         133 kB
+Göö Gùï /_not-found                          979 B           106 kB
++ First Load JS shared by all            105 kB
+  Gö£ chunks/4bd1b696-98e9308c101e0794.js  52.9 kB
+  Gö£ chunks/517-d86d8c0b9f5759ee.js       50.5 kB
+  Göö other shared chunks (total)          1.95 kB
+
+
+Gùï  (Static)  prerendered as static content
+
+
