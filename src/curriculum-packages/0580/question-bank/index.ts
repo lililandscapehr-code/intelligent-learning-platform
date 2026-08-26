@@ -2,6 +2,60 @@ import { QuestionInstance } from "../../../contracts/question-content";
 
 export const sample0580Questions: QuestionInstance[] = [
   // ============================================================
+  // SKILL: SK-PREREQ-ARITHMETIC (Arithmetic Order of Operations / BIDMAS)
+  // ============================================================
+  {
+    id: "QI-0580-ARITH-001",
+    blueprintId: "QB-0580-R-BIDMAS-01",
+    skillId: "SK-PREREQ-ARITHMETIC",
+    curriculumId: "cambridge-igcse-0580",
+    curriculumVersion: "2025-2027",
+    promptText: "Evaluate: 12 - 3 x 2",
+    difficulty: 1,
+    points: 1,
+    answerConfig: {
+      type: "MULTIPLE_CHOICE",
+      choices: [
+        {
+          id: "A",
+          text: "18",
+          isCorrect: false,
+          misconceptionId: "GAP-MATH-ORDER-LEFT-TO-RIGHT",
+          distractorRationale: "Calculated left-to-right: (12 - 3) x 2 = 9 x 2 = 18."
+        },
+        {
+          id: "B",
+          text: "6",
+          isCorrect: true,
+          distractorRationale: "Correct order: multiplication first (3 x 2 = 6), then subtraction (12 - 6 = 6)."
+        },
+        {
+          id: "C",
+          text: "9",
+          isCorrect: false,
+          distractorRationale: "Incorrect arithmetic calculation."
+        },
+        {
+          id: "D",
+          text: "0",
+          isCorrect: false,
+          distractorRationale: "Incorrect order of operation calculation."
+        }
+      ]
+    },
+    explanationText: "According to BIDMAS rules, multiplication must be done before subtraction. First calculate 3 x 2 = 6. Then perform the subtraction: 12 - 6 = 6.",
+    origin: "MANUAL_EDUCATOR",
+    provenance: {
+      generatedAt: "2025-01-20T10:00:00.000Z"
+    },
+    approval: {
+      status: "APPROVED",
+      reviewedBy: "EDU-CAMBRIDGE-LEAD",
+      reviewedAt: "2025-01-22T14:30:00.000Z",
+      version: 1
+    }
+  },
+  // ============================================================
   // SKILL: SK-NUM-FRAC-ADD (Fraction Addition with Unlike Denominators)
   // ============================================================
   {

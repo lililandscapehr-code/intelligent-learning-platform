@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS content_registry_approvals (
 CREATE TABLE IF NOT EXISTS source_snapshots (
   id VARCHAR(36) PRIMARY KEY,
   source_type ENUM('PDF', 'DOCX', 'WEBPAGE', 'TEXT', 'IMAGE') NOT NULL,
-  source_reference VARCHAR(1024) NOT NULL,
+  source_reference VARCHAR(500) NOT NULL,
   title VARCHAR(255) NOT NULL,
   source_version VARCHAR(100),
   captured_at DATETIME(6) NOT NULL,

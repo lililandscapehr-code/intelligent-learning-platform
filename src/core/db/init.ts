@@ -28,7 +28,25 @@ async function seedUser(user: { id: string; email: string; password: string; fir
   );
 }
 
+import mysql from "mysql2/promise";
+
 async function main() {
+  console.log("Ensuring database existence...");
+  try {
+    const setupConn = await mysql.createConnection({
+      host: process.env.DB_HOST,
+      port: parseInt(process.env.DB_PORT || "3306", 10),
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: true } : undefined,
+    });
+    await setupConn.query(`CREATE DATABASE IF NOT EXISTS \`${process.env.DB_NAME || 'educational_platform'}\``);
+    await setupConn.end();
+    console.log("Database ensured.");
+  } catch (err) {
+    console.warn("Could not pre-create database, attempting direct pool initialization:", err);
+  }
+
   console.log("Initializing database connection...");
   const pool = getDbPool();
 

@@ -34,6 +34,10 @@ export default function PdfCropAssistant({ onClose, onCapture }: PdfCropAssistan
   const [cropEnd, setCropEnd] = useState<{ x: number; y: number } | null>(null);
   const [croppedPreview, setCroppedPreview] = useState<string | null>(null);
 
+  // AI Assistant states
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -221,6 +225,36 @@ export default function PdfCropAssistant({ onClose, onCapture }: PdfCropAssistan
     }
   };
 
+  const askAiToAnalyze = async () => {
+    if (!croppedPreview) return;
+    setAiLoading(true);
+    setAiAnalysis(null);
+    try {
+      // Convert data URL to Blob
+      const res = await fetch(croppedPreview);
+      const blob = await res.blob();
+      const file = new File([blob], "snippet.png", { type: "image/png" });
+
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const response = await fetch("/api/teacher/image-analysis", {
+        method: "POST",
+        body: formData,
+      });
+      const result = await response.json();
+      if (result.answer) {
+        setAiAnalysis(result.answer);
+      } else {
+        setAiAnalysis(result.error || "The AI could not analyze the image.");
+      }
+    } catch (err) {
+      setAiAnalysis("Network error or AI provider is not available.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-6 backdrop-blur-md">
       <div className="flex h-[90vh] w-[95vw] flex-col rounded-xl border border-neutral-800 bg-neutral-950 overflow-hidden shadow-2xl">
@@ -369,15 +403,24 @@ export default function PdfCropAssistant({ onClose, onCapture }: PdfCropAssistan
                 <div className="space-y-2 pt-4 border-t border-neutral-800">
                   <button
                     onClick={handleCaptureToSlide}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-amber-500 py-2.5 text-xs font-bold text-neutral-950 hover:bg-amber-400 transition"
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-500 py-2 text-xs font-bold text-neutral-950 hover:bg-emerald-400 transition"
                   >
                     <Crop className="h-4 w-4" /> Insert into Active Slide
+                  </button>
+                  <button
+                    onClick={askAiToAnalyze}
+                    disabled={aiLoading}
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-sky-500 py-2 text-xs font-bold text-white hover:bg-sky-400 transition disabled:opacity-50"
+                  >
+                    {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                    {aiLoading ? "AI is thinking..." : "AI: Predict & Draft Slides"}
                   </button>
                   <button
                     onClick={() => {
                       setCropStart(null);
                       setCropEnd(null);
                       setCroppedPreview(null);
+                      setAiAnalysis(null);
                       drawOverlay(null, null);
                     }}
                     className="w-full rounded-lg border border-neutral-800 hover:border-neutral-700 py-2 text-xs font-semibold text-neutral-400 hover:text-white transition"
@@ -392,6 +435,28 @@ export default function PdfCropAssistant({ onClose, onCapture }: PdfCropAssistan
                   <Crop className="h-6 w-6 text-neutral-600 mx-auto mb-2" />
                   Drag a selection box over the PDF page on the left to capture a screenshot preview.
                 </div>
+              </div>
+            )}
+            
+            {/* AI Analysis Results Box */}
+            {aiAnalysis && (
+              <div className="mt-4 rounded-xl border border-sky-500/30 bg-sky-500/5 p-4 flex flex-col gap-2 max-h-64 overflow-y-auto">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-sky-400">
+                  <Sparkles className="h-4 w-4" /> AI Draft Proposal
+                </div>
+                <p className="whitespace-pre-wrap text-[11px] text-neutral-300 leading-relaxed">
+                  {aiAnalysis}
+                </p>
+                <button
+                  onClick={() => {
+                    // Quick way for the teacher to copy the AI text to clipboard to paste into slides
+                    navigator.clipboard.writeText(aiAnalysis);
+                    alert("AI draft copied to clipboard! You can paste it into a new slide.");
+                  }}
+                  className="mt-2 rounded bg-sky-500/20 px-2 py-1.5 text-[10px] font-bold text-sky-300 hover:bg-sky-500/30 w-full"
+                >
+                  Copy AI Draft to Clipboard
+                </button>
               </div>
             )}
           </div>
