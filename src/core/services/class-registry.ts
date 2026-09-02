@@ -278,6 +278,13 @@ export interface TeacherAnnouncement {
   publishedAt: string;
 }
 
+export interface TeacherAssignment {
+  teacherId: string;
+  teacherName: string;
+  teacherEmail: string;
+  approvedCurriculumIds: string[];
+}
+
 export interface ClassRecord {
   id: string;
   teacherId: string;
@@ -681,6 +688,20 @@ let mockSessions: LiveSession[] = [
 
 let mockPendingRegistrations: PendingRegistration[] = [];
 
+let mockTeacherAssignments: TeacherAssignment[] = [
+  {
+    teacherId: "teacher_1",
+    teacherName: "Dr. Hassan Youssef",
+    teacherEmail: "teacher@platform.com",
+    approvedCurriculumIds: [
+      "egypt-baccalaureate-second-year-physics-part1",
+      "egypt-baccalaureate-second-year-physics-part2",
+      "cambridge-igcse-0580-math",
+      "egypt-secondary1-integrated-science"
+    ]
+  }
+];
+
 export const ClassRegistry = {
   // --- Dynamic Pricing Engine ---
   calculateEffectiveRate(classRecord: ClassRecord): number {
@@ -998,5 +1019,47 @@ export const ClassRegistry = {
 
   getAllPendingRegistrations() {
     return mockPendingRegistrations;
+  },
+
+  // --- Admin Curriculum Governance & Teacher Permissions ---
+  getApprovedCurriculumsForTeacher(teacherId: string): CurriculumSpec[] {
+    const assignment = mockTeacherAssignments.find(t => t.teacherId === teacherId);
+    if (!assignment) return Object.values(REGISTERED_CURRICULUM_SPECS); // Fallback to all if unassigned
+    return assignment.approvedCurriculumIds
+      .map(id => REGISTERED_CURRICULUM_SPECS[id])
+      .filter((c): c is CurriculumSpec => c !== undefined);
+  },
+
+  getAllTeacherAssignments(): TeacherAssignment[] {
+    return mockTeacherAssignments;
+  },
+
+  assignCurriculumToTeacher(teacherId: string, curriculumId: string): boolean {
+    let assignment = mockTeacherAssignments.find(t => t.teacherId === teacherId);
+    if (!assignment) {
+      assignment = {
+        teacherId,
+        teacherName: "Teacher",
+        teacherEmail: `${teacherId}@platform.com`,
+        approvedCurriculumIds: []
+      };
+      mockTeacherAssignments.push(assignment);
+    }
+    if (!assignment.approvedCurriculumIds.includes(curriculumId)) {
+      assignment.approvedCurriculumIds.push(curriculumId);
+    }
+    return true;
+  },
+
+  revokeCurriculumFromTeacher(teacherId: string, curriculumId: string): boolean {
+    const assignment = mockTeacherAssignments.find(t => t.teacherId === teacherId);
+    if (!assignment) return false;
+    assignment.approvedCurriculumIds = assignment.approvedCurriculumIds.filter(id => id !== curriculumId);
+    return true;
+  },
+
+  importOfficialCurriculumSpec(spec: CurriculumSpec): boolean {
+    REGISTERED_CURRICULUM_SPECS[spec.id] = spec;
+    return true;
   }
 };

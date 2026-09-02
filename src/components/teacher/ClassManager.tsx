@@ -60,7 +60,8 @@ export default function ClassManager() {
   const [newPrereqInput, setNewPrereqInput] = useState("");
   const [announceSaved, setAnnounceSaved] = useState(false);
 
-  const activeCurriculumSpec: CurriculumSpec = REGISTERED_CURRICULUM_SPECS[selectedCurriculumId] || REGISTERED_CURRICULUM_SPECS["egypt-baccalaureate-second-year-physics-part1"];
+  const approvedCurriculums = ClassRegistry.getApprovedCurriculumsForTeacher("teacher_1");
+  const activeCurriculumSpec: CurriculumSpec = approvedCurriculums.find(c => c.id === selectedCurriculumId) || approvedCurriculums[0] || REGISTERED_CURRICULUM_SPECS["egypt-baccalaureate-second-year-physics-part1"];
 
   const loadClasses = () => {
     const teacherId = "teacher_1";
@@ -518,12 +519,15 @@ export default function ClassManager() {
             <form onSubmit={handleCreateClass} className="space-y-5 text-xs">
               {/* Curriculum Selection */}
               <div className="bg-neutral-900/60 border border-neutral-800 rounded-xl p-4 space-y-3">
-                <label className="block text-amber-400 font-bold uppercase tracking-wider text-[11px]">1. Select Registered Curriculum Base</label>
+                <div className="flex items-center justify-between">
+                  <label className="block text-amber-400 font-bold uppercase tracking-wider text-[11px]">1. Select Admin-Approved Curriculum Base</label>
+                  <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold">🛡️ ADMIN AUTHORIZED</span>
+                </div>
                 <select 
                   value={selectedCurriculumId} onChange={(e) => handleCurriculumChange(e.target.value)}
                   className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2.5 text-white font-semibold outline-none focus:border-amber-500"
                 >
-                  {Object.values(REGISTERED_CURRICULUM_SPECS).map((spec) => (
+                  {approvedCurriculums.map((spec) => (
                     <option key={spec.id} value={spec.id}>{spec.name} ({spec.gradeLevel})</option>
                   ))}
                 </select>
