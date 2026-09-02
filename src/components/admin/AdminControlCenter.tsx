@@ -113,6 +113,8 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
           </label>
         </div>
         {uploadStatus && <p className="text-xs p-3 rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-300">{uploadStatus}</p>}
+      </section>
+
       {/* ── ADMIN QUESTION TANK & AI BUILDER GOVERNANCE ── */}
       <section className="rounded-2xl border border-violet-500/40 bg-neutral-950 p-6 space-y-4">
         <div className="flex items-start justify-between">
