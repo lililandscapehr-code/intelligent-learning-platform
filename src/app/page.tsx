@@ -318,28 +318,6 @@ export default function EngineSimulator() {
     }
   }
 
-  async function submitLogin(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setLoginBusy(true);
-    setLoginError("");
-    const result = await login(loginEmail, loginPassword);
-    if (result.success && result.data) {
-      setSession({ email: loginEmail.trim().toLowerCase(), role: result.data.role });
-      if (result.data.role === "TEACHER") setActiveTab("teacher");
-      if (result.data.role === "ADMIN") setActiveTab("admin");
-      if (result.data.role === "PARENT") setActiveTab("parent");
-      if (result.data.role === "STUDENT") setActiveTab("student");
-    } else {
-      setLoginError(result.errors[0] || "Unable to sign in.");
-    }
-    setLoginBusy(false);
-  }
-
-  async function signOut() {
-    await logout();
-    setSession(null);
-  }
-
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   async function submitLogin(event: React.FormEvent<HTMLFormElement>) {
