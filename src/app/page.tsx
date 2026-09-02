@@ -61,6 +61,7 @@ import ServiceCatalog from "../components/services/ServiceCatalog";
 import StudentHome from "../components/student/StudentHome";
 import ParentHome from "../components/parent/ParentHome";
 import StudentDiagnostic from "../components/student/StudentDiagnostic";
+import PublicTeacherShowcase from "../components/public/PublicTeacherShowcase";
 import { lesson11QuestionDNA } from "../curriculum-packages/egypt-baccalaureate-second-year-physics/part1/question-dna/lesson-1-1-question-dna";
 import { lesson12QuestionDNA } from "../curriculum-packages/egypt-baccalaureate-second-year-physics/part1/question-dna/lesson-1-2-question-dna";
 import { lesson13QuestionDNA } from "../curriculum-packages/egypt-baccalaureate-second-year-physics/part1/question-dna/lesson-1-3-question-dna";
@@ -149,7 +150,7 @@ export default function EngineSimulator() {
   const selectedCurriculum: CurriculumPackage = curriculumOptions[selectedCurriculumId] || Object.values(curriculumOptions)[0];
   const validationReport = validateCurriculumPackage(selectedCurriculum);
 
-  const [activeTab, setActiveTab] = useState<"curriculum" | "readiness" | "carousel" | "authoring" | "teacher" | "student" | "student-diagnostic" | "parent" | "admin" | "services" | "diagnostic" | "state" | "platform" | "source-analysis">("readiness");
+  const [activeTab, setActiveTab] = useState<"curriculum" | "readiness" | "carousel" | "authoring" | "teacher" | "student" | "student-diagnostic" | "parent" | "admin" | "services" | "diagnostic" | "state" | "platform" | "source-analysis" | "public-showcase">("public-showcase");
   const [activeCaseKey, setActiveCaseKey] = useState<string>("A");
 
   // --- Platform Connection States ---
@@ -368,6 +369,7 @@ export default function EngineSimulator() {
   }
 
   const navigationItems: Array<{ key: typeof activeTab; icon: typeof User; label: string; roles?: string[] }> = [
+    { key: "public-showcase", icon: Layers, label: "Teacher Packages Portal", roles: ["STUDENT", "TEACHER", "ADMIN", "PARENT"] },
     { key: "student", icon: User, label: "My Study Tracks", roles: ["STUDENT"] },
     { key: "carousel", icon: Tv, label: "Lesson & Quiz Carousel", roles: ["STUDENT", "TEACHER", "ADMIN"] },
     { key: "student-diagnostic", icon: ClipboardCheck, label: "Readiness & 3-Case Diagnostics", roles: ["STUDENT"] },
@@ -501,6 +503,16 @@ export default function EngineSimulator() {
 
         {/* Canvas */}
         <section className="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto bg-neutral-900">
+
+          {/* PUBLIC TEACHER PACKAGE PORTAL */}
+          {activeTab === "public-showcase" && (
+            <PublicTeacherShowcase 
+              onDirectLaunchPackage={(curriculumId, classId) => {
+                setSelectedCurriculumId(curriculumId);
+                setActiveTab("student-diagnostic");
+              }}
+            />
+          )}
 
           {/* READINESS TAB WITH DYNAMIC TOP CAROUSEL */}
           {activeTab === "readiness" && sessionQuestions.length > 0 && (

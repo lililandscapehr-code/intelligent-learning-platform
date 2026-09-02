@@ -251,6 +251,15 @@ export const REGISTERED_CURRICULUM_SPECS: Record<string, CurriculumSpec> = {
   }
 };
 
+export interface TeacherAnnouncement {
+  teacherName: string;
+  teacherTitle: string;
+  description: string;
+  prerequisites: string[];
+  isPubliclyAnnounced: boolean;
+  publishedAt: string;
+}
+
 export interface ClassRecord {
   id: string;
   teacherId: string;
@@ -261,6 +270,7 @@ export interface ClassRecord {
   scope: ClassPackageScope;
   financials: PackageFinancials;
   studentIds: string[];
+  announcement?: TeacherAnnouncement;
 }
 
 // Initial Mock Data
@@ -269,9 +279,21 @@ let mockClasses: ClassRecord[] = [
     id: "cls_101",
     teacherId: "teacher_1",
     name: "Year 11 Physics - Section A (Full Term 1)",
-    curriculumPackageId: "egypt-baccalaureate-second-year-physics",
-    curriculumPackageName: "Egyptian Baccalaureate 2nd Year Physics",
-    gradeLevel: "11",
+    curriculumPackageId: "egypt-baccalaureate-second-year-physics-part1",
+    curriculumPackageName: "Egyptian Baccalaureate 2nd Year Physics - Part 1",
+    gradeLevel: "Secondary 2 (Grade 11)",
+    announcement: {
+      teacherName: "Dr. Hassan Youssef",
+      teacherTitle: "Senior Physics Master Educator",
+      description: "Complete Term 1 Mechanics & Vectors coverage. Includes 12 carousels, 3-case adaptive diagnostics, and weekly live video review sessions.",
+      prerequisites: [
+        "Secondary 2 (Grade 11) active standing",
+        "Basic SI unit conversions & algebraic rearrangement",
+        "Right-triangle geometry & trigonometry basics (sin, cos, tan)"
+      ],
+      isPubliclyAnnounced: true,
+      publishedAt: "2026-08-28T09:00:00Z"
+    },
     scope: {
       scopeType: "SEMESTER",
       semesterId: "term1",
@@ -294,9 +316,20 @@ let mockClasses: ClassRecord[] = [
     id: "cls_102",
     teacherId: "teacher_1",
     name: "Vector & Projectile Intensive Workshop",
-    curriculumPackageId: "egypt-baccalaureate-second-year-physics",
-    curriculumPackageName: "Egyptian Baccalaureate 2nd Year Physics",
-    gradeLevel: "11",
+    curriculumPackageId: "egypt-baccalaureate-second-year-physics-part1",
+    curriculumPackageName: "Egyptian Baccalaureate 2nd Year Physics - Part 1",
+    gradeLevel: "Secondary 2 (Grade 11)",
+    announcement: {
+      teacherName: "Dr. Hassan Youssef",
+      teacherTitle: "Senior Physics Master Educator",
+      description: "Focused 2-chapter workshop on relative velocity vectors & projectile motion trajectory equations. 2 live sessions included.",
+      prerequisites: [
+        "Secondary 2 Physics Standing",
+        "Understanding of Cartesian coordinates (X, Y)"
+      ],
+      isPubliclyAnnounced: true,
+      publishedAt: "2026-08-30T10:00:00Z"
+    },
     scope: {
       scopeType: "CHAPTER_BUNDLE",
       chapterNames: ["Vectors & Relative Velocity"],
@@ -321,6 +354,17 @@ let mockClasses: ClassRecord[] = [
     curriculumPackageId: "cambridge-igcse-0580",
     curriculumPackageName: "Cambridge IGCSE Mathematics 0580",
     gradeLevel: "IGCSE / Secondary 1-2",
+    announcement: {
+      teacherName: "Dr. Hassan Youssef",
+      teacherTitle: "Certified Cambridge Math Instructor",
+      description: "Core & Extended Cambridge 0580 arithmetic, fractions, and linear algebra booster. Includes 4 live problem-solving sessions.",
+      prerequisites: [
+        "Year 9 / Year 10 Math Foundation",
+        "Scientific calculator"
+      ],
+      isPubliclyAnnounced: true,
+      publishedAt: "2026-08-29T14:00:00Z"
+    },
     scope: {
       scopeType: "CHAPTER_BUNDLE",
       chapterNames: ["Topic 1: Number Skills & Fractions", "Topic 2: Algebra & Equations"],
@@ -345,6 +389,16 @@ let mockClasses: ClassRecord[] = [
     curriculumPackageId: "egypt-secondary1-integrated-science",
     curriculumPackageName: "Egyptian Secondary 1 Integrated Science",
     gradeLevel: "Secondary 1 (Grade 10)",
+    announcement: {
+      teacherName: "Dr. Hassan Youssef",
+      teacherTitle: "Integrated Science Specialist",
+      description: "Aquatic ecosystem energy flow and environmental chemistry observation module.",
+      prerequisites: [
+        "Secondary 1 Active Standing"
+      ],
+      isPubliclyAnnounced: true,
+      publishedAt: "2026-08-25T11:00:00Z"
+    },
     scope: {
       scopeType: "CHAPTER_BUNDLE",
       chapterNames: ["Chapter 1: Aquatic Ecosystems & Energy Flow"],
@@ -771,5 +825,58 @@ export const ClassRegistry = {
     if (session) {
       session.status = status;
     }
+  },
+
+  // --- Public Package Announcement Portal ---
+  getPublicPackageAnnouncements() {
+    return mockClasses
+      .filter((c) => c.announcement && c.announcement.isPubliclyAnnounced)
+      .map((c) => {
+        const effectiveRate = this.calculateEffectiveRate(c);
+        return {
+          classId: c.id,
+          title: c.name,
+          curriculumPackageId: c.curriculumPackageId,
+          curriculumPackageName: c.curriculumPackageName,
+          gradeLevel: c.gradeLevel,
+          scope: c.scope,
+          effectiveRate,
+          currency: c.financials.currency,
+          studentCount: c.studentIds.length,
+          announcement: c.announcement!
+        };
+      });
+  },
+
+  enrollStudentInPublicPackage(studentId: string, classId: string) {
+    const student = this.getStudentById(studentId);
+    const cls = this.getClassById(classId);
+    if (!student || !cls) return { success: false, message: "Student or package not found." };
+
+    if (!cls.studentIds.includes(studentId)) {
+      cls.studentIds.push(studentId);
+    }
+    if (!student.enrolledClassIds.includes(classId)) {
+      student.enrolledClassIds.push(classId);
+    }
+
+    const rate = this.calculateEffectiveRate(cls);
+    student.billingTransactions.push({
+      id: `tx_${Date.now()}`,
+      studentId,
+      timestamp: new Date().toISOString(),
+      type: "ENROLLMENT",
+      className: cls.name,
+      packageName: cls.curriculumPackageName,
+      amount: rate,
+      effectiveRateApplied: rate,
+      studentVolumeAtTime: cls.studentIds.length,
+      description: `Registered for public teacher package: ${cls.name}`
+    });
+
+    return {
+      success: true,
+      message: `Enrolled in ${cls.name}! Effective package rate: $${rate}.`
+    };
   }
 };
