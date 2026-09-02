@@ -314,6 +314,53 @@ export default function ClassManager() {
                   ))}
                 </div>
 
+                {/* ── QUESTION TANKS & TEACHER CUSTOM CAROUSELS ── */}
+                <div className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-5 space-y-4">
+                  <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+                    <div>
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-amber-500" />
+                        Package Carousels & Question Tanks
+                      </h3>
+                      <p className="text-[11px] text-neutral-400">Inherits official Admin-pushed 3-Case Question DNA + teacher custom package carousels.</p>
+                    </div>
+                    <span className="text-[10px] bg-sky-500/20 text-sky-400 border border-sky-500/30 px-2 py-0.5 rounded-full font-bold">
+                      TEACHER CUSTOMIZABLE
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                    {/* Admin Pushed Official Tank */}
+                    <div className="p-3.5 bg-neutral-950 border border-neutral-800 rounded-xl space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-white flex items-center gap-1.5">
+                          <ShieldCheck className="h-4 w-4 text-emerald-400" /> Official Admin Question Tank
+                        </span>
+                        <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-bold">LOCKED TANK</span>
+                      </div>
+                      <p className="text-neutral-400 text-[11px]">7 Official Case B Problems · 70 Pre Trials · 35 Case C Challenges</p>
+                      <p className="text-[10px] text-neutral-500 italic">Pushed by Admin for {selectedClass.curriculumPackageName}</p>
+                    </div>
+
+                    {/* Teacher Package Custom Carousels */}
+                    <div className="p-3.5 bg-neutral-950 border border-amber-500/30 rounded-xl space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-white flex items-center gap-1.5">
+                          <Sparkles className="h-4 w-4 text-amber-400" /> Teacher Package Carousels
+                        </span>
+                        <span className="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded font-bold">CUSTOM EXTRAS</span>
+                      </div>
+                      <p className="text-neutral-400 text-[11px]">Teacher can add package-specific explanation slides, worked examples & custom quizzes.</p>
+                      <button
+                        onClick={() => setShowRecordingStudio(true)}
+                        className="w-full py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold rounded-lg text-[11px] transition"
+                      >
+                        + Record Demo / Add Custom Carousel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <h3 className="text-sm font-bold text-white">Enrolled Students ({students.length})</h3>
                   <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl overflow-hidden">
