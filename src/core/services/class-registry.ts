@@ -87,7 +87,12 @@ export interface LiveSession {
   title: string;
   scheduledTime: string;
   meetingLink: string;
+  platform: "google-meet" | "zoom" | "teams" | "custom";
+  attachedCarouselId?: string;
+  description?: string;
+  durationMinutes?: number;
   status: "scheduled" | "live" | "completed";
+  attendeeStudentIds?: string[];
 }
 
 export interface PendingRegistration {
@@ -649,10 +654,28 @@ let mockSessions: LiveSession[] = [
   {
     id: "session_001",
     classId: "cls_101",
-    title: "Weekly Review: Vectors & Forces",
-    scheduledTime: new Date(Date.now() + 86400000).toISOString(),
+    title: "Live Problem Solving: Vectors & Forces",
+    scheduledTime: new Date(Date.now() + 3600000).toISOString(), // Starts in 1 hour
     meetingLink: "https://meet.google.com/abc-defg-hij",
-    status: "scheduled"
+    platform: "google-meet",
+    attachedCarouselId: "CAROUSEL-cls_101",
+    description: "Live interactive problem solving on Nile boat crossing & relative velocity vectors.",
+    durationMinutes: 60,
+    status: "live",
+    attendeeStudentIds: ["std_001"]
+  },
+  {
+    id: "session_002",
+    classId: "cls_102",
+    title: "Masterclass: Angled Projectiles & Trajectory Math",
+    scheduledTime: new Date(Date.now() + 172800000).toISOString(), // In 2 days
+    meetingLink: "https://zoom.us/j/9876543210",
+    platform: "zoom",
+    attachedCarouselId: "CAROUSEL-cls_102",
+    description: "Step-by-step breakdown of projectile motion at an angle.",
+    durationMinutes: 90,
+    status: "scheduled",
+    attendeeStudentIds: []
   }
 ];
 
@@ -834,6 +857,15 @@ export const ClassRegistry = {
     const newSession = { ...session, id: `session_${Date.now()}` };
     mockSessions.push(newSession);
     return newSession;
+  },
+  joinLiveSession(sessionId: string, studentId: string): LiveSession | null {
+    const session = mockSessions.find((s) => s.id === sessionId);
+    if (!session) return null;
+    if (!session.attendeeStudentIds) session.attendeeStudentIds = [];
+    if (!session.attendeeStudentIds.includes(studentId)) {
+      session.attendeeStudentIds.push(studentId);
+    }
+    return session;
   },
   updateSessionStatus(sessionId: string, status: LiveSession["status"]): void {
     const session = mockSessions.find((s) => s.id === sessionId);
