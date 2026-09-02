@@ -90,6 +90,167 @@ export interface LiveSession {
   status: "scheduled" | "live" | "completed";
 }
 
+// ── Official Registered Curriculum Packages & Specifications ─────────────────
+export interface CurriculumSpec {
+  id: string;
+  name: string;
+  publisher: string;
+  subject: string;
+  gradeLevel: string;
+  version: string;
+  terms: Array<{ id: "term1" | "term2" | "full"; label: string; dateRange: string }>;
+  chapters: string[];
+  lessons: Array<{ id: string; title: string }>;
+}
+
+export const REGISTERED_CURRICULUM_SPECS: Record<string, CurriculumSpec> = {
+  "egypt-baccalaureate-second-year-physics-part1": {
+    id: "egypt-baccalaureate-second-year-physics-part1",
+    name: "Egyptian Baccalaureate 2nd Year Physics - Part 1",
+    publisher: "Egyptian Ministry of Education and Technical Education",
+    subject: "Physics",
+    gradeLevel: "Secondary 2 (Grade 11)",
+    version: "2026-2027 (Official Part 1)",
+    terms: [
+      { id: "term1", label: "Part 1 · Term 1 (Mechanics, Projectiles & Gravitation)", dateRange: "Sept 2026 – Jan 2027" }
+    ],
+    chapters: [
+      "Chapter 1: Velocity Vectors & Relative Velocity",
+      "Chapter 2: Horizontal & Angled Projectiles",
+      "Chapter 3: Moment of Force & Equilibrium",
+      "Chapter 4: Power, Work & Energy Efficiency",
+      "Chapter 5: Momentum, Impulse & Conservation Laws",
+      "Chapter 6: Uniform Circular Motion & Centripetal Acceleration",
+      "Chapter 7: Kepler's Laws & Universal Gravitation"
+    ],
+    lessons: [
+      { id: "CAROUSEL-PHYS-EB-MECH-1-1", title: "1-1 Velocity Vectors & Relative Velocity" },
+      { id: "CAROUSEL-PHYS-EB-MECH-1-2", title: "1-2 Horizontal Projectile Motion" },
+      { id: "CAROUSEL-PHYS-EB-MECH-1-3", title: "1-3 Projectile Motion at an Angle" },
+      { id: "CAROUSEL-PHYS-EB-MECH-1-4", title: "1-4 Moment of a Force" },
+      { id: "CAROUSEL-PHYS-EB-MECH-1-5", title: "1-5 Equilibrium of Forces" },
+      { id: "CAROUSEL-PHYS-EB-MECH-1-6", title: "1-6 Power & Efficiency" },
+      { id: "CAROUSEL-PHYS-EB-MECH-1-7", title: "1-7 Momentum & Impulse" },
+      { id: "CAROUSEL-PHYS-EB-MECH-1-8", title: "1-8 Conservation of Momentum" },
+      { id: "CAROUSEL-PHYS-EB-MECH-1-9", title: "1-9 Momentum & Energy Interactions" },
+      { id: "CAROUSEL-PHYS-EB-MECH-1-10", title: "1-10 Uniform Circular Motion" },
+      { id: "CAROUSEL-PHYS-EB-MECH-1-11", title: "1-11 Horizontal & Vertical Circular Dynamics" },
+      { id: "CAROUSEL-PHYS-EB-MECH-1-12", title: "1-12 Kepler's Laws & Universal Gravitation" }
+    ]
+  },
+  "egypt-baccalaureate-second-year-physics-part2": {
+    id: "egypt-baccalaureate-second-year-physics-part2",
+    name: "Egyptian Baccalaureate 2nd Year Physics - Part 2",
+    publisher: "Egyptian Ministry of Education and Technical Education",
+    subject: "Physics",
+    gradeLevel: "Secondary 2 (Grade 11)",
+    version: "2026-2027 (Official Part 2)",
+    terms: [
+      { id: "term2", label: "Part 2 · Term 2 (Gases, Electricity & Quantum)", dateRange: "Feb 2027 – June 2027" }
+    ],
+    chapters: [
+      "Unit 1: Gases & Heat (Boyle & Charles Laws)",
+      "Unit 2: Static Electricity & Electrostatics",
+      "Unit 3: Electric Current, Resistance & Circuits",
+      "Unit 4: Magnetism & Electromagnetic Induction",
+      "Unit 5: Quantum Nature of Light & Photoelectric Effect"
+    ],
+    lessons: [
+      { id: "CAROUSEL-PHYS-EB-GASES-2-1", title: "2-1 Gas Pressure & Kinetic Theory" },
+      { id: "CAROUSEL-PHYS-EB-GASES-2-2", title: "2-2 Boyle's Law (p-V Isothermal)" },
+      { id: "CAROUSEL-PHYS-EB-GASES-2-3", title: "2-3 Charles's Law & Absolute Temperature" },
+      { id: "CAROUSEL-PHYS-EB-GASES-2-4", title: "2-4 Ideal Gas Equation (pV = nRT)" }
+    ]
+  },
+  "egypt-baccalaureate-second-year-physics": {
+    id: "egypt-baccalaureate-second-year-physics",
+    name: "Egyptian Baccalaureate 2nd Year Physics (Full Year)",
+    publisher: "Egyptian Ministry of Education and Technical Education",
+    subject: "Physics",
+    gradeLevel: "Secondary 2 (Grade 11)",
+    version: "2026-2027 (Full Curriculum)",
+    terms: [
+      { id: "term1", label: "Part 1 · Term 1 (Mechanics)", dateRange: "Sept 2026 – Jan 2027" },
+      { id: "term2", label: "Part 2 · Term 2 (Gases & Electricity)", dateRange: "Feb 2027 – June 2027" },
+      { id: "full", label: "Full Academic Year (Both Terms)", dateRange: "Sept 2026 – June 2027" }
+    ],
+    chapters: [
+      "Chapter 1: Mechanics & Projectiles",
+      "Chapter 2: Forces, Moments & Equilibrium",
+      "Chapter 3: Energy, Power & Momentum",
+      "Chapter 4: Circular Motion & Gravitation",
+      "Chapter 5: Gases & Thermodynamic Laws",
+      "Chapter 6: Electricity, Circuits & Magnetism",
+      "Chapter 7: Quantum Physics"
+    ],
+    lessons: [
+      { id: "CAROUSEL-PHYS-EB-MECH-1-1", title: "1-1 Velocity Vectors & Relative Velocity" },
+      { id: "CAROUSEL-PHYS-EB-MECH-1-2", title: "1-2 Horizontal Projectile Motion" },
+      { id: "CAROUSEL-PHYS-EB-MECH-1-3", title: "1-3 Projectile Motion at an Angle" },
+      { id: "CAROUSEL-PHYS-EB-GASES-2-2", title: "2-2 Boyle's Law" },
+      { id: "CAROUSEL-PHYS-EB-GASES-2-3", title: "2-3 Charles's Law" }
+    ]
+  },
+  "cambridge-igcse-0580": {
+    id: "cambridge-igcse-0580",
+    name: "Cambridge IGCSE Mathematics 0580",
+    publisher: "Cambridge Assessment International Education",
+    subject: "Mathematics",
+    gradeLevel: "IGCSE / Secondary 1-2",
+    version: "2026-2028 Syllabus",
+    terms: [
+      { id: "term1", label: "Core Syllabus (Term 1)", dateRange: "Sept 2026 – Jan 2027" },
+      { id: "term2", label: "Extended Syllabus (Term 2)", dateRange: "Feb 2027 – June 2027" }
+    ],
+    chapters: [
+      "Topic 1: Number Skills & Fractions",
+      "Topic 2: Algebra & Equations",
+      "Topic 3: Coordinate Geometry",
+      "Topic 4: Mensuration & Trigonometry"
+    ],
+    lessons: [
+      { id: "LES-0580-NUM-01", title: "Fraction Arithmetic & Simplification" },
+      { id: "LES-0580-ALG-01", title: "Algebraic Expansion & Factorization" }
+    ]
+  },
+  "egypt-secondary1-integrated-science": {
+    id: "egypt-secondary1-integrated-science",
+    name: "Egyptian Secondary 1 Integrated Science",
+    publisher: "Egyptian Ministry of Education and Technical Education",
+    subject: "Integrated Science",
+    gradeLevel: "Secondary 1 (Grade 10)",
+    version: "2026-2027",
+    terms: [
+      { id: "term1", label: "Part 1 · Ecosystems & Environmental Chemistry", dateRange: "Sept 2026 – Jan 2027" }
+    ],
+    chapters: [
+      "Chapter 1: Aquatic Ecosystems & Energy Flow",
+      "Chapter 2: Atmospheric Chemistry & Climate"
+    ],
+    lessons: [
+      { id: "LES-EGYPT-S1-AQUATIC-01", title: "Aquatic Ecosystem: Observation to Evidence" }
+    ]
+  },
+  "arts-drama-201": {
+    id: "arts-drama-201",
+    name: "Advanced Dramatic Arts & Monologue 201",
+    publisher: "National Theatre Arts Board",
+    subject: "Dramatic Arts",
+    gradeLevel: "Grade 11-12",
+    version: "2026-2027",
+    terms: [
+      { id: "full", label: "Full Module (Voice & Performance)", dateRange: "Sept 2026 – June 2027" }
+    ],
+    chapters: [
+      "Module 1: Voice Projection & Articulation",
+      "Module 2: Monologue Interpretation"
+    ],
+    lessons: [
+      { id: "LES-DRAMA-VOCAL-01", title: "Voice Projection & Resonator Technique" }
+    ]
+  }
+};
+
 export interface ClassRecord {
   id: string;
   teacherId: string;

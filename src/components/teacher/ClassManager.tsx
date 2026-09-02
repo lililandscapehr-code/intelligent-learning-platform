@@ -5,7 +5,9 @@ import {
   ClassRegistry, 
   ClassRecord, 
   StudentProfile, 
-  PackageScopeType 
+  PackageScopeType,
+  REGISTERED_CURRICULUM_SPECS,
+  CurriculumSpec
 } from "../../core/services/class-registry";
 import { 
   Users, 
@@ -18,7 +20,10 @@ import {
   CheckCircle, 
   Calendar,
   X,
-  Sparkles
+  Sparkles,
+  ShieldCheck,
+  FileText,
+  Check
 } from "lucide-react";
 
 export default function ClassManager() {
@@ -28,14 +33,18 @@ export default function ClassManager() {
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   // New Class Form State
+  const [selectedCurriculumId, setSelectedCurriculumId] = useState<string>("egypt-baccalaureate-second-year-physics-part1");
   const [newClassName, setNewClassName] = useState("");
-  const [newGradeLevel, setNewGradeLevel] = useState("11");
   const [newScopeType, setNewScopeType] = useState<PackageScopeType>("SEMESTER");
-  const [newChapterInput, setNewChapterInput] = useState("");
+  const [selectedTermId, setSelectedTermId] = useState<"term1" | "term2" | "full">("term1");
+  const [selectedChapters, setSelectedChapters] = useState<string[]>([]);
+  const [selectedLessonIds, setSelectedLessonIds] = useState<string[]>([]);
   const [newQuotaInput, setNewQuotaInput] = useState(5);
   const [newBasePrice, setNewBasePrice] = useState(50);
   const [newTier1Price, setNewTier1Price] = useState(60);
   const [newTier2Price, setNewTier2Price] = useState(45);
+
+  const activeCurriculumSpec: CurriculumSpec = REGISTERED_CURRICULUM_SPECS[selectedCurriculumId] || REGISTERED_CURRICULUM_SPECS["egypt-baccalaureate-second-year-physics-part1"];
 
   const loadClasses = () => {
     const teacherId = "teacher_1";
@@ -56,6 +65,29 @@ export default function ClassManager() {
     }
   }, [selectedClass]);
 
+  // When changing curriculum selection, auto-select first term & reset chapters
+  const handleCurriculumChange = (curriculumId: string) => {
+    setSelectedCurriculumId(curriculumId);
+    const spec = REGISTERED_CURRICULUM_SPECS[curriculumId];
+    if (spec) {
+      if (spec.terms.length > 0) setSelectedTermId(spec.terms[0].id);
+      setSelectedChapters([]);
+      setSelectedLessonIds([]);
+    }
+  };
+
+  const toggleChapterSelection = (chapter: string) => {
+    setSelectedChapters(prev => 
+      prev.includes(chapter) ? prev.filter(c => c !== chapter) : [...prev, chapter]
+    );
+  };
+
+  const toggleLessonSelection = (lessonId: string) => {
+    setSelectedLessonIds(prev => 
+      prev.includes(lessonId) ? prev.filter(l => l !== lessonId) : [...prev, lessonId]
+    );
+  };
+
   const handleCreateClass = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newClassName) return;
@@ -63,13 +95,14 @@ export default function ClassManager() {
     const created = ClassRegistry.createClass({
       teacherId: "teacher_1",
       name: newClassName,
-      curriculumPackageId: "egypt-baccalaureate-second-year-physics",
-      curriculumPackageName: "Egyptian Baccalaureate 2nd Year Physics",
-      gradeLevel: newGradeLevel,
+      curriculumPackageId: activeCurriculumSpec.id,
+      curriculumPackageName: activeCurriculumSpec.name,
+      gradeLevel: activeCurriculumSpec.gradeLevel,
       scope: {
         scopeType: newScopeType,
-        semesterId: newScopeType === "SEMESTER" ? "term1" : undefined,
-        chapterNames: newChapterInput ? newChapterInput.split(",").map(s => s.trim()) : undefined,
+        semesterId: selectedTermId,
+        chapterNames: selectedChapters.length > 0 ? selectedChapters : activeCurriculumSpec.chapters,
+        lessonIds: selectedLessonIds.length > 0 ? selectedLessonIds : activeCurriculumSpec.lessons.map(l => l.id),
         maxLessonCount: newScopeType === "LESSON_QUANTITY" ? newQuotaInput : undefined,
         includedLiveSessions: newScopeType === "SINGLE_SESSION" ? 1 : -1
       },
@@ -89,6 +122,8 @@ export default function ClassManager() {
     setSelectedClass(created);
     setShowCreateModal(false);
     setNewClassName("");
+    setSelectedChapters([]);
+    setSelectedLessonIds([]);
   };
 
   const getScopeBadge = (scopeType: PackageScopeType) => {
@@ -113,7 +148,7 @@ export default function ClassManager() {
               <BookOpen className="h-5 w-5 text-amber-500" />
               Classes & Packages
             </h2>
-            <p className="text-xs text-neutral-400">Scoped learning groups & pricing tiers</p>
+            <p className="text-xs text-neutral-400">Curriculum-driven scoped learning groups</p>
           </div>
           <button 
             onClick={() => setShowCreateModal(true)}
@@ -143,7 +178,8 @@ export default function ClassManager() {
                   </span>
                 </div>
                 <h3 className="font-bold text-white text-sm mb-1">{cls.name}</h3>
-                <div className="flex items-center justify-between text-xs text-neutral-400 mt-2 pt-2 border-t border-neutral-800/60">
+                <p className="text-[11px] text-neutral-400 truncate mb-2">{cls.curriculumPackageName}</p>
+                <div className="flex items-center justify-between text-xs text-neutral-400 pt-2 border-t border-neutral-800/60">
                   <span className="flex items-center gap-1">
                     <Users className="h-3 w-3" /> {cls.studentIds.length} Enrolled
                   </span>
@@ -157,7 +193,7 @@ export default function ClassManager() {
         </div>
       </div>
 
-      {/* Right Area - Class Details & Financial Metrics */}
+      {/* Right Area - Class Details & Formal Curriculum Specifications */}
       <div className="flex-1 overflow-y-auto pl-2 space-y-6">
         {selectedClass ? (
           <>
@@ -169,12 +205,44 @@ export default function ClassManager() {
                 </div>
                 <h1 className="text-2xl font-bold text-white">{selectedClass.name}</h1>
                 <p className="text-neutral-400 text-xs mt-1">
-                  Curriculum Package: <strong className="text-amber-400">{selectedClass.curriculumPackageName}</strong>
+                  Selected Base Curriculum: <strong className="text-amber-400">{selectedClass.curriculumPackageName}</strong>
                 </p>
               </div>
             </header>
 
-            {/* Financial Volume Matrix for this Package */}
+            {/* Formal Curriculum Classification Spec Badge */}
+            <div className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-5 space-y-3">
+              <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="h-5 w-5 text-amber-500" />
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-white">Curriculum Specification Contract</h3>
+                </div>
+                <span className="text-[11px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold">
+                  VERIFIED CURRICULUM BASE
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                <div>
+                  <span className="text-neutral-500 block">Grade / Level</span>
+                  <strong className="text-white">{selectedClass.gradeLevel}</strong>
+                </div>
+                <div>
+                  <span className="text-neutral-500 block">Scoped Chapters</span>
+                  <strong className="text-sky-400">{selectedClass.scope.chapterNames?.length || "All"} Chapter(s)</strong>
+                </div>
+                <div>
+                  <span className="text-neutral-500 block">Scoped Lessons</span>
+                  <strong className="text-amber-400">{selectedClass.scope.lessonIds?.length || "All Catalog"} Lesson(s)</strong>
+                </div>
+                <div>
+                  <span className="text-neutral-500 block">Live Sessions Included</span>
+                  <strong className="text-purple-400">{selectedClass.scope.includedLiveSessions === -1 ? "Unlimited" : selectedClass.scope.includedLiveSessions}</strong>
+                </div>
+              </div>
+            </div>
+
+            {/* Financial Volume Matrix */}
             <div className="grid grid-cols-3 gap-4">
               <div className="bg-neutral-900/60 border border-neutral-800 rounded-xl p-4">
                 <span className="text-xs text-neutral-400 flex items-center gap-1">
@@ -202,29 +270,6 @@ export default function ClassManager() {
                   ${ClassRegistry.getPackageMetrics(selectedClass.id)?.totalRevenue}
                 </p>
                 <p className="text-[11px] text-neutral-500 mt-0.5">Auto-updates on student swaps</p>
-              </div>
-            </div>
-
-            {/* Pricing Tiers Table */}
-            <div className="bg-neutral-900/40 border border-neutral-800 rounded-xl p-5 space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400 flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-emerald-400" /> Volume Pricing Tiers Structure
-              </h3>
-              <div className="grid grid-cols-3 gap-3">
-                {selectedClass.financials.tiers.map((tier, idx) => {
-                  const isActive = selectedClass.studentIds.length >= tier.minStudents && selectedClass.studentIds.length <= tier.maxStudents;
-                  return (
-                    <div key={idx} className={`p-3 rounded-lg border text-xs ${
-                      isActive ? "border-emerald-500/50 bg-emerald-500/10" : "border-neutral-800 bg-neutral-950"
-                    }`}>
-                      <div className="flex justify-between font-bold text-white mb-1">
-                        <span>Tier {idx + 1} ({tier.minStudents}-{tier.maxStudents} std)</span>
-                        {isActive && <span className="text-emerald-400 text-[10px] uppercase font-bold">ACTIVE</span>}
-                      </div>
-                      <p className="text-amber-400 font-bold text-sm">${tier.pricePerStudent} <span className="text-xs font-normal text-neutral-400">/ student</span></p>
-                    </div>
-                  );
-                })}
               </div>
             </div>
 
@@ -274,67 +319,155 @@ export default function ClassManager() {
         )}
       </div>
 
-      {/* Modal: Create New Scoped Class & Pricing Tiers */}
+      {/* ── MODAL: CURRICULUM-DRIVEN PACKAGE CREATOR ───────────────── */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 max-w-lg w-full space-y-5 animate-in fade-in zoom-in-95">
+          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto space-y-5 animate-in fade-in zoom-in-95">
             <div className="flex justify-between items-center border-b border-neutral-800 pb-3">
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <Layers className="h-5 w-5 text-amber-500" /> Create Scoped Class / Package
-              </h2>
+              <div>
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Layers className="h-5 w-5 text-amber-500" /> Create Package from Registered Curriculum
+                </h2>
+                <p className="text-xs text-neutral-400">Select an official curriculum specification to build a scoped package</p>
+              </div>
               <button onClick={() => setShowCreateModal(false)} className="text-neutral-400 hover:text-white">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateClass} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-neutral-400 font-semibold mb-1">Class / Package Title</label>
-                <input 
-                  type="text" required value={newClassName} onChange={(e) => setNewClassName(e.target.value)}
-                  placeholder="e.g. Term 1 Mechanics & Vectors Group"
-                  className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-neutral-400 font-semibold mb-1">Package Scope Mode</label>
+            <form onSubmit={handleCreateClass} className="space-y-5 text-xs">
+              {/* Step 1: Select Official Curriculum Base */}
+              <div className="bg-neutral-900/60 border border-neutral-800 rounded-xl p-4 space-y-3">
+                <label className="block text-amber-400 font-bold uppercase tracking-wider text-[11px]">
+                  1. Select Base Registered Curriculum Package
+                </label>
                 <select 
-                  value={newScopeType} onChange={(e) => setNewScopeType(e.target.value as PackageScopeType)}
-                  className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
+                  value={selectedCurriculumId} 
+                  onChange={(e) => handleCurriculumChange(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2.5 text-white font-semibold outline-none focus:border-amber-500 text-xs"
                 >
-                  <option value="SEMESTER">Full Semester / Term</option>
-                  <option value="CHAPTER_BUNDLE">Chapter Bundle</option>
-                  <option value="LESSON_BUNDLE">Lesson Bundle</option>
-                  <option value="LESSON_QUANTITY">Lesson Quota Pass</option>
-                  <option value="SINGLE_SESSION">Single Session / Workshop</option>
-                  <option value="FULL_PACKAGE">Full Package (All Terms)</option>
+                  {Object.values(REGISTERED_CURRICULUM_SPECS).map((spec) => (
+                    <option key={spec.id} value={spec.id}>
+                      {spec.name} ({spec.gradeLevel})
+                    </option>
+                  ))}
                 </select>
+
+                {/* Auto-Populated Curriculum Classification Card */}
+                <div className="p-3 bg-black/40 border border-neutral-800 rounded-lg space-y-1.5 text-[11px]">
+                  <div className="flex justify-between">
+                    <span className="text-neutral-400">Publisher:</span>
+                    <span className="text-white font-semibold">{activeCurriculumSpec.publisher}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-neutral-400">Subject & Grade:</span>
+                    <span className="text-amber-300 font-semibold">{activeCurriculumSpec.subject} · {activeCurriculumSpec.gradeLevel}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-neutral-400">Curriculum Version:</span>
+                    <span className="text-sky-300 font-semibold">{activeCurriculumSpec.version}</span>
+                  </div>
+                </div>
               </div>
 
+              {/* Step 2: Package Title & Scoping Mode */}
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-neutral-300 font-semibold mb-1">Class / Package Title</label>
+                  <input 
+                    type="text" required value={newClassName} onChange={(e) => setNewClassName(e.target.value)}
+                    placeholder={`e.g. ${activeCurriculumSpec.name} - Group A`}
+                    className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-neutral-300 font-semibold mb-1">Package Scope Mode</label>
+                    <select 
+                      value={newScopeType} onChange={(e) => setNewScopeType(e.target.value as PackageScopeType)}
+                      className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
+                    >
+                      <option value="SEMESTER">Semester / Term Scope</option>
+                      <option value="CHAPTER_BUNDLE">Chapter Bundle</option>
+                      <option value="LESSON_BUNDLE">Specific Lesson Bundle</option>
+                      <option value="LESSON_QUANTITY">Lesson Quota Pass</option>
+                      <option value="SINGLE_SESSION">Single Live Session Workshop</option>
+                      <option value="FULL_PACKAGE">Full Academic Package</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-neutral-300 font-semibold mb-1">Academic Term Range</label>
+                    <select 
+                      value={selectedTermId} onChange={(e) => setSelectedTermId(e.target.value as any)}
+                      className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
+                    >
+                      {activeCurriculumSpec.terms.map((t) => (
+                        <option key={t.id} value={t.id}>{t.label} ({t.dateRange})</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dynamic Curriculum Chapter Checkboxes */}
               {newScopeType === "CHAPTER_BUNDLE" && (
-                <div>
-                  <label className="block text-neutral-400 font-semibold mb-1">Chapter Names (comma-separated)</label>
-                  <input 
-                    type="text" value={newChapterInput} onChange={(e) => setNewChapterInput(e.target.value)}
-                    placeholder="e.g. Vectors, Relative Velocity, Friction"
-                    className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
-                  />
+                <div className="space-y-2 bg-neutral-900/40 p-3 rounded-xl border border-neutral-800">
+                  <label className="block text-amber-400 font-bold text-xs">
+                    Select Chapters from {activeCurriculumSpec.name}:
+                  </label>
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                    {activeCurriculumSpec.chapters.map((chapter) => {
+                      const isSelected = selectedChapters.includes(chapter);
+                      return (
+                        <div 
+                          key={chapter}
+                          onClick={() => toggleChapterSelection(chapter)}
+                          className={`p-2 rounded-lg border flex items-center justify-between cursor-pointer transition ${
+                            isSelected ? "border-amber-500 bg-amber-500/10 text-white" : "border-neutral-800 bg-neutral-950 text-neutral-400 hover:text-white"
+                          }`}
+                        >
+                          <span>{chapter}</span>
+                          {isSelected && <Check className="h-4 w-4 text-amber-500" />}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
-              {newScopeType === "LESSON_QUANTITY" && (
-                <div>
-                  <label className="block text-neutral-400 font-semibold mb-1">Allowed Lesson Quota</label>
-                  <input 
-                    type="number" value={newQuotaInput} onChange={(e) => setNewQuotaInput(Number(e.target.value))}
-                    className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
-                  />
+              {/* Dynamic Curriculum Lesson Selector */}
+              {newScopeType === "LESSON_BUNDLE" && (
+                <div className="space-y-2 bg-neutral-900/40 p-3 rounded-xl border border-neutral-800">
+                  <label className="block text-amber-400 font-bold text-xs">
+                    Select Specific Lessons from {activeCurriculumSpec.name}:
+                  </label>
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                    {activeCurriculumSpec.lessons.map((lesson) => {
+                      const isSelected = selectedLessonIds.includes(lesson.id);
+                      return (
+                        <div 
+                          key={lesson.id}
+                          onClick={() => toggleLessonSelection(lesson.id)}
+                          className={`p-2 rounded-lg border flex items-center justify-between cursor-pointer transition ${
+                            isSelected ? "border-amber-500 bg-amber-500/10 text-white" : "border-neutral-800 bg-neutral-950 text-neutral-400 hover:text-white"
+                          }`}
+                        >
+                          <span>{lesson.title}</span>
+                          {isSelected && <Check className="h-4 w-4 text-amber-500" />}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
-              <div className="border-t border-neutral-800 pt-3">
-                <h3 className="font-bold text-white mb-2 text-xs">Volume Tier Pricing ($ USD)</h3>
+              {/* Step 3: Dynamic Volume Pricing Tiers */}
+              <div className="border-t border-neutral-800 pt-3 space-y-2">
+                <h3 className="font-bold text-white text-xs flex items-center gap-1.5">
+                  <DollarSign className="h-4 w-4 text-emerald-400" /> Student Volume Pricing Tiers ($ USD)
+                </h3>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-neutral-400 mb-1">Tier 1 Rate (1–5 Students)</label>
@@ -358,7 +491,7 @@ export default function ClassManager() {
                   Cancel
                 </button>
                 <button type="submit" className="px-4 py-2 rounded-lg bg-amber-500 text-black font-bold hover:bg-amber-400">
-                  Save & Create Class
+                  Save & Launch Package
                 </button>
               </div>
             </form>
