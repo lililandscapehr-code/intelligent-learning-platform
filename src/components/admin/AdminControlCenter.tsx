@@ -7,13 +7,16 @@ import {
   PlusCircle, Settings, ChevronDown, ChevronUp, AlertTriangle,
   CheckCircle, X, Info, ToggleLeft, ToggleRight, Edit3,
   Cpu, Server, Key, RefreshCw, MessageSquare, Video, Mic,
-  Sliders, Eye, EyeOff, Layers
+  Sliders, Eye, EyeOff, Layers, ArrowUp, ArrowDown, Brain,
+  Award, Zap, Check
 } from "lucide-react";
 import { 
   uploadCurriculumPackage,
-  getAIConfigAction,
-  saveAIConfigAction,
-  testAIConnectionAction
+  getAIProviderPoolAction,
+  saveAIProviderPoolAction,
+  testSingleProviderAction,
+  getDistillationMemoryAction,
+  clearDistillationMemoryAction
 } from "../../app/actions";
 import type { CurriculumPackage } from "../../contracts/curriculum";
 import {
@@ -26,7 +29,12 @@ import {
   TeacherAssignment,
   TeacherPermissions
 } from "../../core/services/class-registry";
-import { AIConfiguration, DEFAULT_AI_CONFIG } from "../../core/services/ai-provider";
+import { 
+  AIProviderEntry, 
+  AIProviderPoolConfig, 
+  DEFAULT_AI_POOL_CONFIG,
+  DistilledExemplar 
+} from "../../core/services/ai-provider-types";
 
 interface AdminControlCenterProps {
   onCurriculumAdded: (curriculum: CurriculumPackage) => void;
@@ -34,7 +42,7 @@ interface AdminControlCenterProps {
 
 type AdminTab = "registry" | "add" | "teachers" | "ai";
 
-// ── Helper ────────────────────────────────────────────────────────────────────
+// ── Helpers ────────────────────────────────────────────────────────────────────
 function PolicyBadge({ on, label }: { on: boolean; label: string }) {
   return (
     <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${
@@ -134,26 +142,49 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
     ClassRegistry.getAllTeacherAssignments()
   );
 
-  // AI Configuration state
-  const [aiConfig, setAIConfig] = useState<AIConfiguration>(DEFAULT_AI_CONFIG);
-  const [aiTesting, setAITesting] = useState(false);
-  const [aiTestResult, setAITestResult] = useState<{ success: boolean; message: string; latencyMs?: number } | null>(null);
-  const [showApiKey, setShowApiKey] = useState(false);
+  // AI Provider Pool state
+  const [aiPoolConfig, setAIPoolConfig] = useState<AIProviderPoolConfig>(DEFAULT_AI_POOL_CONFIG);
+  const [testingProviderId, setTestingProviderId] = useState<string | null>(null);
+  const [testResults, setTestResults] = useState<Record<string, { success: boolean; message: string; latencyMs?: number }>>({});
+  const [showAddProviderModal, setShowAddProviderModal] = useState(false);
+  const [newProviderForm, setNewProviderForm] = useState<Partial<AIProviderEntry>>({
+    name: "",
+    type: "gemini",
+    model: "gemini-2.5-flash",
+    apiKey: "",
+    endpoint: "http://127.0.0.1:11434",
+    apiBaseUrl: "https://api.openai.com/v1",
+    enabled: true,
+    priority: 1,
+    temperature: 0.2,
+    maxTokens: 4096
+  });
+
+  // Distillation memory state
+  const [distillationMemory, setDistillationMemory] = useState<DistilledExemplar[]>([]);
+  const [showDistillationViewer, setShowDistillationViewer] = useState(false);
   const [aiSaveMsg, setAISaveMsg] = useState<string | null>(null);
+  const [showKeyMap, setShowKeyMap] = useState<Record<string, boolean>>({});
 
   const refreshSpecs = () => setSpecs(Object.values(REGISTERED_CURRICULUM_SPECS));
   const refreshTeachers = () => setTeacherAssignments([...ClassRegistry.getAllTeacherAssignments()]);
 
-  // Load AI configuration on mount
+  // Load AI Pool & Distillation Memory on Mount
   useEffect(() => {
-    getAIConfigAction().then(res => {
+    getAIProviderPoolAction().then(res => {
       if (res.success && res.data) {
-        setAIConfig(res.data);
+        setAIPoolConfig(res.data);
+      }
+    });
+
+    getDistillationMemoryAction().then(res => {
+      if (res.success && res.data) {
+        setDistillationMemory(res.data);
       }
     });
   }, []);
 
-  // ── Handlers ─────────────────────────────────────────────────────────────
+  // ── Curriculum Handlers ───────────────────────────────────────────────────
   const handlePackageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -219,50 +250,112 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
     refreshTeachers();
   };
 
-  // ── AI Configuration Handlers ─────────────────────────────────────────────
-  const handleTestAIConnection = async () => {
-    setAITesting(true);
-    setAITestResult(null);
+  // ── AI Multi-Provider Pool Handlers ───────────────────────────────────────
+  const handleTestSingleProvider = async (provider: AIProviderEntry) => {
+    setTestingProviderId(provider.id);
     try {
-      const res = await testAIConnectionAction(aiConfig);
-      if (res.success && res.data) {
-        setAITestResult({
-          success: true,
-          message: res.data.message,
-          latencyMs: res.data.latencyMs
-        });
-      } else {
-        setAITestResult({
-          success: false,
-          message: res.errors[0] || "Connection test failed."
-        });
-      }
+      const res = await testSingleProviderAction(provider);
+      setTestResults(prev => ({
+        ...prev,
+        [provider.id]: {
+          success: res.success,
+          message: res.success ? (res.data?.message || "Connected") : (res.errors[0] || "Failed"),
+          latencyMs: res.data?.latencyMs
+        }
+      }));
     } catch (err: any) {
-      setAITestResult({
-        success: false,
-        message: err?.message || "Failed to reach AI provider."
-      });
+      setTestResults(prev => ({
+        ...prev,
+        [provider.id]: { success: false, message: err?.message || "Test error" }
+      }));
     } finally {
-      setAITesting(false);
+      setTestingProviderId(null);
     }
   };
 
-  const handleSaveAIConfig = async () => {
-    const res = await saveAIConfigAction(aiConfig);
+  const handleSavePoolConfig = async (updatedConfig: AIProviderPoolConfig) => {
+    setAIPoolConfig(updatedConfig);
+    const res = await saveAIProviderPoolAction(updatedConfig);
     if (res.success) {
-      setAISaveMsg("✓ AI Configuration updated successfully.");
+      setAISaveMsg("✓ AI Multi-Provider configuration saved permanently to data/ai-config.json");
       setTimeout(() => setAISaveMsg(null), 4000);
-    } else {
-      setAISaveMsg(`Error: ${res.errors.join(", ")}`);
     }
   };
 
-  // ── Tabs ──────────────────────────────────────────────────────────────────
+  const handleToggleProvider = (providerId: string) => {
+    const updated = {
+      ...aiPoolConfig,
+      providers: aiPoolConfig.providers.map(p => p.id === providerId ? { ...p, enabled: !p.enabled } : p)
+    };
+    handleSavePoolConfig(updated);
+  };
+
+  const handleMovePriority = (index: number, direction: "up" | "down") => {
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= aiPoolConfig.providers.length) return;
+
+    const list = [...aiPoolConfig.providers];
+    const temp = list[index];
+    list[index] = list[targetIndex];
+    list[targetIndex] = temp;
+
+    // Reassign priority numbers
+    list.forEach((p, i) => { p.priority = i + 1; });
+    handleSavePoolConfig({ ...aiPoolConfig, providers: list });
+  };
+
+  const handleDeleteProvider = (providerId: string) => {
+    const list = aiPoolConfig.providers.filter(p => p.id !== providerId);
+    list.forEach((p, i) => { p.priority = i + 1; });
+    handleSavePoolConfig({ ...aiPoolConfig, providers: list });
+  };
+
+  const handleAddProvider = () => {
+    if (!newProviderForm.name || !newProviderForm.model) return;
+    const newEntry: AIProviderEntry = {
+      id: `prov-${Date.now()}`,
+      name: newProviderForm.name,
+      type: newProviderForm.type || "gemini",
+      model: newProviderForm.model,
+      apiKey: newProviderForm.apiKey || "",
+      endpoint: newProviderForm.endpoint || "http://127.0.0.1:11434",
+      apiBaseUrl: newProviderForm.apiBaseUrl || "https://api.openai.com/v1",
+      priority: aiPoolConfig.providers.length + 1,
+      enabled: true,
+      temperature: 0.2,
+      maxTokens: 4096,
+      lastTestStatus: "untested"
+    };
+
+    const updated = {
+      ...aiPoolConfig,
+      providers: [...aiPoolConfig.providers, newEntry]
+    };
+    handleSavePoolConfig(updated);
+    setShowAddProviderModal(false);
+    setNewProviderForm({
+      name: "",
+      type: "gemini",
+      model: "gemini-2.5-flash",
+      apiKey: "",
+      endpoint: "http://127.0.0.1:11434",
+      apiBaseUrl: "https://api.openai.com/v1",
+      enabled: true,
+      priority: 1
+    });
+  };
+
+  const handleClearDistillation = async () => {
+    await clearDistillationMemoryAction();
+    setDistillationMemory([]);
+  };
+
+  // ── Tabs Definition ───────────────────────────────────────────────────────
   const tabs: { key: AdminTab; label: string; icon: React.ElementType }[] = [
     { key: "registry", label: "📋 Curriculum Registry", icon: BookOpen },
     { key: "add", label: "➕ Add New Curriculum", icon: PlusCircle },
     { key: "teachers", label: "👩‍🏫 Teacher Governance & Permissions", icon: UserCheck },
-    { key: "ai", label: "🤖 AI & Ollama Engine Settings", icon: Cpu },
+    { key: "ai", label: "🤖 AI, Ollama & Multi-API Pool", icon: Cpu },
   ];
 
   return (
@@ -271,7 +364,7 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
       <div>
         <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-red-400">Administration & Governance</p>
         <h2 className="mt-1 text-2xl font-bold text-white">Platform Control Center</h2>
-        <p className="mt-1 text-sm text-neutral-400">Complete governance over Curricula, Teacher Capabilities, Permissions, and AI / Ollama Infrastructure.</p>
+        <p className="mt-1 text-sm text-neutral-400">Governance for Curricula, Multi-API Key Failover, Ollama Knowledge Distillation, and Teacher Capabilities.</p>
       </div>
 
       {/* Metrics */}
@@ -279,8 +372,8 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
         {[
           { label: "Registered Curricula", value: `${specs.length}`, icon: BookOpen },
           { label: "Managed Teachers", value: `${teacherAssignments.length}`, icon: UserCheck },
-          { label: "AI Provider Active", value: aiConfig.provider.toUpperCase(), icon: Cpu },
-          { label: "Governance Status", value: "100% Locked", icon: ShieldCheck },
+          { label: "Active AI Providers in Pool", value: `${aiPoolConfig.providers.filter(p => p.enabled).length} / ${aiPoolConfig.providers.length}`, icon: Cpu },
+          { label: "Ollama Distilled Memory", value: `${distillationMemory.length} Gold Pairs`, icon: Brain },
         ].map(({ label, value, icon: Icon }) => (
           <div key={label} className="rounded-xl border border-neutral-800 bg-neutral-950 p-5">
             <Icon className="h-5 w-5 text-red-400" />
@@ -307,7 +400,6 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
       {/* ── TAB 1: CURRICULUM REGISTRY ─────────────────────────────────── */}
       {activeTab === "registry" && (
         <div className="space-y-4">
-          {/* Import JSON button */}
           <div className="flex items-center justify-between bg-neutral-900/60 border border-neutral-800 rounded-xl p-4">
             <div className="flex items-center gap-2">
               <Lock className="h-4 w-4 text-red-400" />
@@ -322,7 +414,6 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
           </div>
           {uploadStatus && <p className="text-xs p-3 bg-neutral-900 border border-neutral-800 rounded-lg text-neutral-300">{uploadStatus}</p>}
 
-          {/* Curriculum table */}
           <div className="space-y-3">
             {specs.map(spec => {
               const deps = ClassRegistry.getCurriculumDependencies(spec.id);
@@ -330,7 +421,6 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
 
               return (
                 <div key={spec.id} className="bg-neutral-900/70 border border-neutral-800 rounded-2xl overflow-hidden">
-                  {/* Spec header row */}
                   <div className="flex items-start gap-4 p-5">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -340,7 +430,6 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
                       </div>
                       <p className="text-[11px] text-neutral-500 mt-1">{spec.publisher} · v{spec.version}</p>
 
-                      {/* Policy badges */}
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         <PolicyBadge on={spec.policy?.aiTankEnabled !== false} label="AI Tank" />
                         <PolicyBadge on={spec.policy?.allowTeacherCustomSlides !== false} label="Custom Slides" />
@@ -350,23 +439,15 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
                             Max {spec.policy.maxAuthorizedTeachers} Teachers
                           </span>
                         ) : null}
-                        {spec.policy?.expiryDate && (
-                          <span className="text-[10px] bg-red-500/15 text-red-400 border border-red-500/30 px-2 py-0.5 rounded-full font-bold">
-                            Expires {spec.policy.expiryDate}
-                          </span>
-                        )}
                       </div>
 
-                      {/* Dependency counts */}
                       <div className="flex gap-4 mt-2 text-[11px] text-neutral-400">
                         <span><span className="text-amber-400 font-bold">{deps.authorizedTeachers.length}</span> authorized teachers</span>
                         <span><span className="text-sky-400 font-bold">{deps.affectedPackages.length}</span> active packages</span>
-                        <span><span className="text-neutral-500">{spec.chapters.length}</span> chapters · <span className="text-neutral-500">{spec.lessons.length}</span> lessons</span>
-                        {spec.registeredAt && <span>Registered {spec.registeredAt}</span>}
+                        <span><span className="text-neutral-500">{spec.chapters.length}</span> chapters</span>
                       </div>
                     </div>
 
-                    {/* Action buttons */}
                     <div className="flex flex-col gap-2 shrink-0">
                       <button
                         onClick={() => {
@@ -386,7 +467,6 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
                     </div>
                   </div>
 
-                  {/* Inline policy editor */}
                   {isEditingThis && (
                     <div className="border-t border-neutral-800 bg-neutral-950/60 p-5 space-y-4">
                       <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
@@ -416,7 +496,6 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
               <PlusCircle className="h-4 w-4 text-emerald-400" /> Register New Official Curriculum
             </h3>
 
-            {/* Basic Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               {[
                 { key: "id", label: "Curriculum ID *", placeholder: "e.g. egypt-physics-grade9-2027", hint: "Unique slug, no spaces" },
@@ -440,7 +519,6 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
               ))}
             </div>
 
-            {/* Chapters */}
             <div className="space-y-2 text-xs">
               <label className="text-neutral-400 font-semibold block">Chapters / Modules</label>
               <div className="flex gap-2">
@@ -459,21 +537,8 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
                   + Add
                 </button>
               </div>
-              {(newSpec.chapters ?? []).length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {(newSpec.chapters ?? []).map((ch, i) => (
-                    <span key={i} className="flex items-center gap-1.5 bg-neutral-800 border border-neutral-700 text-neutral-300 px-2.5 py-1 rounded-lg text-[11px]">
-                      {ch}
-                      <button onClick={() => setNewSpec(s => ({ ...s, chapters: s.chapters?.filter((_, j) => j !== i) }))} className="text-neutral-500 hover:text-red-400">
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
 
-            {/* Policy */}
             <div className="border-t border-neutral-800 pt-4 space-y-3">
               <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
                 <Settings className="h-3.5 w-3.5" /> Curriculum Policies
@@ -512,7 +577,7 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
                 <UserCheck className="h-5 w-5 text-amber-500" />
                 Teacher Capability & Permissions Governance
               </h3>
-              <p className="text-xs text-neutral-400">Admin decides: whom of teachers can add custom carousels, whom can contact parents, and which curriculums each teacher can package.</p>
+              <p className="text-xs text-neutral-400">Admin decides: whom can add custom carousels, whom can contact parents, and whom is a Lead Curriculum Reviewer.</p>
             </div>
             <span className="text-[11px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-full font-bold">
               PER-TEACHER CONTROLS
@@ -522,23 +587,29 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
           <div className="space-y-4">
             {teacherAssignments.map(assignment => (
               <div key={assignment.teacherId} className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-5 space-y-4">
-                {/* Teacher Header */}
                 <div className="flex items-center justify-between">
                   <div>
                     <h4 className="font-bold text-white text-base">{assignment.teacherName}</h4>
                     <p className="text-xs text-neutral-400">{assignment.teacherEmail} · ID: {assignment.teacherId}</p>
                   </div>
-                  <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-3 py-1.5 rounded-xl border border-amber-500/20">
-                    {assignment.approvedCurriculumIds.length} / {specs.length} Curricula Authorized
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {assignment.permissions.canReviewCurriculumTanks && (
+                      <span className="text-[10px] font-bold text-violet-300 bg-violet-950/60 border border-violet-500/40 px-2.5 py-1 rounded-lg flex items-center gap-1">
+                        <Award className="h-3 w-3 text-violet-400" /> Lead Reviewer
+                      </span>
+                    )}
+                    <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-3 py-1 rounded-xl border border-amber-500/20">
+                      {assignment.approvedCurriculumIds.length} / {specs.length} Curricula
+                    </span>
+                  </div>
                 </div>
 
-                {/* Granular Teacher Permissions Section */}
+                {/* Granular Teacher Permissions Grid */}
                 <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-4 space-y-3">
                   <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block">
                     🛡️ Teacher Action & Capability Permissions
                   </span>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
                     {/* Permission 1: Add Custom Carousels */}
                     <div className={`p-3 rounded-xl border flex items-center justify-between transition ${
                       assignment.permissions.canAddCarousels
@@ -550,7 +621,7 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
                           <Layers className="h-4 w-4 text-amber-400" />
                           <span>Add Carousels</span>
                         </div>
-                        <p className="text-[10px] text-neutral-400 mt-0.5">Author custom slides/quizzes</p>
+                        <p className="text-[10px] text-neutral-400 mt-0.5">Author custom slides</p>
                       </div>
                       <Toggle 
                         value={assignment.permissions.canAddCarousels} 
@@ -569,7 +640,7 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
                           <MessageSquare className="h-4 w-4 text-emerald-400" />
                           <span>Contact Parents</span>
                         </div>
-                        <p className="text-[10px] text-neutral-400 mt-0.5">Direct messaging & updates</p>
+                        <p className="text-[10px] text-neutral-400 mt-0.5">Direct parent updates</p>
                       </div>
                       <Toggle 
                         value={assignment.permissions.canContactParents} 
@@ -577,47 +648,28 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
                       />
                     </div>
 
-                    {/* Permission 3: Record Screen Demos */}
+                    {/* Permission 3: Lead Curriculum Reviewer */}
                     <div className={`p-3 rounded-xl border flex items-center justify-between transition ${
-                      assignment.permissions.canRecordDemos
-                        ? "bg-purple-950/20 border-purple-500/40 text-purple-200"
+                      assignment.permissions.canReviewCurriculumTanks
+                        ? "bg-violet-950/30 border-violet-500/50 text-violet-200"
                         : "bg-neutral-900 border-neutral-800 text-neutral-500"
                     }`}>
                       <div className="pr-2">
                         <div className="flex items-center gap-1.5 font-bold text-white">
-                          <Mic className="h-4 w-4 text-purple-400" />
-                          <span>Record Studio</span>
+                          <Award className="h-4 w-4 text-violet-400" />
+                          <span>Lead Reviewer</span>
                         </div>
-                        <p className="text-[10px] text-neutral-400 mt-0.5">Screen & voice DSP enhancer</p>
+                        <p className="text-[10px] text-neutral-400 mt-0.5">Verify AI Question Tanks</p>
                       </div>
                       <Toggle 
-                        value={assignment.permissions.canRecordDemos} 
-                        onChange={v => handleUpdateTeacherPermission(assignment.teacherId, "canRecordDemos", v)} 
-                      />
-                    </div>
-
-                    {/* Permission 4: Host Live Hybrid Sessions */}
-                    <div className={`p-3 rounded-xl border flex items-center justify-between transition ${
-                      assignment.permissions.canHostLiveSessions
-                        ? "bg-sky-950/20 border-sky-500/40 text-sky-200"
-                        : "bg-neutral-900 border-neutral-800 text-neutral-500"
-                    }`}>
-                      <div className="pr-2">
-                        <div className="flex items-center gap-1.5 font-bold text-white">
-                          <Video className="h-4 w-4 text-sky-400" />
-                          <span>Host Live Classes</span>
-                        </div>
-                        <p className="text-[10px] text-neutral-400 mt-0.5">Google Meet & Zoom setup</p>
-                      </div>
-                      <Toggle 
-                        value={assignment.permissions.canHostLiveSessions} 
-                        onChange={v => handleUpdateTeacherPermission(assignment.teacherId, "canHostLiveSessions", v)} 
+                        value={assignment.permissions.canReviewCurriculumTanks} 
+                        onChange={v => handleUpdateTeacherPermission(assignment.teacherId, "canReviewCurriculumTanks", v)} 
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Curriculum Assignment Matrix for this teacher */}
+                {/* Curriculum Assignment Matrix */}
                 <div className="space-y-2">
                   <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block">
                     Curriculum Packaging Authorization
@@ -653,9 +705,10 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
         </div>
       )}
 
-      {/* ── TAB 4: AI & OLLAMA ENGINE SETTINGS ─────────────────────────── */}
+      {/* ── TAB 4: AI & OLLAMA MULTI-API POOL SETTINGS ───────────────────── */}
       {activeTab === "ai" && (
-        <div className="space-y-5">
+        <div className="space-y-6">
+          {/* Main Pool Header */}
           <div className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-6 space-y-6">
             <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
               <div className="flex items-center gap-3">
@@ -664,294 +717,351 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-white flex items-center gap-2">
-                    AI & Ollama Engine Configuration
-                    <span className="text-[10px] bg-violet-500/20 text-violet-400 border border-violet-500/30 px-2 py-0.5 rounded-full font-bold">
-                      ADMIN MANAGED
+                    Multi-API Provider Pool & Auto-Failover Engine
+                    <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold">
+                      OFFLINE + ONLINE RESILIENT
                     </span>
                   </h3>
-                  <p className="text-xs text-neutral-400">Admin selects AI engine provider, model parameters, API credentials, and local Ollama endpoint.</p>
+                  <p className="text-xs text-neutral-400">Configure multiple cloud API keys (Gemini / OpenAI) with automatic fallback to Local Ollama when offline or rate-limited.</p>
                 </div>
               </div>
-              <span className="text-xs font-bold px-3 py-1 rounded-xl bg-violet-500/10 text-violet-300 border border-violet-500/20">
-                Provider: {aiConfig.provider.toUpperCase()}
-              </span>
+              <button
+                type="button"
+                onClick={() => setShowAddProviderModal(true)}
+                className="flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl text-xs transition shadow-lg shadow-violet-950/40"
+              >
+                <PlusCircle className="h-4 w-4" /> Add API / Provider
+              </button>
             </div>
 
-            {/* Provider Selection Cards */}
-            <div className="space-y-2">
-              <label className="block text-xs font-bold text-amber-400 uppercase tracking-wider">1. Select AI Backend Provider</label>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {[
-                  {
-                    id: "ollama" as const,
-                    title: "Ollama (Local LLM)",
-                    sub: "100% On-Premise, zero API cost",
-                    icon: Server,
-                    tag: "LOCAL PRIVACY"
-                  },
-                  {
-                    id: "gemini" as const,
-                    title: "Google Gemini API",
-                    sub: "Gemini 2.5 Flash, Multimodal vision & reasoning",
-                    icon: Sparkles,
-                    tag: "CLOUD FAST"
-                  },
-                  {
-                    id: "openai" as const,
-                    title: "OpenAI / Custom REST",
-                    sub: "Compatible with GPT-4o, Azure, vLLM, DeepSeek",
-                    icon: Key,
-                    tag: "REST API"
-                  }
-                ].map(({ id, title, sub, icon: Icon, tag }) => (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => setAIConfig(prev => ({ ...prev, provider: id }))}
-                    className={`p-4 rounded-xl border text-left transition flex flex-col justify-between ${
-                      aiConfig.provider === id
-                        ? "bg-violet-950/40 border-violet-500 text-white shadow-lg shadow-violet-950/50"
-                        : "bg-neutral-950 border-neutral-800 text-neutral-400 hover:border-neutral-700"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <Icon className={`h-5 w-5 ${aiConfig.provider === id ? "text-violet-400" : "text-neutral-500"}`} />
-                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
-                        aiConfig.provider === id
-                          ? "bg-violet-500/20 text-violet-300 border-violet-500/40"
-                          : "bg-neutral-800 text-neutral-500 border-neutral-700"
-                      }`}>
-                        {tag}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="font-bold text-sm text-white">{title}</p>
-                      <p className="text-[11px] text-neutral-400 mt-0.5">{sub}</p>
-                    </div>
-                  </button>
-                ))}
+            {/* Global Failover & Distillation Toggles */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-4 flex items-center justify-between">
+                <div>
+                  <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
+                    <Zap className="h-4 w-4 text-amber-400" />
+                    Automatic Offline & Quota Failover
+                  </h4>
+                  <p className="text-[10px] text-neutral-400 mt-0.5">Cascade through enabled keys, then fallback to Local Ollama if network is down.</p>
+                </div>
+                <Toggle
+                  value={aiPoolConfig.failoverEnabled}
+                  onChange={v => handleSavePoolConfig({ ...aiPoolConfig, failoverEnabled: v })}
+                />
+              </div>
+
+              <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-4 flex items-center justify-between">
+                <div>
+                  <h4 className="font-bold text-white text-xs flex items-center gap-1.5">
+                    <Brain className="h-4 w-4 text-violet-400" />
+                    Ollama Knowledge Distillation ("Learning")
+                  </h4>
+                  <p className="text-[10px] text-neutral-400 mt-0.5">Injects gold teacher-verified Gemini exemplars into Ollama for superior offline reasoning.</p>
+                </div>
+                <Toggle
+                  value={aiPoolConfig.distillationEnabled}
+                  onChange={v => handleSavePoolConfig({ ...aiPoolConfig, distillationEnabled: v })}
+                />
               </div>
             </div>
 
-            {/* Provider Configuration Forms */}
-            <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-5 space-y-4">
+            {/* Providers Priority Table */}
+            <div className="space-y-3">
               <span className="text-xs font-bold text-amber-400 uppercase tracking-wider block">
-                2. {aiConfig.provider.toUpperCase()} Provider Parameters
+                1. Configured AI Providers & Priority Order (Highest Priority First)
               </span>
 
-              {aiConfig.provider === "ollama" && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                  <label className="block">
-                    <span className="text-neutral-300 block mb-1 font-semibold">Ollama Server Endpoint URL</span>
-                    <input
-                      type="text"
-                      value={aiConfig.ollamaEndpoint}
-                      onChange={e => setAIConfig(prev => ({ ...prev, ollamaEndpoint: e.target.value }))}
-                      placeholder="http://127.0.0.1:11434"
-                      className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500"
-                    />
-                    <span className="text-[10px] text-neutral-500 mt-1 block">Default local port is 11434</span>
-                  </label>
+              <div className="space-y-2">
+                {aiPoolConfig.providers.map((provider, index) => {
+                  const testRes = testResults[provider.id];
+                  const isTesting = testingProviderId === provider.id;
+                  const isKeyShown = showKeyMap[provider.id];
 
-                  <label className="block">
-                    <span className="text-neutral-300 block mb-1 font-semibold">Ollama Model Name</span>
-                    <input
-                      type="text"
-                      value={aiConfig.ollamaModel}
-                      onChange={e => setAIConfig(prev => ({ ...prev, ollamaModel: e.target.value }))}
-                      placeholder="e.g. qwen2.5:3b, llama3.2, deepseek-r1:7b, mistral"
-                      className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500"
-                    />
-                    <div className="flex gap-1.5 mt-1.5">
-                      {["qwen2.5:3b", "llama3.2", "deepseek-r1:7b", "mistral"].map(m => (
-                        <button
-                          key={m}
-                          type="button"
-                          onClick={() => setAIConfig(prev => ({ ...prev, ollamaModel: m }))}
-                          className="text-[10px] bg-neutral-800 hover:bg-violet-900/40 text-neutral-300 px-2 py-0.5 rounded border border-neutral-700"
-                        >
-                          {m}
-                        </button>
-                      ))}
-                    </div>
-                  </label>
-                </div>
-              )}
-
-              {aiConfig.provider === "gemini" && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                  <label className="block">
-                    <span className="text-neutral-300 block mb-1 font-semibold">Google Gemini API Key</span>
-                    <div className="relative">
-                      <input
-                        type={showApiKey ? "text" : "password"}
-                        value={aiConfig.apiKey}
-                        onChange={e => setAIConfig(prev => ({ ...prev, apiKey: e.target.value }))}
-                        placeholder="AIzaSy..."
-                        className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 pr-9 text-white outline-none focus:border-violet-500"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowApiKey(!showApiKey)}
-                        className="absolute right-2.5 top-2.5 text-neutral-400 hover:text-white"
-                      >
-                        {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                    <span className="text-[10px] text-neutral-500 mt-1 block">Leave blank to use environment AI_API_KEY</span>
-                  </label>
-
-                  <label className="block">
-                    <span className="text-neutral-300 block mb-1 font-semibold">Gemini Model</span>
-                    <select
-                      value={aiConfig.apiModel}
-                      onChange={e => setAIConfig(prev => ({ ...prev, apiModel: e.target.value }))}
-                      className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500 font-semibold"
+                  return (
+                    <div
+                      key={provider.id}
+                      className={`p-4 rounded-xl border flex items-center justify-between gap-3 text-xs transition ${
+                        provider.enabled
+                          ? "bg-neutral-950/80 border-neutral-800"
+                          : "bg-neutral-950/30 border-neutral-900 opacity-60"
+                      }`}
                     >
-                      <option value="gemini-2.5-flash">gemini-2.5-flash (Fast, Recommended)</option>
-                      <option value="gemini-2.5-pro">gemini-2.5-pro (Deep Reasoning)</option>
-                      <option value="gemini-1.5-flash">gemini-1.5-flash</option>
-                      <option value="gemini-1.5-pro">gemini-1.5-pro</option>
-                    </select>
-                  </label>
-                </div>
-              )}
+                      {/* Priority badge & reordering */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex flex-col gap-0.5">
+                          <button
+                            type="button"
+                            onClick={() => handleMovePriority(index, "up")}
+                            disabled={index === 0}
+                            className="text-neutral-500 hover:text-white disabled:opacity-20"
+                          >
+                            <ArrowUp className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleMovePriority(index, "down")}
+                            disabled={index === aiPoolConfig.providers.length - 1}
+                            className="text-neutral-500 hover:text-white disabled:opacity-20"
+                          >
+                            <ArrowDown className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                        <span className={`px-2 py-1 rounded-lg font-bold text-[11px] ${
+                          index === 0
+                            ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                            : "bg-neutral-800 text-neutral-400"
+                        }`}>
+                          #{index + 1}
+                        </span>
+                      </div>
 
-              {aiConfig.provider === "openai" && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                  <label className="block">
-                    <span className="text-neutral-300 block mb-1 font-semibold">API Base URL</span>
-                    <input
-                      type="text"
-                      value={aiConfig.apiBaseUrl}
-                      onChange={e => setAIConfig(prev => ({ ...prev, apiBaseUrl: e.target.value }))}
-                      placeholder="https://api.openai.com/v1"
-                      className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500"
-                    />
-                  </label>
+                      {/* Provider Info */}
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-white text-sm truncate">{provider.name}</span>
+                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
+                            provider.type === "gemini" ? "bg-sky-500/20 text-sky-300 border-sky-500/30" :
+                            provider.type === "ollama" ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" :
+                            "bg-purple-500/20 text-purple-300 border-purple-500/30"
+                          }`}>
+                            {provider.type.toUpperCase()}
+                          </span>
+                          <span className="text-[10px] text-neutral-400 font-mono">Model: {provider.model}</span>
+                        </div>
 
-                  <label className="block">
-                    <span className="text-neutral-300 block mb-1 font-semibold">API Key</span>
-                    <div className="relative">
-                      <input
-                        type={showApiKey ? "text" : "password"}
-                        value={aiConfig.apiKey}
-                        onChange={e => setAIConfig(prev => ({ ...prev, apiKey: e.target.value }))}
-                        placeholder="sk-..."
-                        className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 pr-9 text-white outline-none focus:border-violet-500"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowApiKey(!showApiKey)}
-                        className="absolute right-2.5 top-2.5 text-neutral-400 hover:text-white"
-                      >
-                        {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
+                        <div className="flex items-center gap-3 text-[11px] text-neutral-400 font-mono">
+                          {provider.type === "ollama" ? (
+                            <span>Endpoint: {provider.endpoint}</span>
+                          ) : (
+                            <div className="flex items-center gap-1.5">
+                              <span>Key: {isKeyShown ? (provider.apiKey || "None") : "••••••••••••••••"}</span>
+                              <button
+                                type="button"
+                                onClick={() => setShowKeyMap(p => ({ ...p, [provider.id]: !p[provider.id] }))}
+                                className="text-neutral-500 hover:text-neutral-300"
+                              >
+                                {isKeyShown ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Test status display */}
+                        {testRes && (
+                          <p className={`text-[10px] font-bold mt-1 ${testRes.success ? "text-emerald-400" : "text-red-400"}`}>
+                            {testRes.message} {testRes.latencyMs ? `(${testRes.latencyMs}ms)` : ""}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Controls */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleTestSingleProvider(provider)}
+                          disabled={isTesting}
+                          className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-bold rounded-lg text-[11px] transition flex items-center gap-1.5"
+                        >
+                          <RefreshCw className={`h-3 w-3 ${isTesting ? "animate-spin text-violet-400" : ""}`} />
+                          {isTesting ? "Pinging..." : "Test"}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleToggleProvider(provider.id)}
+                          className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition ${
+                            provider.enabled
+                              ? "bg-emerald-950/60 text-emerald-300 border border-emerald-500/40 hover:bg-red-950/40 hover:text-red-300"
+                              : "bg-neutral-800 text-neutral-500 hover:text-emerald-300"
+                          }`}
+                        >
+                          {provider.enabled ? "Enabled" : "Disabled"}
+                        </button>
+
+                        {aiPoolConfig.providers.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteProvider(provider.id)}
+                            className="p-1.5 text-neutral-500 hover:text-red-400 rounded-lg hover:bg-neutral-800 transition"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </label>
-
-                  <label className="block">
-                    <span className="text-neutral-300 block mb-1 font-semibold">Model Identifier</span>
-                    <input
-                      type="text"
-                      value={aiConfig.apiModel}
-                      onChange={e => setAIConfig(prev => ({ ...prev, apiModel: e.target.value }))}
-                      placeholder="gpt-4o-mini, deepseek-chat, mistral-large"
-                      className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500"
-                    />
-                  </label>
-                </div>
-              )}
-
-              {/* Generation Controls */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-neutral-800/80 text-xs">
-                <div>
-                  <div className="flex justify-between text-neutral-300 font-semibold mb-1">
-                    <span>Creativity Temperature</span>
-                    <span className="text-amber-400">{aiConfig.temperature}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.05"
-                    value={aiConfig.temperature}
-                    onChange={e => setAIConfig(prev => ({ ...prev, temperature: parseFloat(e.target.value) }))}
-                    className="w-full accent-amber-500"
-                  />
-                  <div className="flex justify-between text-[10px] text-neutral-500">
-                    <span>0.0 (Strict & Factual)</span>
-                    <span>1.0 (Creative)</span>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-neutral-300 font-semibold mb-1">
-                    <span>Max Output Tokens</span>
-                    <span className="text-sky-400">{aiConfig.maxTokens}</span>
-                  </div>
-                  <input
-                    type="number"
-                    min="512"
-                    max="8192"
-                    step="256"
-                    value={aiConfig.maxTokens}
-                    onChange={e => setAIConfig(prev => ({ ...prev, maxTokens: parseInt(e.target.value) || 4096 }))}
-                    className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500"
-                  />
-                </div>
+                  );
+                })}
               </div>
             </div>
-
-            {/* Test Connection Output */}
-            {aiTestResult && (
-              <div className={`p-4 rounded-xl border text-xs flex items-start gap-3 ${
-                aiTestResult.success
-                  ? "bg-emerald-950/40 border-emerald-500/40 text-emerald-300"
-                  : "bg-red-950/40 border-red-500/40 text-red-300"
-              }`}>
-                {aiTestResult.success ? <CheckCircle className="h-5 w-5 shrink-0 text-emerald-400 mt-0.5" /> : <AlertTriangle className="h-5 w-5 shrink-0 text-red-400 mt-0.5" />}
-                <div className="space-y-0.5">
-                  <p className="font-bold">{aiTestResult.success ? "Connection Verified" : "Connection Failed"}</p>
-                  <p className="text-neutral-300">{aiTestResult.message}</p>
-                  {aiTestResult.latencyMs !== undefined && (
-                    <p className="text-[10px] text-neutral-400">Round-trip latency: {aiTestResult.latencyMs}ms</p>
-                  )}
-                </div>
-              </div>
-            )}
 
             {aiSaveMsg && (
               <div className="p-3 bg-emerald-950/40 border border-emerald-500/40 rounded-xl text-emerald-300 text-xs font-semibold">
                 {aiSaveMsg}
               </div>
             )}
+          </div>
 
-            {/* Actions Bar */}
-            <div className="flex items-center justify-between pt-2 border-t border-neutral-800">
-              <button
-                type="button"
-                onClick={handleTestAIConnection}
-                disabled={aiTesting}
-                className="flex items-center gap-2 px-4 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white font-bold rounded-xl text-xs transition border border-neutral-700 disabled:opacity-50"
-              >
-                <RefreshCw className={`h-4 w-4 text-violet-400 ${aiTesting ? "animate-spin" : ""}`} />
-                {aiTesting ? "Testing Connection..." : "⚡ Test AI Connection"}
+          {/* ── OLLAMA KNOWLEDGE DISTILLATION CARD ── */}
+          <div className="bg-neutral-900/80 border border-violet-500/30 rounded-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-xl bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-violet-400">
+                  <Brain className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                    Ollama Knowledge Distillation Vault
+                    <span className="text-[10px] bg-violet-500/20 text-violet-400 border border-violet-500/30 px-2 py-0.5 rounded-full font-bold">
+                      FEW-SHOT LEARNING ACTIVE
+                    </span>
+                  </h3>
+                  <p className="text-xs text-neutral-400">How Ollama learns from Gemini & Teachers: gold-standard verified outputs are captured and injected as Few-Shot in-context patterns when running offline.</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowDistillationViewer(!showDistillationViewer)}
+                  className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-bold rounded-lg border border-neutral-700 transition"
+                >
+                  {showDistillationViewer ? "Hide Memory" : `Inspect Memory (${distillationMemory.length})`}
+                </button>
+                {distillationMemory.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleClearDistillation}
+                    className="px-3 py-1.5 bg-neutral-800 hover:bg-red-950/50 text-neutral-400 hover:text-red-300 text-xs font-bold rounded-lg border border-neutral-700 transition"
+                  >
+                    Clear Memory
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Distillation Memory Viewer */}
+            {showDistillationViewer && (
+              <div className="space-y-3 pt-2">
+                {distillationMemory.length === 0 ? (
+                  <p className="text-xs text-neutral-500 italic p-3 bg-neutral-950 rounded-xl">No distilled exemplars stored yet. Cloud generations will automatically populate this buffer.</p>
+                ) : (
+                  distillationMemory.slice(0, 5).map(ex => (
+                    <div key={ex.id} className="p-4 bg-neutral-950 border border-neutral-800 rounded-xl text-xs space-y-2">
+                      <div className="flex items-center justify-between text-neutral-400 text-[11px]">
+                        <span className="font-bold text-violet-400">Source: {ex.sourceModel}</span>
+                        <span>{new Date(ex.createdAt).toLocaleString()}</span>
+                      </div>
+                      <p className="font-semibold text-white">Prompt: {ex.instruction}</p>
+                      <pre className="p-2.5 bg-neutral-900 rounded-lg text-[10px] text-neutral-300 overflow-x-auto whitespace-pre-wrap font-mono">
+                        {ex.idealResponse.slice(0, 300)}...
+                      </pre>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── ADD PROVIDER MODAL ───────────────────────────────────────────── */}
+      {showAddProviderModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 max-w-lg w-full space-y-5 animate-in fade-in zoom-in-95 text-xs">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <PlusCircle className="h-4 w-4 text-violet-400" /> Add AI Provider / API Key
+              </h3>
+              <button type="button" onClick={() => setShowAddProviderModal(false)} className="text-neutral-500 hover:text-white">
+                <X className="h-4 w-4" />
               </button>
+            </div>
 
+            <div className="space-y-3">
+              <label className="block">
+                <span className="text-neutral-400 font-semibold block mb-1">Provider Type</span>
+                <select
+                  value={newProviderForm.type}
+                  onChange={e => setNewProviderForm(p => ({
+                    ...p,
+                    type: e.target.value as any,
+                    model: e.target.value === "gemini" ? "gemini-2.5-flash" : e.target.value === "ollama" ? "qwen2.5:3b" : "gpt-4o-mini"
+                  }))}
+                  className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500"
+                >
+                  <option value="gemini">Google Gemini API (Cloud Fast)</option>
+                  <option value="ollama">Ollama (Local Offline LLM)</option>
+                  <option value="openai">OpenAI / DeepSeek / Custom REST</option>
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="text-neutral-400 font-semibold block mb-1">Friendly Name</span>
+                <input
+                  type="text"
+                  placeholder="e.g. Gemini Backup Key #2"
+                  value={newProviderForm.name}
+                  onChange={e => setNewProviderForm(p => ({ ...p, name: e.target.value }))}
+                  className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500"
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-neutral-400 font-semibold block mb-1">Model Identifier</span>
+                <input
+                  type="text"
+                  placeholder="gemini-2.5-flash, qwen2.5:3b, gpt-4o-mini"
+                  value={newProviderForm.model}
+                  onChange={e => setNewProviderForm(p => ({ ...p, model: e.target.value }))}
+                  className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500"
+                />
+              </label>
+
+              {newProviderForm.type !== "ollama" ? (
+                <label className="block">
+                  <span className="text-neutral-400 font-semibold block mb-1">API Key</span>
+                  <input
+                    type="password"
+                    placeholder="AIzaSy... / sk-..."
+                    value={newProviderForm.apiKey}
+                    onChange={e => setNewProviderForm(p => ({ ...p, apiKey: e.target.value }))}
+                    className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500"
+                  />
+                </label>
+              ) : (
+                <label className="block">
+                  <span className="text-neutral-400 font-semibold block mb-1">Ollama Server Endpoint</span>
+                  <input
+                    type="text"
+                    placeholder="http://127.0.0.1:11434"
+                    value={newProviderForm.endpoint}
+                    onChange={e => setNewProviderForm(p => ({ ...p, endpoint: e.target.value }))}
+                    className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500"
+                  />
+                </label>
+              )}
+            </div>
+
+            <div className="flex gap-3 pt-2">
               <button
                 type="button"
-                onClick={handleSaveAIConfig}
-                className="flex items-center gap-2 px-6 py-2.5 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl text-xs transition shadow-lg shadow-violet-900/40"
+                onClick={() => setShowAddProviderModal(false)}
+                className="flex-1 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white font-bold rounded-xl transition"
               >
-                <Sparkles className="h-4 w-4" /> Save AI Configuration
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleAddProvider}
+                className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition"
+              >
+                Add Provider to Pool
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── REMOVE MODAL ─────────────────────────────────────────────────── */}
+      {/* ── REMOVE CURRICULUM MODAL ─────────────────────────────────────── */}
       {removeTarget && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
           <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 max-w-lg w-full space-y-5 animate-in fade-in zoom-in-95">
@@ -968,27 +1078,17 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
                   </div>
                 </div>
 
-                {/* Dependency impact */}
                 <div className="bg-red-950/30 border border-red-500/30 rounded-xl p-4 space-y-3 text-xs">
                   <p className="font-bold text-red-300 uppercase tracking-wide text-[11px]">⚠️ Cascade Impact Preview</p>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-neutral-300">
                       <UserCheck className="h-3.5 w-3.5 text-amber-400" />
-                      <span>Revoke authorization from <strong className="text-amber-300">{removeDeps?.authorizedTeachers.length ?? 0} teacher(s)</strong>:</span>
+                      <span>Revoke authorization from <strong className="text-amber-300">{removeDeps?.authorizedTeachers.length ?? 0} teacher(s)</strong></span>
                     </div>
-                    {removeDeps?.authorizedTeachers.map(t => (
-                      <p key={t.teacherId} className="ml-6 text-neutral-400">• {t.teacherName} ({t.teacherEmail})</p>
-                    ))}
                     <div className="flex items-center gap-2 text-neutral-300">
                       <Database className="h-3.5 w-3.5 text-sky-400" />
-                      <span>Archive <strong className="text-sky-300">{removeDeps?.affectedPackages.length ?? 0} active package(s)</strong>:</span>
+                      <span>Archive <strong className="text-sky-300">{removeDeps?.affectedPackages.length ?? 0} active package(s)</strong></span>
                     </div>
-                    {removeDeps?.affectedPackages.map((p: any) => (
-                      <p key={p.id ?? p.name} className="ml-6 text-neutral-400">• {p.name}</p>
-                    ))}
-                    {(removeDeps?.affectedPackages.length ?? 0) > 0 && (
-                      <p className="ml-6 text-[10px] text-emerald-400 italic">✓ Existing students keep access — packages archived, not deleted.</p>
-                    )}
                   </div>
                 </div>
 
@@ -1009,11 +1109,6 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
                     <h3 className="font-bold text-white">Curriculum Removed</h3>
                     <p className="text-xs text-neutral-400">All dependencies handled successfully.</p>
                   </div>
-                </div>
-                <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 text-xs space-y-2">
-                  <p className="text-neutral-400">✓ Removed: <strong className="text-white">{removalReport.curriculumName}</strong></p>
-                  <p className="text-neutral-400">✓ Revoked from <strong className="text-amber-300">{removalReport.revokedFromTeachers.length}</strong> teacher(s): {removalReport.revokedFromTeachers.join(", ") || "none"}</p>
-                  <p className="text-neutral-400">✓ Archived <strong className="text-sky-300">{removalReport.archivedPackages.length}</strong> package(s): {removalReport.archivedPackages.join(", ") || "none"}</p>
                 </div>
                 <button type="button" onClick={() => { setRemoveTarget(null); setRemovalReport(null); }} className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition">
                   Done

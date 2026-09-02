@@ -286,7 +286,7 @@ export async function getDiagnosticAttemptForStudent(attemptId: string): Promise
   }
 }
 
-// ── Admin AI & Ollama Configuration Actions ─────────────────
+// ── Admin AI & Ollama Multi-Provider Pool & Distillation Actions ────────
 export async function getAIConfigAction(): Promise<ServerActionResponse<any>> {
   try {
     const { getAIConfiguration } = await import("../core/services/ai-provider");
@@ -316,4 +316,65 @@ export async function testAIConnectionAction(config?: any): Promise<ServerAction
     return { success: false, errors: [error.message || "AI connection test failed."] };
   }
 }
+
+export async function getAIProviderPoolAction(): Promise<ServerActionResponse<any>> {
+  try {
+    const { getAIProviderPoolConfig } = await import("../core/services/ai-provider");
+    const pool = getAIProviderPoolConfig();
+    return { success: true, errors: [], data: pool };
+  } catch (error: any) {
+    return { success: false, errors: [error.message || "Failed to load AI provider pool."] };
+  }
+}
+
+export async function saveAIProviderPoolAction(config: any): Promise<ServerActionResponse<any>> {
+  try {
+    const { saveAIProviderPoolConfig } = await import("../core/services/ai-provider");
+    const saved = saveAIProviderPoolConfig(config);
+    return { success: true, errors: [], data: saved };
+  } catch (error: any) {
+    return { success: false, errors: [error.message || "Failed to save AI provider pool."] };
+  }
+}
+
+export async function testSingleProviderAction(provider: any): Promise<ServerActionResponse<any>> {
+  try {
+    const { testSingleProvider } = await import("../core/services/ai-provider");
+    const result = await testSingleProvider(provider);
+    return { success: result.success, errors: result.success ? [] : [result.message], data: result };
+  } catch (error: any) {
+    return { success: false, errors: [error.message || "Provider test failed."] };
+  }
+}
+
+export async function getDistillationMemoryAction(): Promise<ServerActionResponse<any>> {
+  try {
+    const { getDistillationMemory } = await import("../core/services/ai-provider");
+    const memory = getDistillationMemory();
+    return { success: true, errors: [], data: memory };
+  } catch (error: any) {
+    return { success: false, errors: [error.message || "Failed to load distillation memory."] };
+  }
+}
+
+export async function clearDistillationMemoryAction(): Promise<ServerActionResponse<any>> {
+  try {
+    const { clearDistillationMemory } = await import("../core/services/ai-provider");
+    clearDistillationMemory();
+    return { success: true, errors: [] };
+  } catch (error: any) {
+    return { success: false, errors: [error.message || "Failed to clear distillation memory."] };
+  }
+}
+
+export async function recordDistilledExemplarAction(exemplar: any): Promise<ServerActionResponse<any>> {
+  try {
+    const { recordDistilledExemplar } = await import("../core/services/ai-provider");
+    const created = recordDistilledExemplar(exemplar);
+    return { success: true, errors: [], data: created };
+  } catch (error: any) {
+    return { success: false, errors: [error.message || "Failed to record distillation exemplar."] };
+  }
+}
+
 

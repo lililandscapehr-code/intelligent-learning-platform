@@ -328,17 +328,19 @@ export interface TeacherAnnouncement {
 }
 
 export interface TeacherPermissions {
-  canAddCarousels: boolean;       // Whom of teachers can add carousels, whom can not
-  canContactParents: boolean;     // Whom of teachers can contact parents, whom can not
-  canRecordDemos: boolean;        // Permission to use Screen/Mic recording studio
-  canHostLiveSessions: boolean;   // Permission to schedule Meet/Zoom live classes
+  canAddCarousels: boolean;            // Whom of teachers can add carousels, whom can not
+  canContactParents: boolean;          // Whom of teachers can contact parents, whom can not
+  canRecordDemos: boolean;             // Permission to use Screen/Mic recording studio
+  canHostLiveSessions: boolean;        // Permission to schedule Meet/Zoom live classes
+  canReviewCurriculumTanks: boolean;   // Lead Teacher role: Inspect, refine & verify AI Question Tanks
 }
 
 export const DEFAULT_TEACHER_PERMISSIONS: TeacherPermissions = {
   canAddCarousels: true,
   canContactParents: true,
   canRecordDemos: true,
-  canHostLiveSessions: true
+  canHostLiveSessions: true,
+  canReviewCurriculumTanks: false
 };
 
 export interface TeacherAssignment {
@@ -768,7 +770,8 @@ let mockTeacherAssignments: TeacherAssignment[] = [
       canAddCarousels: true,
       canContactParents: true,
       canRecordDemos: true,
-      canHostLiveSessions: true
+      canHostLiveSessions: true,
+      canReviewCurriculumTanks: true // Lead Reviewer authorized by Admin
     }
   },
   {
@@ -783,7 +786,8 @@ let mockTeacherAssignments: TeacherAssignment[] = [
       canAddCarousels: false,  // Restricted: Cannot create carousels
       canContactParents: false, // Restricted: Cannot contact parents directly
       canRecordDemos: true,
-      canHostLiveSessions: true
+      canHostLiveSessions: true,
+      canReviewCurriculumTanks: false
     }
   }
 ];
