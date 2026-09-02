@@ -216,6 +216,7 @@ export type CasePhase =
   | "CASE_C"           // mandatory C question(s) after any B pass
   | "C_SOLVED_CHOICE"  // solved C — offer: more C (optional) or next B
   | "C_EXHAUSTED"      // all C questions done — auto-advance to next B
+  | "PARENT_NOTIFICATION" // student failed all Pre trials; notify parents, offer scratch restart
   | "LESSON_COMPLETE"; // all B questions passed (each with min 1 C)
 
 export interface QuestionMCQSlide extends BaseSlide {

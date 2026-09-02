@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { AlertCircle } from "lucide-react";
 import type {
   QuestionDNA,
   QuestionAlternative,
@@ -21,6 +22,8 @@ export interface BQuestionResult {
   preMasteredAtLevel: number;
   cQuestionsDone: number;
   cQuestionsPassed: number;
+  attemptNumber: number;
+  failedTargets: string[];
 }
 
 export interface LessonCompletionReport {
@@ -42,6 +45,8 @@ interface ProgressState {
   preRoundsUsed: number;
   preTrialsUsed: number;
   bResults: BQuestionResult[];
+  attemptNumber: number;
+  failedTargets: string[];
 }
 
 interface StudentDiagnosticProps {
@@ -205,6 +210,8 @@ export default function StudentDiagnostic({
   const [bResults, setBResults] = useState<BQuestionResult[]>([]);
   const [cDoneCount, setCDoneCount] = useState(0);
   const [cPassedCount, setCPassedCount] = useState(0);
+  const [attemptNumber, setAttemptNumber] = useState(1);
+  const [failedTargets, setFailedTargets] = useState<string[]>([]);
   const [cardKey, setCardKey] = useState(0);
 
   const lsKey = storageKey(lessonId);
@@ -227,6 +234,8 @@ export default function StudentDiagnostic({
         setPreRoundsUsed(s.preRoundsUsed ?? 0);
         setPreTrialsUsed(s.preTrialsUsed ?? 0);
         setBResults(s.bResults);
+        setAttemptNumber(s.attemptNumber ?? 1);
+        setFailedTargets(s.failedTargets ?? []);
       }
     } catch { /* ignore */ }
   }, [lsKey]);
@@ -234,10 +243,11 @@ export default function StudentDiagnostic({
   const persist = useCallback((patch: Partial<ProgressState>) => {
     const current: ProgressState = {
       currentBIndex, phase, preTrialIndex, cTrialIndex,
-      bAttempts, preRoundsUsed, preTrialsUsed, bResults, ...patch,
+      bAttempts, preRoundsUsed, preTrialsUsed, bResults,
+      attemptNumber, failedTargets, ...patch,
     };
     try { localStorage.setItem(lsKey, JSON.stringify(current)); } catch { /* ignore */ }
-  }, [lsKey, currentBIndex, phase, preTrialIndex, cTrialIndex, bAttempts, preRoundsUsed, preTrialsUsed, bResults]);
+  }, [lsKey, currentBIndex, phase, preTrialIndex, cTrialIndex, bAttempts, preRoundsUsed, preTrialsUsed, bResults, attemptNumber, failedTargets]);
 
   function bump() { setCardKey((k) => k + 1); }
 
@@ -255,6 +265,8 @@ export default function StudentDiagnostic({
       preMasteredAtLevel: preTrialIndex,
       cQuestionsDone: cDone,
       cQuestionsPassed: cPassed,
+      attemptNumber,
+      failedTargets,
     };
     const newResults = [...bResults, result];
     setBResults(newResults);
@@ -308,9 +320,55 @@ export default function StudentDiagnostic({
       setPhase("PRE_MASTERED");
       persist({ phase: "PRE_MASTERED", preTrialsUsed: newUsed });
     } else {
-      // Stay on same trial — re-mount card for retry
-      persist({ preTrialsUsed: newUsed });
+      const target = preTrials[preTrialIndex]?.diagnosticTarget || "concept";
+      const newTargets = Array.from(new Set([...failedTargets, target]));
+      setFailedTargets(newTargets);
+
+      if (preTrialIndex < preTrials.length - 1) {
+        const nextPre = preTrialIndex + 1;
+        setPreTrialIndex(nextPre);
+        persist({ preTrialIndex: nextPre, preTrialsUsed: newUsed, failedTargets: newTargets });
+      } else {
+        setPhase("PARENT_NOTIFICATION");
+        persist({ phase: "PARENT_NOTIFICATION", preTrialsUsed: newUsed, failedTargets: newTargets });
+      }
     }
+    bump();
+  }
+
+  // Handle second attempt restart
+  function handleRestartDiagnostic() {
+    const nextAttempt = attemptNumber + 1;
+    
+    // Save to attempt history
+    try {
+      const historyKey = `dna-history-${lessonId}`;
+      const existingHistory = JSON.parse(localStorage.getItem(historyKey) || "[]");
+      existingHistory.push({
+         attempt: attemptNumber,
+         completedAt: new Date().toISOString(),
+         bResults,
+         failedTargets
+      });
+      localStorage.setItem(historyKey, JSON.stringify(existingHistory));
+    } catch { /* ignore */ }
+
+    setCurrentBIndex(0);
+    setPhase("CASE_B");
+    setPreTrialIndex(0);
+    setCTrialIndex(0);
+    setBAttempts(1);
+    setPreRoundsUsed(0);
+    setPreTrialsUsed(0);
+    setBResults([]);
+    setAttemptNumber(nextAttempt);
+    setFailedTargets([]);
+
+    persist({
+      currentBIndex: 0, phase: "CASE_B", preTrialIndex: 0, cTrialIndex: 0,
+      bAttempts: 1, preRoundsUsed: 0, preTrialsUsed: 0, bResults: [],
+      attemptNumber: nextAttempt, failedTargets: []
+    });
     bump();
   }
 
@@ -521,6 +579,43 @@ export default function StudentDiagnostic({
                 <span className="text-neutral-400 text-xs">
                   {currentBIndex + 1 < totalB ? `${totalB - currentBIndex - 1} remaining` : "View results"}
                 </span>
+              </button>
+            </div>
+          </div>
+        )}
+        {/* ── PARENT NOTIFICATION ── */}
+        {phase === "PARENT_NOTIFICATION" && (
+          <div className="rounded-2xl border border-red-500/40 bg-red-500/10 p-8 space-y-6 text-center">
+            <div className="text-6xl flex justify-center">
+              <AlertCircle className="h-16 w-16 text-red-500" />
+            </div>
+            <h2 className="text-2xl font-bold text-red-300">Diagnostic Unsuccessful</h2>
+            <p className="text-neutral-300">
+              You have exhausted all available simplification trials without successfully answering.
+            </p>
+            
+            <div className="bg-black/40 rounded-xl p-5 border border-red-500/20 max-w-md mx-auto text-left space-y-3">
+              <h3 className="text-sm font-bold text-red-400 border-b border-red-500/20 pb-2">Parent Evaluation & Weaknesses</h3>
+              <p className="text-xs text-neutral-400">
+                A report has been sent to your parent/guardian highlighting the following specific areas that need much care:
+              </p>
+              <ul className="list-disc pl-5 text-sm text-white font-medium space-y-1">
+                {failedTargets.length > 0 ? (
+                  failedTargets.map(target => (
+                    <li key={target} className="capitalize">{target}</li>
+                  ))
+                ) : (
+                  <li>General Concept Application</li>
+                )}
+              </ul>
+            </div>
+
+            <div className="pt-4">
+              <button 
+                onClick={handleRestartDiagnostic} 
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-sm transition-all"
+              >
+                Restart Lesson (Attempt {attemptNumber + 1})
               </button>
             </div>
           </div>

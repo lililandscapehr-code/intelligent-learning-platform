@@ -5,6 +5,9 @@ import { fetchTeacherDashboard, getSession, login } from "../../app/actions";
 import TeacherAIDesk from "./TeacherAIDesk";
 import DiagnosticReport from "./DiagnosticReport";
 import TeacherDNAReview from "./TeacherDNAReview";
+import StudentFollowUp from "./StudentFollowUp";
+import LiveSessionsManager from "./LiveSessionsManager";
+import ClassManager from "./ClassManager";
 import {
   AlertTriangle,
   ArrowRight,
@@ -81,8 +84,9 @@ const todayTasks = [
 const NAV_ITEMS = [
   { id: "today", label: "Today", icon: CheckCircle2 },
   { id: "overview", label: "Overview", icon: BarChart3 },
+  { id: "classes", label: "Classes", icon: Users },
+  { id: "students", label: "Students", icon: UserRound },
   { id: "preparation", label: "Lesson Prep", icon: BookOpen },
-  { id: "students", label: "Students", icon: Users },
   { id: "assignments", label: "Assignments", icon: ClipboardList },
   { id: "sessions", label: "Sessions", icon: CalendarClock },
   { id: "reviews", label: "Question Banks", icon: FileCheck2 },
@@ -143,6 +147,10 @@ export default function TeacherDashboard({ onOpenAuthoring }: { onOpenAuthoring:
     setLoginError("");
     const result = await login(loginEmail, loginPassword);
     if (result.success && result.data && ["TEACHER", "ADMIN"].includes(result.data.role)) {
+      // Persist email so LiveSessionsManager can use it from any machine
+      if (typeof window !== "undefined") {
+        localStorage.setItem("teacher_email", loginEmail);
+      }
       setSession({ email: loginEmail, role: result.data.role });
       window.location.reload();
     } else {
@@ -458,126 +466,14 @@ export default function TeacherDashboard({ onOpenAuthoring }: { onOpenAuthoring:
             </div>
           )}
 
-          {/* Students View with Collapsible Details */}
-          {view === "students" && (
-            <div className="space-y-4">
-              {/* Filtering / Search Header */}
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-neutral-800 bg-neutral-900/40 p-4">
-                <div className="relative flex-1 min-w-[200px]">
-                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-neutral-500" />
-                  <input
-                    type="text"
-                    placeholder="Search student by name..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full rounded-lg border border-neutral-700 bg-neutral-950 pl-9 pr-3 py-2 text-xs text-white outline-none focus:border-amber-500"
-                  />
-                </div>
-                <select
-                  value={selectedClass}
-                  onChange={(event) => setSelectedClass(event.target.value)}
-                  className="rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-xs text-neutral-300 outline-none focus:border-amber-500"
-                >
-                  <option value="ALL">All Classes</option>
-                  {classData.map((c) => (
-                    <option key={c.id} value={c.name}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
+          {/* Classes View */}
+          {view === "classes" && (
+            <ClassManager />
+          )}
 
-              {/* Modern progress table */}
-              <div className="overflow-hidden rounded-xl border border-neutral-800 bg-neutral-900/20">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-neutral-900 text-[10px] uppercase tracking-wider text-neutral-400">
-                    <tr>
-                      <th className="px-5 py-3">Student</th>
-                      <th className="px-5 py-3">Class</th>
-                      <th className="px-5 py-3">Stage</th>
-                      <th className="px-5 py-3">Progress</th>
-                      <th className="px-5 py-3">Priority Gap</th>
-                      <th className="px-5 py-3">Status</th>
-                      <th className="px-5 py-3 text-right">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-800">
-                    {visibleStudents.map((student) => {
-                      const isExpanded = expandedStudentId === student.id;
-                      return (
-                        <React.Fragment key={student.id}>
-                          <tr className="hover:bg-neutral-900/40 transition">
-                            <td className="px-5 py-4 font-bold text-white">{student.name}</td>
-                            <td className="px-5 py-4 text-neutral-400">{student.className}</td>
-                            <td className="px-5 py-4 text-neutral-400">{student.stage}</td>
-                            <td className="px-5 py-4">
-                              <div className="flex items-center gap-2">
-                                <div className="h-1.5 w-20 rounded-full bg-neutral-800 overflow-hidden">
-                                  <div className="h-full rounded-full bg-emerald-500" style={{ width: `${student.progress}%` }} />
-                                </div>
-                                <span className="font-semibold text-neutral-300">{student.progress}%</span>
-                              </div>
-                            </td>
-                            <td className="px-5 py-4 text-neutral-400">{student.gap}</td>
-                            <td className="px-5 py-4">
-                              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold ${
-                                student.status === "ON_TRACK"
-                                  ? "bg-emerald-500/10 text-emerald-400"
-                                  : student.status === "INACTIVE"
-                                  ? "bg-red-500/10 text-red-400"
-                                  : "bg-amber-500/10 text-amber-400"
-                              }`}>
-                                {student.status.replace("_", " ")}
-                              </span>
-                            </td>
-                            <td className="px-5 py-4 text-right">
-                              <button
-                                onClick={() => setExpandedStudentId(isExpanded ? null : student.id)}
-                                className="inline-flex items-center gap-1 rounded bg-neutral-800 px-2 py-1 text-[10px] font-bold text-sky-400 hover:bg-neutral-700 transition"
-                              >
-                                {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                                {isExpanded ? "Hide" : "Details"}
-                              </button>
-                            </td>
-                          </tr>
-                          {/* Collapsible student detail row */}
-                          {isExpanded && (
-                            <tr className="bg-neutral-900/50">
-                              <td colSpan={7} className="px-6 py-4">
-                                <div className="grid gap-4 md:grid-cols-3 text-xs">
-                                  <div className="rounded-lg bg-neutral-950 p-3.5 border border-neutral-800">
-                                    <p className="font-bold text-white mb-2">Diagnostic Summary</p>
-                                    <p className="text-neutral-400 leading-5">
-                                      {student.name} is currently enrolled in {student.className}. Gaps identified in: <span className="text-amber-400">{student.gap}</span>.
-                                    </p>
-                                  </div>
-                                  <div className="rounded-lg bg-neutral-950 p-3.5 border border-neutral-800">
-                                    <p className="font-bold text-white mb-2">Remediation Decision</p>
-                                    <p className="text-neutral-400 leading-5">
-                                      We recommend deploying a relative velocity practice carousel slide to bridge this conceptual gap before assessment trials.
-                                    </p>
-                                  </div>
-                                  <div className="rounded-lg bg-neutral-950 p-3.5 border border-neutral-800 flex flex-col justify-between">
-                                    <div>
-                                      <p className="font-bold text-white mb-1">Parent Link Status</p>
-                                      <p className="text-neutral-400">Communication channel verified.</p>
-                                    </div>
-                                    <button 
-                                      onClick={() => setView("preparation")}
-                                      className="mt-3 w-full rounded bg-amber-500 py-1.5 text-center font-bold text-neutral-950 text-[11px] hover:bg-amber-400 transition"
-                                    >
-                                      Assign Remediation Carousel
-                                    </button>
-                                  </div>
-                                </div>
-                              </td>
-                            </tr>
-                          )}
-                        </React.Fragment>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+          {/* Students Follow Up View */}
+          {view === "students" && (
+            <StudentFollowUp />
           )}
 
           {/* Assignments View */}
@@ -604,37 +500,10 @@ export default function TeacherDashboard({ onOpenAuthoring }: { onOpenAuthoring:
             </div>
           )}
 
+
           {/* Sessions View */}
           {view === "sessions" && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-bold text-white">Class Sessions</h3>
-                  <p className="text-xs text-neutral-400">Remediation, tests, and student reviews.</p>
-                </div>
-                <button className="flex items-center gap-1.5 rounded-lg bg-amber-500 px-3.5 py-2 text-xs font-bold text-neutral-950 hover:bg-amber-400 transition">
-                  <Plus className="h-4 w-4" /> Schedule Session
-                </button>
-              </div>
-              <div className="space-y-2">
-                {sessions.map((session) => (
-                  <div key={session.title} className="flex flex-wrap items-center gap-4 rounded-xl border border-neutral-800 bg-neutral-900/30 p-5 hover:border-neutral-700 transition">
-                    <CalendarClock className="h-5 w-5 text-sky-400" />
-                    <div className="min-w-48 flex-1">
-                      <p className="text-xs font-bold text-white">{session.title}</p>
-                      <p className="mt-0.5 text-[11px] text-neutral-400">{session.className} · {session.type}</p>
-                    </div>
-                    <span className="text-xs text-neutral-400">{session.date}</span>
-                    <span className="rounded bg-emerald-500/10 px-2.5 py-0.5 text-[9px] font-bold text-emerald-400 uppercase">
-                      {session.status}
-                    </span>
-                    <button className="rounded border border-neutral-700 hover:border-neutral-500 px-2 py-1 text-[10px] font-bold text-neutral-300 transition">
-                      Manage
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <LiveSessionsManager />
           )}
 
           {/* Reviews View */}
