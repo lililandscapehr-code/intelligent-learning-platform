@@ -343,6 +343,82 @@ export const DEFAULT_TEACHER_PERMISSIONS: TeacherPermissions = {
   canReviewCurriculumTanks: false
 };
 
+// ── Admin Executive Suite Interfaces ──────────────────────────────────────────
+export type AlarmSeverity = "CRITICAL" | "WARNING" | "INFO";
+export type AlarmCategory = "ACADEMIC_GAP" | "PENDING_REGISTRATION" | "SYSTEM_AI" | "SESSION_DISRUPTION" | "FINANCIAL";
+
+export interface AdminAlarm {
+  id: string;
+  title: string;
+  message: string;
+  severity: AlarmSeverity;
+  category: AlarmCategory;
+  timestamp: string;
+  resolved: boolean;
+  actionLabel?: string;
+  actionUrl?: string;
+}
+
+export type BroadcastAudience = "ALL" | "TEACHERS" | "PARENTS" | "STUDENTS";
+export type BroadcastPriority = "URGENT" | "NORMAL";
+
+export interface AdminBroadcast {
+  id: string;
+  title: string;
+  message: string;
+  targetAudience: BroadcastAudience;
+  priority: BroadcastPriority;
+  sentAt: string;
+  authorName: string;
+  readCount?: number;
+}
+
+export type NotePriority = "URGENT" | "MEDIUM" | "INFO";
+export type NoteStatus = "OPEN" | "IN_PROGRESS" | "RESOLVED";
+
+export interface AdminDirectiveNote {
+  id: string;
+  title: string;
+  content: string;
+  category: "Pedagogical Audit" | "Financial Policy" | "Curriculum Revision" | "System Tech";
+  priority: NotePriority;
+  status: NoteStatus;
+  createdAt: string;
+  targetTeacherName?: string;
+  targetPackageName?: string;
+}
+
+export interface ExecutiveAuditReport {
+  timestamp: string;
+  academics: {
+    totalStudents: number;
+    readyCount: number;
+    readyWithSupportCount: number;
+    bridgingRecommendedCount: number;
+    foundationRequiredCount: number;
+    masteryPercentage: number;
+  };
+  financials: {
+    totalActivePackages: number;
+    archivedPackagesCount: number;
+    totalEnrolledStudents: number;
+    grossVolumeUSD: number;
+    volumeDiscountSavingsUSD: number;
+    averageRatePerStudent: number;
+  };
+  teachers: {
+    totalTeachers: number;
+    authorizedTeacherCount: number;
+    leadReviewerCount: number;
+    totalParentNotesSent: number;
+  };
+  aiEngine: {
+    activeProvider: string;
+    failoverEnabled: boolean;
+    distillationMemoryCount: number;
+  };
+}
+
 export interface TeacherAssignment {
   teacherId: string;
   teacherName: string;
@@ -754,6 +830,85 @@ let mockSessions: LiveSession[] = [
 ];
 
 let mockPendingRegistrations: PendingRegistration[] = [];
+
+let mockAdminAlarms: AdminAlarm[] = [
+  {
+    id: "alarm_101",
+    title: "Pending Student Registration Backlog",
+    message: "2 pending student registration requests awaiting teacher review in 'Year 11 Physics Section A'.",
+    severity: "WARNING",
+    category: "PENDING_REGISTRATION",
+    timestamp: new Date(Date.now() - 3600000 * 3).toISOString(),
+    resolved: false,
+    actionLabel: "Review Requests"
+  },
+  {
+    id: "alarm_102",
+    title: "High Academic Gap Flagged: Foundation Required",
+    message: "Student 'Tariq Ziyad' triggered FOUNDATION_REQUIRED diagnosis in Velocity Vectors Case B.",
+    severity: "CRITICAL",
+    category: "ACADEMIC_GAP",
+    timestamp: new Date(Date.now() - 3600000 * 8).toISOString(),
+    resolved: false,
+    actionLabel: "Inspect Student Audit"
+  },
+  {
+    id: "alarm_103",
+    title: "Offline Local Ollama Failover Active",
+    message: "Primary Cloud API reached quota limit; auto-switched to Local Ollama (qwen2.5:3b). Zero downtime experienced.",
+    severity: "INFO",
+    category: "SYSTEM_AI",
+    timestamp: new Date(Date.now() - 3600000 * 18).toISOString(),
+    resolved: true
+  }
+];
+
+let mockAdminBroadcasts: AdminBroadcast[] = [
+  {
+    id: "bcast_1",
+    title: "Official Egyptian Baccalaureate Term 2 Specs Published",
+    message: "The new official Term 2 curriculum package and AI Question Tanks are registered and available to authorized teachers.",
+    targetAudience: "TEACHERS",
+    priority: "NORMAL",
+    sentAt: "2026-08-28T10:00:00Z",
+    authorName: "Platform Admin",
+    readCount: 18
+  },
+  {
+    id: "bcast_2",
+    title: "System Data Backup & Distillation Memory Sync",
+    message: "All student progress logs, AI distillation exemplars, and package financial ledgers backed up successfully.",
+    targetAudience: "ALL",
+    priority: "NORMAL",
+    sentAt: "2026-08-30T14:30:00Z",
+    authorName: "Platform Admin",
+    readCount: 92
+  }
+];
+
+let mockAdminDirectiveNotes: AdminDirectiveNote[] = [
+  {
+    id: "note_1",
+    title: "Verify Case C Projectile Trajectory Calculations",
+    content: "Request Dr. Hassan Youssef (Lead Reviewer) to double check angles in Lesson 1-3 Case C questions before final exam publishing.",
+    category: "Pedagogical Audit",
+    priority: "URGENT",
+    status: "OPEN",
+    createdAt: "2026-09-01T09:00:00Z",
+    targetTeacherName: "Dr. Hassan Youssef",
+    targetPackageName: "Year 11 Physics Section A"
+  },
+  {
+    id: "note_2",
+    title: "Enforce Volume Pricing Tier for Section B",
+    content: "Ensure Section B applies 15+ student tier discount ($40/std) upon 3 new student enrollments.",
+    category: "Financial Policy",
+    priority: "MEDIUM",
+    status: "IN_PROGRESS",
+    createdAt: "2026-09-02T11:15:00Z",
+    targetPackageName: "Year 11 Physics Section B"
+  }
+];
 
 let mockTeacherAssignments: TeacherAssignment[] = [
   {
@@ -1233,5 +1388,148 @@ export const ClassRegistry = {
     delete REGISTERED_CURRICULUM_SPECS[curriculumId];
 
     return { success: true, report };
+  },
+
+  // ── Admin Executive Suite Methods ─────────────────────────────────────────
+  getAdminAlarms(): AdminAlarm[] {
+    // Dynamically calculate live alarms alongside static ones
+    const liveAlarms: AdminAlarm[] = [];
+
+    // 1. Pending registration backlog alarm
+    const pendingCount = mockPendingRegistrations.filter(r => r.status === "PENDING").length;
+    if (pendingCount > 0) {
+      liveAlarms.push({
+        id: "live_alarm_pending",
+        title: "Unreviewed Student Registrations Backlog",
+        message: `${pendingCount} student registration request(s) are awaiting teacher review.`,
+        severity: pendingCount > 3 ? "CRITICAL" : "WARNING",
+        category: "PENDING_REGISTRATION",
+        timestamp: new Date().toISOString(),
+        resolved: false,
+        actionLabel: "Review Registrations"
+      });
+    }
+
+    return [...liveAlarms, ...mockAdminAlarms];
+  },
+
+  resolveAdminAlarm(alarmId: string): boolean {
+    const alarm = mockAdminAlarms.find(a => a.id === alarmId);
+    if (!alarm) return false;
+    alarm.resolved = true;
+    return true;
+  },
+
+  getAllBroadcasts(): AdminBroadcast[] {
+    return [...mockAdminBroadcasts].sort((a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime());
+  },
+
+  createBroadcast(broadcast: Omit<AdminBroadcast, "id" | "sentAt">): AdminBroadcast {
+    const newEntry: AdminBroadcast = {
+      ...broadcast,
+      id: `bcast_${Date.now()}`,
+      sentAt: new Date().toISOString(),
+      readCount: 0
+    };
+    mockAdminBroadcasts.unshift(newEntry);
+    return newEntry;
+  },
+
+  getAllAdminNotes(): AdminDirectiveNote[] {
+    return [...mockAdminDirectiveNotes].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  },
+
+  createAdminNote(note: Omit<AdminDirectiveNote, "id" | "createdAt">): AdminDirectiveNote {
+    const newEntry: AdminDirectiveNote = {
+      ...note,
+      id: `note_${Date.now()}`,
+      createdAt: new Date().toISOString()
+    };
+    mockAdminDirectiveNotes.unshift(newEntry);
+    return newEntry;
+  },
+
+  updateAdminNote(id: string, update: Partial<AdminDirectiveNote>): boolean {
+    const note = mockAdminDirectiveNotes.find(n => n.id === id);
+    if (!note) return false;
+    Object.assign(note, update);
+    return true;
+  },
+
+  deleteAdminNote(id: string): boolean {
+    mockAdminDirectiveNotes = mockAdminDirectiveNotes.filter(n => n.id !== id);
+    return true;
+  },
+
+  getExecutiveAuditReport(): ExecutiveAuditReport {
+    // 1. Academic Readiness Breakdown calculated from student overall grades
+    let readyCount = 0;
+    let readyWithSupportCount = 0;
+    let bridgingRecommendedCount = 0;
+    let foundationRequiredCount = 0;
+
+    mockStudents.forEach(s => {
+      const grade = s.overallGrade ?? 80;
+      if (grade >= 85) readyCount++;
+      else if (grade >= 70) readyWithSupportCount++;
+      else if (grade >= 50) bridgingRecommendedCount++;
+      else foundationRequiredCount++;
+    });
+
+    const totalDiagnosed = readyCount + readyWithSupportCount + bridgingRecommendedCount + foundationRequiredCount;
+    const masteryPercentage = totalDiagnosed > 0 ? Math.round(((readyCount + readyWithSupportCount) / totalDiagnosed) * 100) : 85;
+
+    // 2. Financial Metrics
+    const activeClasses = mockClasses.filter(c => !c.archivedAt);
+    const archivedClasses = mockClasses.filter(c => !!c.archivedAt);
+
+    let grossVolumeUSD = 0;
+    let totalEnrolled = 0;
+
+    activeClasses.forEach(c => {
+      const rate = this.calculateEffectiveRate(c);
+      const enrolled = c.studentIds.length;
+      totalEnrolled += enrolled;
+      grossVolumeUSD += rate * enrolled;
+    });
+
+    const averageRate = totalEnrolled > 0 ? Math.round(grossVolumeUSD / totalEnrolled) : 40;
+
+    // 3. Teacher Metrics
+    const leadReviewerCount = mockTeacherAssignments.filter(t => t.permissions?.canReviewCurriculumTanks).length;
+
+    let parentNotesCount = 0;
+    mockStudents.forEach(s => { parentNotesCount += s.followUpLogs.length; });
+
+    return {
+      timestamp: new Date().toISOString(),
+      academics: {
+        totalStudents: mockStudents.length,
+        readyCount,
+        readyWithSupportCount,
+        bridgingRecommendedCount,
+        foundationRequiredCount,
+        masteryPercentage
+      },
+      financials: {
+        totalActivePackages: activeClasses.length,
+        archivedPackagesCount: archivedClasses.length,
+        totalEnrolledStudents: totalEnrolled,
+        grossVolumeUSD,
+        volumeDiscountSavingsUSD: 140, // Tiered discount savings
+        averageRatePerStudent: averageRate
+      },
+      teachers: {
+        totalTeachers: mockTeacherAssignments.length,
+        authorizedTeacherCount: mockTeacherAssignments.filter(t => t.approvedCurriculumIds.length > 0).length,
+        leadReviewerCount,
+        totalParentNotesSent: parentNotesCount
+      },
+      aiEngine: {
+        activeProvider: "Gemini 2.5 Flash + Ollama Local Fallback",
+        failoverEnabled: true,
+        distillationMemoryCount: 42
+      }
+    };
   }
 };

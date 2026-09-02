@@ -8,7 +8,8 @@ import {
   CheckCircle, X, Info, ToggleLeft, ToggleRight, Edit3,
   Cpu, Server, Key, RefreshCw, MessageSquare, Video, Mic,
   Sliders, Eye, EyeOff, Layers, ArrowUp, ArrowDown, Brain,
-  Award, Zap, Check
+  Award, Zap, Check, Bell, Send, FileText, BarChart2,
+  TrendingUp, DollarSign, Target, Radio, AlertOctagon, Filter
 } from "lucide-react";
 import { 
   uploadCurriculumPackage,
@@ -27,7 +28,11 @@ import {
   CurriculumRemovalReport,
   DEFAULT_CURRICULUM_POLICY,
   TeacherAssignment,
-  TeacherPermissions
+  TeacherPermissions,
+  AdminAlarm,
+  AdminBroadcast,
+  AdminDirectiveNote,
+  ExecutiveAuditReport
 } from "../../core/services/class-registry";
 import { 
   AIProviderEntry, 
@@ -40,7 +45,7 @@ interface AdminControlCenterProps {
   onCurriculumAdded: (curriculum: CurriculumPackage) => void;
 }
 
-type AdminTab = "registry" | "add" | "teachers" | "ai";
+type AdminTab = "reports" | "alarms" | "broadcasts" | "notes" | "registry" | "add" | "teachers" | "ai";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function PolicyBadge({ on, label }: { on: boolean; label: string }) {
@@ -113,7 +118,7 @@ function PolicyEditor({
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCenterProps) {
-  const [activeTab, setActiveTab] = useState<AdminTab>("registry");
+  const [activeTab, setActiveTab] = useState<AdminTab>("reports");
 
   // Registry state
   const [specs, setSpecs] = useState<CurriculumSpec[]>(() => Object.values(REGISTERED_CURRICULUM_SPECS));
@@ -166,8 +171,36 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
   const [aiSaveMsg, setAISaveMsg] = useState<string | null>(null);
   const [showKeyMap, setShowKeyMap] = useState<Record<string, boolean>>({});
 
+  // ── Executive Suite State ──────────────────────────────────────────────────
+  const [alarms, setAlarms] = useState<AdminAlarm[]>(() => ClassRegistry.getAdminAlarms());
+  const [broadcasts, setBroadcasts] = useState<AdminBroadcast[]>(() => ClassRegistry.getAllBroadcasts());
+  const [notes, setNotes] = useState<AdminDirectiveNote[]>(() => ClassRegistry.getAllAdminNotes());
+  const [executiveReport, setExecutiveReport] = useState<ExecutiveAuditReport>(() => ClassRegistry.getExecutiveAuditReport());
+
+  // New Broadcast Form State
+  const [bcastTitle, setBcastTitle] = useState("");
+  const [bcastMessage, setBcastMessage] = useState("");
+  const [bcastTarget, setBcastTarget] = useState<any>("TEACHERS");
+  const [bcastPriority, setBcastPriority] = useState<any>("NORMAL");
+  const [bcastSuccessMsg, setBcastSuccessMsg] = useState<string | null>(null);
+
+  // New Note Form State
+  const [noteTitle, setNoteTitle] = useState("");
+  const [noteContent, setNoteContent] = useState("");
+  const [noteCategory, setNoteCategory] = useState<any>("Pedagogical Audit");
+  const [notePriority, setNotePriority] = useState<any>("MEDIUM");
+  const [noteTeacherTarget, setNoteTeacherTarget] = useState("");
+  const [notePackageTarget, setNotePackageTarget] = useState("");
+  const [noteFilterStatus, setNoteFilterStatus] = useState<string>("ALL");
+
   const refreshSpecs = () => setSpecs(Object.values(REGISTERED_CURRICULUM_SPECS));
   const refreshTeachers = () => setTeacherAssignments([...ClassRegistry.getAllTeacherAssignments()]);
+  const refreshExecutiveSuite = () => {
+    setAlarms(ClassRegistry.getAdminAlarms());
+    setBroadcasts(ClassRegistry.getAllBroadcasts());
+    setNotes(ClassRegistry.getAllAdminNotes());
+    setExecutiveReport(ClassRegistry.getExecutiveAuditReport());
+  };
 
   // Load AI Pool & Distillation Memory on Mount
   useEffect(() => {
@@ -184,7 +217,7 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
     });
   }, []);
 
-  // ── Curriculum Handlers ───────────────────────────────────────────────────
+  // ── Handlers ─────────────────────────────────────────────────────────────
   const handlePackageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -198,6 +231,7 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
       onCurriculumAdded(packageData);
       setUploadStatus(`✓ ${packageData.identity.name} imported and registered.`);
       refreshSpecs();
+      refreshExecutiveSuite();
     } catch { setUploadStatus("Upload failed: choose a valid curriculum package JSON file."); }
     finally { setIsUploading(false); }
   };
@@ -216,6 +250,7 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
       setRemovalReport(result.report);
       refreshSpecs();
       refreshTeachers();
+      refreshExecutiveSuite();
     }
   };
 
@@ -234,6 +269,7 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
     setAddResult(result);
     if (result.success) {
       refreshSpecs();
+      refreshExecutiveSuite();
       setNewSpec({ id: "", name: "", publisher: "", subject: "", gradeLevel: "", version: "", terms: [], chapters: [], lessons: [], policy: { ...DEFAULT_CURRICULUM_POLICY } });
       setNewChapter("");
     }
@@ -243,11 +279,65 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
     if (isAuthorized) ClassRegistry.revokeCurriculumFromTeacher(teacherId, curriculumId);
     else ClassRegistry.assignCurriculumToTeacher(teacherId, curriculumId);
     refreshTeachers();
+    refreshExecutiveSuite();
   };
 
   const handleUpdateTeacherPermission = (teacherId: string, permKey: keyof TeacherPermissions, value: boolean) => {
     ClassRegistry.updateTeacherPermissions(teacherId, { [permKey]: value });
     refreshTeachers();
+    refreshExecutiveSuite();
+  };
+
+  // ── Executive Handlers ─────────────────────────────────────────────────────
+  const handleResolveAlarm = (alarmId: string) => {
+    ClassRegistry.resolveAdminAlarm(alarmId);
+    refreshExecutiveSuite();
+  };
+
+  const handleCreateBroadcast = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bcastTitle || !bcastMessage) return;
+    ClassRegistry.createBroadcast({
+      title: bcastTitle,
+      message: bcastMessage,
+      targetAudience: bcastTarget,
+      priority: bcastPriority,
+      authorName: "Platform Admin"
+    });
+    setBcastTitle("");
+    setBcastMessage("");
+    setBcastSuccessMsg("✓ Broadcast alert dispatched successfully.");
+    setTimeout(() => setBcastSuccessMsg(null), 4000);
+    refreshExecutiveSuite();
+  };
+
+  const handleCreateAdminNote = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!noteTitle || !noteContent) return;
+    ClassRegistry.createAdminNote({
+      title: noteTitle,
+      content: noteContent,
+      category: noteCategory,
+      priority: notePriority,
+      status: "OPEN",
+      targetTeacherName: noteTeacherTarget || undefined,
+      targetPackageName: notePackageTarget || undefined
+    });
+    setNoteTitle("");
+    setNoteContent("");
+    setNoteTeacherTarget("");
+    setNotePackageTarget("");
+    refreshExecutiveSuite();
+  };
+
+  const handleUpdateNoteStatus = (noteId: string, status: any) => {
+    ClassRegistry.updateAdminNote(noteId, { status });
+    refreshExecutiveSuite();
+  };
+
+  const handleDeleteNote = (noteId: string) => {
+    ClassRegistry.deleteAdminNote(noteId);
+    refreshExecutiveSuite();
   };
 
   // ── AI Multi-Provider Pool Handlers ───────────────────────────────────────
@@ -299,7 +389,6 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
     list[index] = list[targetIndex];
     list[targetIndex] = temp;
 
-    // Reassign priority numbers
     list.forEach((p, i) => { p.priority = i + 1; });
     handleSavePoolConfig({ ...aiPoolConfig, providers: list });
   };
@@ -351,53 +440,561 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
   };
 
   // ── Tabs Definition ───────────────────────────────────────────────────────
-  const tabs: { key: AdminTab; label: string; icon: React.ElementType }[] = [
+  const activeAlarmsCount = alarms.filter(a => !a.resolved).length;
+  const criticalAlarmsCount = alarms.filter(a => !a.resolved && a.severity === "CRITICAL").length;
+
+  const tabs: { key: AdminTab; label: string; icon: React.ElementType; badge?: string; badgeColor?: string }[] = [
+    { key: "reports", label: "📊 Executive Reports", icon: BarChart2 },
+    { 
+      key: "alarms", 
+      label: "🚨 Live Alarms & Health", 
+      icon: AlertOctagon, 
+      badge: activeAlarmsCount > 0 ? `${activeAlarmsCount}` : undefined,
+      badgeColor: criticalAlarmsCount > 0 ? "bg-red-500 text-white" : "bg-amber-500 text-black"
+    },
+    { key: "broadcasts", label: "📢 Broadcast Notifier", icon: Radio },
+    { key: "notes", label: "📝 Directives & Notes", icon: FileText, badge: `${notes.filter(n => n.status !== "RESOLVED").length}` },
     { key: "registry", label: "📋 Curriculum Registry", icon: BookOpen },
-    { key: "add", label: "➕ Add New Curriculum", icon: PlusCircle },
-    { key: "teachers", label: "👩‍🏫 Teacher Governance & Permissions", icon: UserCheck },
-    { key: "ai", label: "🤖 AI, Ollama & Multi-API Pool", icon: Cpu },
+    { key: "add", label: "➕ Add Curriculum", icon: PlusCircle },
+    { key: "teachers", label: "👩‍🏫 Teacher Governance", icon: UserCheck },
+    { key: "ai", label: "🤖 AI & Ollama Pool", icon: Cpu },
   ];
+
+  const filteredNotes = notes.filter(n => noteFilterStatus === "ALL" || n.status === noteFilterStatus);
 
   return (
     <div className="mx-auto max-w-6xl space-y-5">
       {/* Header */}
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-red-400">Administration & Governance</p>
-        <h2 className="mt-1 text-2xl font-bold text-white">Platform Control Center</h2>
-        <p className="mt-1 text-sm text-neutral-400">Governance for Curricula, Multi-API Key Failover, Ollama Knowledge Distillation, and Teacher Capabilities.</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-red-400">Executive Control Suite</p>
+        <h2 className="mt-1 text-2xl font-bold text-white">Platform Governance & Intelligence Center</h2>
+        <p className="mt-1 text-sm text-neutral-400">Live system health alarms, broadcast alerts, directive notes, executive audit reports, and multi-AI infrastructure.</p>
       </div>
 
       {/* Metrics */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {[
-          { label: "Registered Curricula", value: `${specs.length}`, icon: BookOpen },
-          { label: "Managed Teachers", value: `${teacherAssignments.length}`, icon: UserCheck },
-          { label: "Active AI Providers in Pool", value: `${aiPoolConfig.providers.filter(p => p.enabled).length} / ${aiPoolConfig.providers.length}`, icon: Cpu },
-          { label: "Ollama Distilled Memory", value: `${distillationMemory.length} Gold Pairs`, icon: Brain },
-        ].map(({ label, value, icon: Icon }) => (
-          <div key={label} className="rounded-xl border border-neutral-800 bg-neutral-950 p-5">
-            <Icon className="h-5 w-5 text-red-400" />
-            <p className="mt-4 text-xs text-neutral-500">{label}</p>
-            <p className="mt-1 text-xl font-bold text-white">{value}</p>
-          </div>
-        ))}
+        <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-5">
+          <BarChart2 className="h-5 w-5 text-emerald-400" />
+          <p className="mt-4 text-xs text-neutral-500">Student Academic Readiness</p>
+          <p className="mt-1 text-xl font-bold text-white">{executiveReport.academics.masteryPercentage}% Mastery</p>
+          <p className="text-[10px] text-emerald-400 mt-1">{executiveReport.academics.readyCount} Ready · {executiveReport.academics.foundationRequiredCount} Need Foundation</p>
+        </div>
+
+        <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-5">
+          <DollarSign className="h-5 w-5 text-sky-400" />
+          <p className="mt-4 text-xs text-neutral-500">Gross Package Revenue</p>
+          <p className="mt-1 text-xl font-bold text-white">${executiveReport.financials.grossVolumeUSD}</p>
+          <p className="text-[10px] text-sky-400 mt-1">{executiveReport.financials.totalEnrolledStudents} Enrolled · Avg ${executiveReport.financials.averageRatePerStudent}/std</p>
+        </div>
+
+        <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-5">
+          <AlertOctagon className="h-5 w-5 text-red-400" />
+          <p className="mt-4 text-xs text-neutral-500">Active System Alarms</p>
+          <p className="mt-1 text-xl font-bold text-white">{activeAlarmsCount} Active</p>
+          <p className="text-[10px] text-red-400 mt-1">{criticalAlarmsCount} Critical · {alarms.filter(a => a.resolved).length} Resolved</p>
+        </div>
+
+        <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-5">
+          <Cpu className="h-5 w-5 text-violet-400" />
+          <p className="mt-4 text-xs text-neutral-500">AI Pool & Offline Distillation</p>
+          <p className="mt-1 text-xl font-bold text-white">{aiPoolConfig.providers.filter(p => p.enabled).length} Active Keys</p>
+          <p className="text-[10px] text-violet-400 mt-1">{distillationMemory.length} Gold Exemplars Learned</p>
+        </div>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-2 border-b border-neutral-800 pb-0 overflow-x-auto">
-        {tabs.map(({ key, label, icon: Icon }) => (
+        {tabs.map(({ key, label, icon: Icon, badge, badgeColor }) => (
           <button key={key} onClick={() => setActiveTab(key)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-t-lg border-b-2 transition whitespace-nowrap ${
+            className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-bold rounded-t-lg border-b-2 transition whitespace-nowrap ${
               activeTab === key
                 ? "border-amber-500 text-amber-400 bg-amber-500/5"
                 : "border-transparent text-neutral-400 hover:text-white"
             }`}>
-            <Icon className="h-4 w-4" /> {label}
+            <Icon className="h-4 w-4" /> 
+            <span>{label}</span>
+            {badge && (
+              <span className={`ml-1 text-[9px] font-extrabold px-1.5 py-0.2 rounded-full ${badgeColor || "bg-neutral-800 text-neutral-300"}`}>
+                {badge}
+              </span>
+            )}
           </button>
         ))}
       </div>
 
-      {/* ── TAB 1: CURRICULUM REGISTRY ─────────────────────────────────── */}
+      {/* ── TAB 1: EXECUTIVE FOLLOW-UP REPORTS ─────────────────────────── */}
+      {activeTab === "reports" && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Academic Mastery & Readiness Audit */}
+            <div className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-5 space-y-4">
+              <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+                <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                  <Target className="h-4 w-4 text-emerald-400" /> Student Academic Readiness Audit
+                </h3>
+                <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold">
+                  {executiveReport.academics.masteryPercentage}% OVERALL READY
+                </span>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                {[
+                  { label: "READY (Direct Progression)", count: executiveReport.academics.readyCount, color: "bg-emerald-500 text-emerald-300 border-emerald-500/40" },
+                  { label: "READY WITH SUPPORT (Scaffolded)", count: executiveReport.academics.readyWithSupportCount, color: "bg-amber-500 text-amber-300 border-amber-500/40" },
+                  { label: "BRIDGING RECOMMENDED (Target Gaps)", count: executiveReport.academics.bridgingRecommendedCount, color: "bg-orange-500 text-orange-300 border-orange-500/40" },
+                  { label: "FOUNDATION REQUIRED (Urgent Case Pre)", count: executiveReport.academics.foundationRequiredCount, color: "bg-red-500 text-red-300 border-red-500/40" },
+                ].map(({ label, count, color }) => (
+                  <div key={label} className="p-3 bg-neutral-950 rounded-xl border border-neutral-800 flex items-center justify-between">
+                    <span className="text-neutral-300 font-semibold">{label}</span>
+                    <span className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold ${color}`}>
+                      {count} Students
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Financial & Volume Pricing Ledger */}
+            <div className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-5 space-y-4">
+              <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+                <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-sky-400" /> Package Revenue & Volume Tier Audit
+                </h3>
+                <span className="text-[10px] bg-sky-500/20 text-sky-400 border border-sky-500/30 px-2 py-0.5 rounded-full font-bold">
+                  FINANCIAL LEDGER
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="p-3 bg-neutral-950 rounded-xl border border-neutral-800">
+                  <p className="text-neutral-500 text-[10px]">Gross Volume USD</p>
+                  <p className="text-lg font-bold text-white mt-1">${executiveReport.financials.grossVolumeUSD}</p>
+                </div>
+                <div className="p-3 bg-neutral-950 rounded-xl border border-neutral-800">
+                  <p className="text-neutral-500 text-[10px]">Volume Discount Savings</p>
+                  <p className="text-lg font-bold text-emerald-400 mt-1">${executiveReport.financials.volumeDiscountSavingsUSD}</p>
+                </div>
+                <div className="p-3 bg-neutral-950 rounded-xl border border-neutral-800">
+                  <p className="text-neutral-500 text-[10px]">Active vs Archived Packages</p>
+                  <p className="text-sm font-bold text-white mt-1">{executiveReport.financials.totalActivePackages} Active · {executiveReport.financials.archivedPackagesCount} Archived</p>
+                </div>
+                <div className="p-3 bg-neutral-950 rounded-xl border border-neutral-800">
+                  <p className="text-neutral-500 text-[10px]">Average Rate Per Student</p>
+                  <p className="text-sm font-bold text-white mt-1">${executiveReport.financials.averageRatePerStudent} / student</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Teacher Activity & AI Pool Utilization */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-5 space-y-3 text-xs">
+              <h3 className="font-bold text-white text-sm flex items-center gap-2 border-b border-neutral-800 pb-2">
+                <Users className="h-4 w-4 text-amber-400" /> Teacher KPI & Governance Summary
+              </h3>
+              <div className="space-y-2">
+                <div className="flex justify-between p-2.5 bg-neutral-950 rounded-lg text-neutral-300">
+                  <span>Total Managed Teachers</span>
+                  <span className="font-bold text-white">{executiveReport.teachers.totalTeachers}</span>
+                </div>
+                <div className="flex justify-between p-2.5 bg-neutral-950 rounded-lg text-neutral-300">
+                  <span>Authorized for Official Curricula</span>
+                  <span className="font-bold text-amber-400">{executiveReport.teachers.authorizedTeacherCount}</span>
+                </div>
+                <div className="flex justify-between p-2.5 bg-neutral-950 rounded-lg text-neutral-300">
+                  <span>Designated Lead Reviewers (Question Tanks)</span>
+                  <span className="font-bold text-violet-400">{executiveReport.teachers.leadReviewerCount}</span>
+                </div>
+                <div className="flex justify-between p-2.5 bg-neutral-950 rounded-lg text-neutral-300">
+                  <span>Parent Updates & Notes Dispatched</span>
+                  <span className="font-bold text-emerald-400">{executiveReport.teachers.totalParentNotesSent}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-5 space-y-3 text-xs">
+              <h3 className="font-bold text-white text-sm flex items-center gap-2 border-b border-neutral-800 pb-2">
+                <Cpu className="h-4 w-4 text-violet-400" /> AI Engine & Local Distillation Audit
+              </h3>
+              <div className="space-y-2">
+                <div className="flex justify-between p-2.5 bg-neutral-950 rounded-lg text-neutral-300">
+                  <span>Primary Provider Cascade</span>
+                  <span className="font-bold text-white truncate max-w-[200px]">{executiveReport.aiEngine.activeProvider}</span>
+                </div>
+                <div className="flex justify-between p-2.5 bg-neutral-950 rounded-lg text-neutral-300">
+                  <span>Smart Offline Failover to Ollama</span>
+                  <span className="font-bold text-emerald-400">ACTIVE ✓</span>
+                </div>
+                <div className="flex justify-between p-2.5 bg-neutral-950 rounded-lg text-neutral-300">
+                  <span>Distillation Memory Vault Size</span>
+                  <span className="font-bold text-violet-400">{distillationMemory.length} Gold Exemplars</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 2: LIVE ALARMS & HEALTH MONITORING ─────────────────────── */}
+      {activeTab === "alarms" && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+            <div>
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <AlertOctagon className="h-5 w-5 text-red-400" />
+                Live System & Academic Alarms Monitor
+              </h3>
+              <p className="text-xs text-neutral-400">Real-time threshold triggers for academic risks, registration backlogs, and AI provider status.</p>
+            </div>
+            <span className="text-xs font-bold px-3 py-1 rounded-full bg-red-500/20 text-red-400 border border-red-500/30">
+              {activeAlarmsCount} Unresolved Alarms
+            </span>
+          </div>
+
+          <div className="space-y-3">
+            {alarms.map(alarm => {
+              const isCritical = alarm.severity === "CRITICAL";
+              const isWarning = alarm.severity === "WARNING";
+
+              return (
+                <div
+                  key={alarm.id}
+                  className={`p-5 rounded-2xl border transition ${
+                    alarm.resolved
+                      ? "bg-neutral-950/40 border-neutral-800 opacity-60"
+                      : isCritical
+                      ? "bg-red-950/30 border-red-500/40"
+                      : isWarning
+                      ? "bg-amber-950/30 border-amber-500/40"
+                      : "bg-sky-950/20 border-sky-500/30"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                      <div className={`p-2.5 rounded-xl border shrink-0 ${
+                        isCritical ? "bg-red-500/20 border-red-500/40 text-red-400" :
+                        isWarning ? "bg-amber-500/20 border-amber-500/40 text-amber-400" :
+                        "bg-sky-500/20 border-sky-500/40 text-sky-400"
+                      }`}>
+                        <AlertOctagon className="h-5 w-5" />
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="font-bold text-white text-sm">{alarm.title}</h4>
+                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
+                            isCritical ? "bg-red-500/20 text-red-300 border-red-500/40" :
+                            isWarning ? "bg-amber-500/20 text-amber-300 border-amber-500/40" :
+                            "bg-sky-500/20 text-sky-300 border-sky-500/40"
+                          }`}>
+                            {alarm.severity}
+                          </span>
+                          <span className="text-[10px] bg-neutral-800 text-neutral-400 px-2 py-0.5 rounded-full border border-neutral-700">
+                            {alarm.category.replace("_", " ")}
+                          </span>
+                        </div>
+                        <p className="text-xs text-neutral-300 leading-relaxed">{alarm.message}</p>
+                        <p className="text-[10px] text-neutral-500">{new Date(alarm.timestamp).toLocaleString()}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      {!alarm.resolved ? (
+                        <button
+                          type="button"
+                          onClick={() => handleResolveAlarm(alarm.id)}
+                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs transition flex items-center gap-1"
+                        >
+                          <Check className="h-3.5 w-3.5" /> Resolve
+                        </button>
+                      ) : (
+                        <span className="text-xs font-bold text-emerald-400 flex items-center gap-1 bg-emerald-950/40 border border-emerald-500/30 px-3 py-1 rounded-lg">
+                          ✓ Resolved
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 3: BROADCAST NOTIFIER & ANNOUNCEMENT HUB ──────────────── */}
+      {activeTab === "broadcasts" && (
+        <div className="space-y-6">
+          <div className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-6 space-y-4">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2 border-b border-neutral-800 pb-3">
+              <Radio className="h-4 w-4 text-amber-500" /> Dispatch Platform Broadcast Alert
+            </h3>
+
+            <form onSubmit={handleCreateBroadcast} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <label className="block">
+                  <span className="text-neutral-400 font-semibold block mb-1">Target Audience</span>
+                  <select
+                    value={bcastTarget}
+                    onChange={e => setBcastTarget(e.target.value as any)}
+                    className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500 font-semibold"
+                  >
+                    <option value="TEACHERS">Teachers Only</option>
+                    <option value="PARENTS">Parents Only</option>
+                    <option value="STUDENTS">Students Only</option>
+                    <option value="ALL">All Users (Global Platform)</option>
+                  </select>
+                </label>
+
+                <label className="block">
+                  <span className="text-neutral-400 font-semibold block mb-1">Priority Flag</span>
+                  <select
+                    value={bcastPriority}
+                    onChange={e => setBcastPriority(e.target.value as any)}
+                    className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500 font-semibold"
+                  >
+                    <option value="NORMAL">Normal Priority</option>
+                    <option value="URGENT">Urgent Priority (Top Banner)</option>
+                  </select>
+                </label>
+
+                <label className="block">
+                  <span className="text-neutral-400 font-semibold block mb-1">Broadcast Title *</span>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Official Physics Curriculum Update..."
+                    value={bcastTitle}
+                    onChange={e => setBcastTitle(e.target.value)}
+                    className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
+                  />
+                </label>
+              </div>
+
+              <label className="block">
+                <span className="text-neutral-400 font-semibold block mb-1">Announcement Body Message *</span>
+                <textarea
+                  required
+                  rows={3}
+                  placeholder="Write clear instructions or alert details for the target audience..."
+                  value={bcastMessage}
+                  onChange={e => setBcastMessage(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
+                />
+              </label>
+
+              {bcastSuccessMsg && (
+                <div className="p-3 bg-emerald-950/40 border border-emerald-500/40 rounded-xl text-emerald-300 text-xs font-semibold flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-400" /> {bcastSuccessMsg}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl transition shadow-lg flex items-center gap-2"
+              >
+                <Send className="h-4 w-4" /> Dispatch Broadcast Alert
+              </button>
+            </form>
+          </div>
+
+          {/* Sent History */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Sent Broadcast Alerts History ({broadcasts.length})</h3>
+            <div className="space-y-3">
+              {broadcasts.map(b => (
+                <div key={b.id} className="p-4 bg-neutral-900/60 border border-neutral-800 rounded-2xl text-xs space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-white text-sm">{b.title}</span>
+                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
+                        b.priority === "URGENT" ? "bg-red-500/20 text-red-300 border-red-500/40" : "bg-sky-500/20 text-sky-300 border-sky-500/40"
+                      }`}>
+                        {b.priority}
+                      </span>
+                      <span className="text-[10px] bg-neutral-800 text-neutral-400 px-2 py-0.5 rounded-full border border-neutral-700">
+                        Target: {b.targetAudience}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-neutral-500">{new Date(b.sentAt).toLocaleString()}</span>
+                  </div>
+                  <p className="text-neutral-300 leading-relaxed">{b.message}</p>
+                  <div className="text-[10px] text-neutral-500 border-t border-neutral-800/60 pt-2 flex justify-between">
+                    <span>Dispatched by: {b.authorName}</span>
+                    <span>Delivered to {b.readCount || 0} user accounts</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 4: DIRECTIVES & ADMIN NOTES LEDGER ─────────────────────── */}
+      {activeTab === "notes" && (
+        <div className="space-y-6">
+          <div className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-6 space-y-4">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2 border-b border-neutral-800 pb-3">
+              <FileText className="h-4 w-4 text-violet-400" /> Log Administrative Directive / Action Note
+            </h3>
+
+            <form onSubmit={handleCreateAdminNote} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <label className="block">
+                  <span className="text-neutral-400 font-semibold block mb-1">Directive Category</span>
+                  <select
+                    value={noteCategory}
+                    onChange={e => setNoteCategory(e.target.value as any)}
+                    className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500 font-semibold"
+                  >
+                    <option value="Pedagogical Audit">Pedagogical Audit</option>
+                    <option value="Financial Policy">Financial Policy</option>
+                    <option value="Curriculum Revision">Curriculum Revision</option>
+                    <option value="System Tech">System Tech</option>
+                  </select>
+                </label>
+
+                <label className="block">
+                  <span className="text-neutral-400 font-semibold block mb-1">Priority</span>
+                  <select
+                    value={notePriority}
+                    onChange={e => setNotePriority(e.target.value as any)}
+                    className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500 font-semibold"
+                  >
+                    <option value="URGENT">Urgent Priority</option>
+                    <option value="MEDIUM">Medium Priority</option>
+                    <option value="INFO">Informational</option>
+                  </select>
+                </label>
+
+                <label className="block">
+                  <span className="text-neutral-400 font-semibold block mb-1">Directive Title *</span>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Audit Case C Projectile Math..."
+                    value={noteTitle}
+                    onChange={e => setNoteTitle(e.target.value)}
+                    className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500"
+                  />
+                </label>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <label className="block">
+                  <span className="text-neutral-400 font-semibold block mb-1">Target Teacher (Optional)</span>
+                  <input
+                    type="text"
+                    placeholder="e.g. Dr. Hassan Youssef"
+                    value={noteTeacherTarget}
+                    onChange={e => setNoteTeacherTarget(e.target.value)}
+                    className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="text-neutral-400 font-semibold block mb-1">Target Package (Optional)</span>
+                  <input
+                    type="text"
+                    placeholder="e.g. Year 11 Physics Section A"
+                    value={notePackageTarget}
+                    onChange={e => setNotePackageTarget(e.target.value)}
+                    className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500"
+                  />
+                </label>
+              </div>
+
+              <label className="block">
+                <span className="text-neutral-400 font-semibold block mb-1">Directive Action Content *</span>
+                <textarea
+                  required
+                  rows={3}
+                  placeholder="Detail the exact administrative task, policy change, or review request..."
+                  value={noteContent}
+                  onChange={e => setNoteContent(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500"
+                />
+              </label>
+
+              <button
+                type="submit"
+                className="px-6 py-2.5 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition shadow-lg flex items-center gap-2"
+              >
+                <PlusCircle className="h-4 w-4" /> Save Directive Note
+              </button>
+            </form>
+          </div>
+
+          {/* Directives List */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Administrative Directives Ledger</h3>
+              <div className="flex gap-1.5 text-xs">
+                {["ALL", "OPEN", "IN_PROGRESS", "RESOLVED"].map(st => (
+                  <button
+                    key={st}
+                    type="button"
+                    onClick={() => setNoteFilterStatus(st)}
+                    className={`px-3 py-1 rounded-lg font-bold transition ${
+                      noteFilterStatus === st ? "bg-amber-500 text-black" : "bg-neutral-900 text-neutral-400 hover:text-white"
+                    }`}
+                  >
+                    {st}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {filteredNotes.map(n => (
+                <div key={n.id} className="p-5 bg-neutral-900/60 border border-neutral-800 rounded-2xl text-xs space-y-3">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <h4 className="font-bold text-white text-sm">{n.title}</h4>
+                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
+                          n.priority === "URGENT" ? "bg-red-500/20 text-red-300 border-red-500/40" : "bg-amber-500/20 text-amber-300 border-amber-500/40"
+                        }`}>
+                          {n.priority}
+                        </span>
+                        <span className="text-[10px] bg-neutral-800 text-neutral-400 px-2 py-0.5 rounded-full border border-neutral-700">
+                          {n.category}
+                        </span>
+                      </div>
+                      <p className="text-neutral-300 leading-relaxed">{n.content}</p>
+                      {(n.targetTeacherName || n.targetPackageName) && (
+                        <p className="text-[10px] text-amber-400 mt-2">
+                          Linked: {n.targetTeacherName ? `Teacher: ${n.targetTeacherName}` : ""} {n.targetPackageName ? `| Package: ${n.targetPackageName}` : ""}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col gap-2 shrink-0">
+                      <select
+                        value={n.status}
+                        onChange={e => handleUpdateNoteStatus(n.id, e.target.value as any)}
+                        className="bg-neutral-950 border border-neutral-700 text-white font-bold rounded-lg px-2.5 py-1 text-[11px] outline-none"
+                      >
+                        <option value="OPEN">OPEN</option>
+                        <option value="IN_PROGRESS">IN PROGRESS</option>
+                        <option value="RESOLVED">RESOLVED</option>
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteNote(n.id)}
+                        className="text-[10px] text-neutral-500 hover:text-red-400 flex items-center justify-end gap-1"
+                      >
+                        <Trash2 className="h-3 w-3" /> Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 5: CURRICULUM REGISTRY ─────────────────────────────────── */}
       {activeTab === "registry" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between bg-neutral-900/60 border border-neutral-800 rounded-xl p-4">
@@ -488,7 +1085,7 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
         </div>
       )}
 
-      {/* ── TAB 2: ADD NEW CURRICULUM ──────────────────────────────────── */}
+      {/* ── TAB 6: ADD NEW CURRICULUM ──────────────────────────────────── */}
       {activeTab === "add" && (
         <div className="space-y-5">
           <div className="bg-neutral-900/70 border border-neutral-800 rounded-2xl p-6 space-y-5">
@@ -568,7 +1165,7 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
         </div>
       )}
 
-      {/* ── TAB 3: TEACHER GOVERNANCE & PERMISSIONS ────────────────────── */}
+      {/* ── TAB 7: TEACHER GOVERNANCE & PERMISSIONS ────────────────────── */}
       {activeTab === "teachers" && (
         <div className="space-y-5">
           <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
@@ -604,13 +1201,11 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
                   </div>
                 </div>
 
-                {/* Granular Teacher Permissions Grid */}
                 <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-4 space-y-3">
                   <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block">
                     🛡️ Teacher Action & Capability Permissions
                   </span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
-                    {/* Permission 1: Add Custom Carousels */}
                     <div className={`p-3 rounded-xl border flex items-center justify-between transition ${
                       assignment.permissions.canAddCarousels
                         ? "bg-amber-950/20 border-amber-500/40 text-amber-200"
@@ -629,7 +1224,6 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
                       />
                     </div>
 
-                    {/* Permission 2: Contact Parents */}
                     <div className={`p-3 rounded-xl border flex items-center justify-between transition ${
                       assignment.permissions.canContactParents
                         ? "bg-emerald-950/20 border-emerald-500/40 text-emerald-200"
@@ -648,7 +1242,6 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
                       />
                     </div>
 
-                    {/* Permission 3: Lead Curriculum Reviewer */}
                     <div className={`p-3 rounded-xl border flex items-center justify-between transition ${
                       assignment.permissions.canReviewCurriculumTanks
                         ? "bg-violet-950/30 border-violet-500/50 text-violet-200"
@@ -669,7 +1262,6 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
                   </div>
                 </div>
 
-                {/* Curriculum Assignment Matrix */}
                 <div className="space-y-2">
                   <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block">
                     Curriculum Packaging Authorization
@@ -705,10 +1297,9 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
         </div>
       )}
 
-      {/* ── TAB 4: AI & OLLAMA MULTI-API POOL SETTINGS ───────────────────── */}
+      {/* ── TAB 8: AI & OLLAMA MULTI-API POOL SETTINGS ───────────────────── */}
       {activeTab === "ai" && (
         <div className="space-y-6">
-          {/* Main Pool Header */}
           <div className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-6 space-y-6">
             <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
               <div className="flex items-center gap-3">
@@ -734,7 +1325,6 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
               </button>
             </div>
 
-            {/* Global Failover & Distillation Toggles */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-4 flex items-center justify-between">
                 <div>
@@ -765,7 +1355,6 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
               </div>
             </div>
 
-            {/* Providers Priority Table */}
             <div className="space-y-3">
               <span className="text-xs font-bold text-amber-400 uppercase tracking-wider block">
                 1. Configured AI Providers & Priority Order (Highest Priority First)
@@ -786,7 +1375,6 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
                           : "bg-neutral-950/30 border-neutral-900 opacity-60"
                       }`}
                     >
-                      {/* Priority badge & reordering */}
                       <div className="flex items-center gap-2 shrink-0">
                         <div className="flex flex-col gap-0.5">
                           <button
@@ -815,7 +1403,6 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
                         </span>
                       </div>
 
-                      {/* Provider Info */}
                       <div className="flex-1 min-w-0 space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-bold text-white text-sm truncate">{provider.name}</span>
@@ -846,7 +1433,6 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
                           )}
                         </div>
 
-                        {/* Test status display */}
                         {testRes && (
                           <p className={`text-[10px] font-bold mt-1 ${testRes.success ? "text-emerald-400" : "text-red-400"}`}>
                             {testRes.message} {testRes.latencyMs ? `(${testRes.latencyMs}ms)` : ""}
@@ -854,7 +1440,6 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
                         )}
                       </div>
 
-                      {/* Controls */}
                       <div className="flex items-center gap-2 shrink-0">
                         <button
                           type="button"
@@ -897,66 +1482,6 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
             {aiSaveMsg && (
               <div className="p-3 bg-emerald-950/40 border border-emerald-500/40 rounded-xl text-emerald-300 text-xs font-semibold">
                 {aiSaveMsg}
-              </div>
-            )}
-          </div>
-
-          {/* ── OLLAMA KNOWLEDGE DISTILLATION CARD ── */}
-          <div className="bg-neutral-900/80 border border-violet-500/30 rounded-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-              <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-xl bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-violet-400">
-                  <Brain className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-white text-sm flex items-center gap-2">
-                    Ollama Knowledge Distillation Vault
-                    <span className="text-[10px] bg-violet-500/20 text-violet-400 border border-violet-500/30 px-2 py-0.5 rounded-full font-bold">
-                      FEW-SHOT LEARNING ACTIVE
-                    </span>
-                  </h3>
-                  <p className="text-xs text-neutral-400">How Ollama learns from Gemini & Teachers: gold-standard verified outputs are captured and injected as Few-Shot in-context patterns when running offline.</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowDistillationViewer(!showDistillationViewer)}
-                  className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-bold rounded-lg border border-neutral-700 transition"
-                >
-                  {showDistillationViewer ? "Hide Memory" : `Inspect Memory (${distillationMemory.length})`}
-                </button>
-                {distillationMemory.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={handleClearDistillation}
-                    className="px-3 py-1.5 bg-neutral-800 hover:bg-red-950/50 text-neutral-400 hover:text-red-300 text-xs font-bold rounded-lg border border-neutral-700 transition"
-                  >
-                    Clear Memory
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Distillation Memory Viewer */}
-            {showDistillationViewer && (
-              <div className="space-y-3 pt-2">
-                {distillationMemory.length === 0 ? (
-                  <p className="text-xs text-neutral-500 italic p-3 bg-neutral-950 rounded-xl">No distilled exemplars stored yet. Cloud generations will automatically populate this buffer.</p>
-                ) : (
-                  distillationMemory.slice(0, 5).map(ex => (
-                    <div key={ex.id} className="p-4 bg-neutral-950 border border-neutral-800 rounded-xl text-xs space-y-2">
-                      <div className="flex items-center justify-between text-neutral-400 text-[11px]">
-                        <span className="font-bold text-violet-400">Source: {ex.sourceModel}</span>
-                        <span>{new Date(ex.createdAt).toLocaleString()}</span>
-                      </div>
-                      <p className="font-semibold text-white">Prompt: {ex.instruction}</p>
-                      <pre className="p-2.5 bg-neutral-900 rounded-lg text-[10px] text-neutral-300 overflow-x-auto whitespace-pre-wrap font-mono">
-                        {ex.idealResponse.slice(0, 300)}...
-                      </pre>
-                    </div>
-                  ))
-                )}
               </div>
             )}
           </div>
