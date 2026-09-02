@@ -90,6 +90,19 @@ export interface LiveSession {
   status: "scheduled" | "live" | "completed";
 }
 
+export interface PendingRegistration {
+  id: string;
+  classId: string;
+  className: string;
+  curriculumPackageName: string;
+  teacherId: string;
+  studentName: string;
+  studentEmail: string;
+  submittedAt: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  rejectionReason?: string;
+}
+
 // ── Official Registered Curriculum Packages & Specifications ─────────────────
 export interface CurriculumSpec {
   id: string;
@@ -643,6 +656,8 @@ let mockSessions: LiveSession[] = [
   }
 ];
 
+let mockPendingRegistrations: PendingRegistration[] = [];
+
 export const ClassRegistry = {
   // --- Dynamic Pricing Engine ---
   calculateEffectiveRate(classRecord: ClassRecord): number {
@@ -878,5 +893,78 @@ export const ClassRegistry = {
       success: true,
       message: `Enrolled in ${cls.name}! Effective package rate: $${rate}.`
     };
+  },
+
+  // --- Teacher Announcement Management ---
+  toggleAnnouncement(classId: string, isPublic: boolean): boolean {
+    const cls = this.getClassById(classId);
+    if (!cls || !cls.announcement) return false;
+    cls.announcement.isPubliclyAnnounced = isPublic;
+    return true;
+  },
+
+  updateAnnouncement(classId: string, patch: Partial<TeacherAnnouncement>): boolean {
+    const cls = this.getClassById(classId);
+    if (!cls) return false;
+    if (!cls.announcement) {
+      cls.announcement = {
+        teacherName: "Teacher",
+        teacherTitle: "",
+        description: "",
+        prerequisites: [],
+        isPubliclyAnnounced: false,
+        publishedAt: new Date().toISOString(),
+        ...patch
+      };
+    } else {
+      Object.assign(cls.announcement, patch);
+    }
+    return true;
+  },
+
+  // --- Student Pending Registration Queue ---
+  submitRegistrationRequest(classId: string, studentName: string, studentEmail: string, prereqConfirmed: boolean) {
+    const cls = this.getClassById(classId);
+    if (!cls) return { success: false, message: "Package not found." };
+    if (!prereqConfirmed) return { success: false, message: "You must confirm all prerequisites." };
+
+    const existing = mockPendingRegistrations.find(r => r.classId === classId && r.studentEmail === studentEmail);
+    if (existing) return { success: false, message: "A registration request for this package is already pending." };
+
+    mockPendingRegistrations.push({
+      id: `reg_${Date.now()}`,
+      classId,
+      className: cls.name,
+      curriculumPackageName: cls.curriculumPackageName,
+      teacherId: cls.teacherId,
+      studentName,
+      studentEmail,
+      submittedAt: new Date().toISOString(),
+      status: "PENDING"
+    });
+    return { success: true, message: `Registration request submitted for ${cls.name}. The teacher will review and accept soon.` };
+  },
+
+  getPendingRegistrationsForTeacher(teacherId: string) {
+    return mockPendingRegistrations.filter(r => r.teacherId === teacherId && r.status === "PENDING");
+  },
+
+  approveRegistration(registrationId: string, studentId: string) {
+    const reg = mockPendingRegistrations.find(r => r.id === registrationId);
+    if (!reg) return { success: false, message: "Registration not found." };
+    reg.status = "APPROVED";
+    return this.enrollStudentInPublicPackage(studentId, reg.classId);
+  },
+
+  rejectRegistration(registrationId: string, reason: string) {
+    const reg = mockPendingRegistrations.find(r => r.id === registrationId);
+    if (!reg) return false;
+    reg.status = "REJECTED";
+    reg.rejectionReason = reason;
+    return true;
+  },
+
+  getAllPendingRegistrations() {
+    return mockPendingRegistrations;
   }
 };

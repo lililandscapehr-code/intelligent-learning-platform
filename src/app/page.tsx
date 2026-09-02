@@ -344,113 +344,11 @@ export default function EngineSimulator() {
     return <div className="flex min-h-screen items-center justify-center bg-neutral-950 text-sm text-neutral-400">Checking secure session...</div>;
   }
 
-  // ── PUBLIC HOMEPAGE (UNAUTHENTICATED) ───────────────────────────
-  if (!session) {
-    return (
-      <div className="min-h-screen bg-neutral-900 text-neutral-100 flex flex-col font-sans">
-        {/* Public Header */}
-        <header className="border-b border-neutral-800 bg-neutral-950 px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-amber-500 flex items-center justify-center font-black text-xl text-neutral-950">Ω</div>
-            <div>
-              <h1 className="text-base font-black text-white flex items-center gap-2">
-                EDUCATIONAL LEARNING PLATFORM
-                <span className="text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold">
-                  PUBLIC HOMEPAGE
-                </span>
-              </h1>
-              <p className="text-xs text-neutral-400">Public Package Catalog & Teacher Announcements</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setShowAuthModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold rounded-xl text-xs transition"
-            >
-              Sign In to Dashboard
-            </button>
-          </div>
-        </header>
-
-        {/* Public Portal Showcase */}
-        <main className="flex-1 p-6 overflow-y-auto">
-          <PublicTeacherShowcase 
-            onDirectLaunchPackage={() => setShowAuthModal(true)}
-            onOpenLoginModal={() => setShowAuthModal(true)}
-          />
-        </main>
-
-        {/* Auth Modal Overlay */}
-        {showAuthModal && (
-          <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-            <div className="bg-neutral-950 border border-neutral-800 rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl relative">
-              <button 
-                onClick={() => setShowAuthModal(false)}
-                className="absolute top-4 right-4 text-neutral-400 hover:text-white"
-              >
-                ✕
-              </button>
-
-              <div className="flex items-center gap-3 border-b border-neutral-800 pb-3">
-                <div className="h-10 w-10 rounded-xl bg-amber-500 flex items-center justify-center font-black text-xl text-neutral-950">Ω</div>
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-400">Authorized Access Guard</p>
-                  <h2 className="text-lg font-bold text-white">Sign In to Platform</h2>
-                </div>
-              </div>
-
-              <p className="text-xs text-neutral-400 leading-relaxed">
-                Sign in to access your authorized teacher dashboard, student workspace, or parent portal.
-              </p>
-
-              <div className="p-3 bg-neutral-900 border border-neutral-800 rounded-xl text-[11px] text-amber-300 space-y-1">
-                <p className="font-bold">Quick Demo Credentials:</p>
-                <p>Teacher: <code className="text-white">teacher@platform.com</code> / <code className="text-white">teacher123</code></p>
-                <p>Student: <code className="text-white">student@platform.com</code> / <code className="text-white">student123</code></p>
-                <p>Parent: <code className="text-white">parent@platform.com</code> / <code className="text-white">parent123</code></p>
-              </div>
-
-              <form onSubmit={submitLogin} className="space-y-3 text-xs">
-                <div>
-                  <label className="block text-neutral-400 font-semibold mb-1">Email Address</label>
-                  <input 
-                    type="email" required value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)}
-                    placeholder="e.g. teacher@platform.com"
-                    className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-neutral-400 font-semibold mb-1">Password</label>
-                  <input 
-                    type="password" required value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
-                  />
-                </div>
-
-                {loginError && (
-                  <p className="p-2.5 rounded-lg border border-red-500/30 bg-red-500/10 text-red-300 text-xs">
-                    {loginError}
-                  </p>
-                )}
-
-                <button 
-                  disabled={loginBusy}
-                  className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-lg text-xs transition disabled:opacity-50"
-                >
-                  {loginBusy ? "Authenticating..." : "Sign In & Unlock Workspace"}
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
+  // Unauthenticated: stay on public-showcase (default tab is already "public-showcase")
+  // The public-showcase tab renders its own full-page standalone layout above
 
   const navigationItems: Array<{ key: typeof activeTab; icon: typeof User; label: string; roles?: string[] }> = [
-    { key: "public-showcase", icon: Layers, label: "Teacher Packages Portal", roles: ["STUDENT", "TEACHER", "ADMIN", "PARENT"] },
+    // NOTE: public-showcase is NOT in the sidebar — it has its own full-page render
     { key: "student", icon: User, label: "My Study Tracks", roles: ["STUDENT"] },
     { key: "carousel", icon: Tv, label: "Lesson & Quiz Carousel", roles: ["STUDENT", "TEACHER", "ADMIN"] },
     { key: "student-diagnostic", icon: ClipboardCheck, label: "Readiness & 3-Case Diagnostics", roles: ["STUDENT"] },
@@ -464,12 +362,119 @@ export default function EngineSimulator() {
     { key: "platform", icon: Database, label: "Platform Core & DB", roles: ["ADMIN"] }
   ];
 
+  // ── PUBLIC HOMEPAGE: Render standalone (no sidebar, no internal sub-headers) ──
+  if (activeTab === "public-showcase") {
+    return (
+      <div className="min-h-screen bg-neutral-900 text-neutral-100 flex flex-col" style={{ fontFamily: "system-ui, sans-serif" }}>
+        {/* Minimal Public Header */}
+        <header className="border-b border-neutral-800 bg-neutral-950 px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-amber-500 flex items-center justify-center font-black text-xl text-neutral-950">Ω</div>
+            <div>
+              <h1 className="text-base font-black text-white flex items-center gap-2">
+                EDUCATIONAL LEARNING PLATFORM
+                <span className="text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold">PUBLIC HOMEPAGE</span>
+              </h1>
+              <p className="text-xs text-neutral-400">Teacher Package Catalog &amp; Public Announcements</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {session ? (
+              <>
+                <button
+                  onClick={() => {
+                    if (session.role === "TEACHER") setActiveTab("teacher");
+                    else if (session.role === "ADMIN") setActiveTab("admin");
+                    else if (session.role === "PARENT") setActiveTab("parent");
+                    else setActiveTab("student");
+                  }}
+                  className="px-3 py-2 rounded-xl bg-neutral-800 border border-neutral-700 text-xs font-semibold text-white hover:bg-neutral-700 transition"
+                >
+                  ← My Dashboard
+                </button>
+                <button onClick={signOut} className="px-3 py-2 rounded-xl bg-neutral-800 border border-neutral-700 text-xs text-amber-400 font-semibold hover:bg-neutral-700 transition">
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setShowAuthModal(true)}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold rounded-xl text-xs transition"
+              >
+                Sign In to Dashboard
+              </button>
+            )}
+          </div>
+        </header>
+
+        {/* Full-width Public Catalog */}
+        <main className="flex-1 p-6 overflow-y-auto">
+          <PublicTeacherShowcase
+            onDirectLaunchPackage={(curriculumId, _classId) => {
+              setSelectedCurriculumId(curriculumId as any);
+              if (session) setActiveTab("student-diagnostic");
+              else setShowAuthModal(true);
+            }}
+            onOpenLoginModal={() => setShowAuthModal(true)}
+          />
+        </main>
+
+        {/* Auth Modal */}
+        {showAuthModal && (
+          <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+            <div className="bg-neutral-950 border border-neutral-800 rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl relative">
+              <button onClick={() => setShowAuthModal(false)} className="absolute top-4 right-4 text-neutral-400 hover:text-white text-xl">✕</button>
+              <div className="flex items-center gap-3 border-b border-neutral-800 pb-3">
+                <div className="h-10 w-10 rounded-xl bg-amber-500 flex items-center justify-center font-black text-xl text-neutral-950">Ω</div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-amber-400">Authorized Access Guard</p>
+                  <h2 className="text-lg font-bold text-white">Sign In to Platform</h2>
+                </div>
+              </div>
+              <div className="p-3 bg-neutral-900 border border-neutral-800 rounded-xl text-[11px] text-amber-300 space-y-1">
+                <p className="font-bold">Demo Credentials:</p>
+                <p>Teacher: <code className="text-white">teacher@platform.com</code> / <code className="text-white">teacher123</code></p>
+                <p>Student: <code className="text-white">student@platform.com</code> / <code className="text-white">student123</code></p>
+                <p>Parent: <code className="text-white">parent@platform.com</code> / <code className="text-white">parent123</code></p>
+              </div>
+              <form onSubmit={submitLogin} className="space-y-3 text-xs">
+                <div>
+                  <label className="block text-neutral-400 font-semibold mb-1">Email</label>
+                  <input type="email" required value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)}
+                    placeholder="e.g. teacher@platform.com"
+                    className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500" />
+                </div>
+                <div>
+                  <label className="block text-neutral-400 font-semibold mb-1">Password</label>
+                  <input type="password" required value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500" />
+                </div>
+                {loginError && <p className="p-2.5 rounded-lg border border-red-500/30 bg-red-500/10 text-red-300">{loginError}</p>}
+                <button disabled={loginBusy} className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-lg transition disabled:opacity-50">
+                  {loginBusy ? "Authenticating..." : "Sign In & Unlock Workspace"}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Beyond this point, session is always defined (public-showcase handles null session above)
+  if (!session) return null;
+
   return (
     <div className="min-h-screen bg-neutral-900 text-neutral-100 flex flex-col" style={{ fontFamily: "system-ui, sans-serif" }}>
-      {/* Header */}
+      {/* Authenticated Internal Header */}
       <header className="border-b border-neutral-800 bg-neutral-950 px-4 py-4 md:px-6 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div style={{ background: "#f59e0b" }} className="h-10 w-10 rounded-xl flex items-center justify-center font-black text-xl text-neutral-950">Ω</div>
+          <button
+            onClick={() => setActiveTab("public-showcase")}
+            title="Back to Public Homepage"
+            className="h-10 w-10 rounded-xl bg-amber-500 flex items-center justify-center font-black text-xl text-neutral-950 hover:brightness-110 transition"
+          >Ω</button>
           <div>
             <h1 className="text-base md:text-lg font-black tracking-tight text-white flex items-center gap-2">
               EDUCATIONAL ENGINE SIMULATOR
@@ -548,25 +553,18 @@ export default function EngineSimulator() {
       <main className="flex-1 flex flex-col md:flex-row overflow-hidden">
         {/* Collapsible Sidebar */}
         <nav className={`border-b md:border-b-0 md:border-r border-neutral-800 bg-neutral-950 shrink-0 transition-all duration-300 flex flex-col ${sidebarCollapsed ? "md:w-14" : "md:w-56"} w-full`}>
-          {/* Collapse toggle — desktop only */}
           <div className="hidden md:flex items-center justify-end px-2 py-3 border-b border-neutral-800">
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
               className="rounded-lg p-1.5 text-neutral-500 hover:bg-neutral-800 hover:text-white transition"
               title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
-              {sidebarCollapsed ? (
-                <ArrowRight className="h-4 w-4" />
-              ) : (
-                <ListFilter className="h-4 w-4" />
-              )}
+              {sidebarCollapsed ? <ArrowRight className="h-4 w-4" /> : <ListFilter className="h-4 w-4" />}
             </button>
           </div>
-
-          {/* Nav items */}
           <div className="flex flex-row md:flex-col gap-1 p-2 overflow-x-auto md:overflow-x-visible">
             {navigationItems.filter(({ roles }) => !roles || roles.includes(session.role)).map(({ key, icon: Icon, label }) => (
-              <button key={key} onClick={() => setActiveTab(key)}
+              <button key={key} onClick={() => setActiveTab(key as any)}
                 title={label}
                 className={`shrink-0 flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
                   activeTab === key
@@ -581,19 +579,8 @@ export default function EngineSimulator() {
           </div>
         </nav>
 
-
         {/* Canvas */}
         <section className="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto bg-neutral-900">
-
-          {/* PUBLIC TEACHER PACKAGE PORTAL */}
-          {activeTab === "public-showcase" && (
-            <PublicTeacherShowcase 
-              onDirectLaunchPackage={(curriculumId, classId) => {
-                setSelectedCurriculumId(curriculumId);
-                setActiveTab("student-diagnostic");
-              }}
-            />
-          )}
 
           {/* READINESS TAB WITH DYNAMIC TOP CAROUSEL */}
           {activeTab === "readiness" && sessionQuestions.length > 0 && (

@@ -39,6 +39,8 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage, onOpenLog
   const [prereqMet, setPrereqMet] = useState(false);
   const [enrollStatus, setEnrollStatus] = useState("");
 
+  const [studentEmailInput, setStudentEmailInput] = useState("ahmed@student.com");
+
   const loadAnnouncements = () => {
     setAnnouncements(ClassRegistry.getPublicPackageAnnouncements());
   };
@@ -60,16 +62,21 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage, onOpenLog
     e.preventDefault();
     if (!selectedPackage || !prereqMet) return;
 
-    const result = ClassRegistry.enrollStudentInPublicPackage(studentIdInput, selectedPackage.classId);
+    const result = ClassRegistry.submitRegistrationRequest(
+      selectedPackage.classId,
+      studentNameInput,
+      studentEmailInput,
+      prereqMet
+    );
     if (result.success) {
-      setEnrollStatus(result.message);
+      setEnrollStatus("✅ " + result.message);
       setTimeout(() => {
         setEnrollStatus("");
         setSelectedPackage(null);
         loadAnnouncements();
-      }, 1500);
+      }, 3000);
     } else {
-      setEnrollStatus(result.message);
+      setEnrollStatus("❌ " + result.message);
     }
   };
 
@@ -274,12 +281,27 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage, onOpenLog
               </div>
             ) : (
               <form onSubmit={handleRegisterPackage} className="space-y-4 text-xs">
-                <div>
-                  <label className="block text-neutral-400 font-semibold mb-1">Student Full Name</label>
-                  <input 
-                    type="text" required value={studentNameInput} onChange={(e) => setStudentNameInput(e.target.value)}
-                    className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
-                  />
+                <div className="p-2 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-[11px]">
+                  📋 Your request will be sent to the teacher for review. Once approved, you'll be enrolled and the package rate will be auto-calculated.
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-neutral-400 font-semibold mb-1">Full Name</label>
+                    <input 
+                      type="text" required value={studentNameInput} onChange={(e) => setStudentNameInput(e.target.value)}
+                      placeholder="Your full name"
+                      className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-neutral-400 font-semibold mb-1">Email Address</label>
+                    <input 
+                      type="email" required value={studentEmailInput} onChange={(e) => setStudentEmailInput(e.target.value)}
+                      placeholder="your@email.com"
+                      className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
+                    />
+                  </div>
                 </div>
 
                 <div className="p-3 bg-neutral-900/80 rounded-xl border border-neutral-800 space-y-2">
@@ -296,16 +318,16 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage, onOpenLog
                 </div>
 
                 <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-300 flex justify-between items-center font-bold">
-                  <span>Effective Student Volume Rate:</span>
-                  <span className="text-base">${selectedPackage.effectiveRate} USD</span>
+                  <span>Current Volume Rate (if accepted):</span>
+                  <span className="text-base">${selectedPackage.effectiveRate} USD / student</span>
                 </div>
 
                 <div className="flex justify-end gap-2 pt-2 border-t border-neutral-800">
                   <button type="button" onClick={() => setSelectedPackage(null)} className="px-4 py-2 rounded-lg bg-neutral-800 text-white font-semibold">
                     Cancel
                   </button>
-                  <button type="submit" disabled={!prereqMet} className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold disabled:opacity-50">
-                    Confirm & Tie Package to Student
+                  <button type="submit" disabled={!prereqMet} className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-bold disabled:opacity-50">
+                    Send Registration Request to Teacher
                   </button>
                 </div>
               </form>
