@@ -113,6 +113,42 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
           </label>
         </div>
         {uploadStatus && <p className="text-xs p-3 rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-300">{uploadStatus}</p>}
+      {/* ── ADMIN QUESTION TANK & AI BUILDER GOVERNANCE ── */}
+      <section className="rounded-2xl border border-violet-500/40 bg-neutral-950 p-6 space-y-4">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-violet-400 font-bold">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                Official AI Builder & 3-Case Question DNA Tank Manager
+                <span className="text-[10px] bg-violet-500/20 text-violet-400 border border-violet-500/30 px-2 py-0.5 rounded-full font-bold">
+                  ADMIN EXCLUSIVE
+                </span>
+              </h3>
+              <p className="text-xs text-neutral-400">Only Admin generates and publishes official 3-Case Question DNA banks (Case B, Case Pre, Case C). Teachers inherit pushed tanks.</p>
+            </div>
+          </div>
+          <span className="text-xs font-bold bg-violet-500/10 text-violet-300 border border-violet-500/30 px-3 py-1.5 rounded-xl">
+            🤖 AI Generator Locked to Admin
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 text-xs">
+          <div className="p-3 bg-neutral-900 border border-neutral-800 rounded-xl space-y-1">
+            <strong className="text-violet-400 block font-bold">1. Admin AI Generation</strong>
+            <p className="text-neutral-400">Admin parses PDF textbooks and generates official 3-Case Question DNA banks.</p>
+          </div>
+          <div className="p-3 bg-neutral-900 border border-neutral-800 rounded-xl space-y-1">
+            <strong className="text-amber-400 block font-bold">2. Push to Authorized Teachers</strong>
+            <p className="text-neutral-400">Official tanks are pushed only to teachers who hold Admin approval for that curriculum.</p>
+          </div>
+          <div className="p-3 bg-neutral-900 border border-neutral-800 rounded-xl space-y-1">
+            <strong className="text-emerald-400 block font-bold">3. Teacher Package Extras</strong>
+            <p className="text-neutral-400">Teachers can add custom slides, explanation videos, and extra questions to their packages.</p>
+          </div>
+        </div>
       </section>
 
       {/* ── TEACHER CURRICULUM AUTHORIZATION MATRIX ── */}

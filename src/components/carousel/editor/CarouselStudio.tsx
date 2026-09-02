@@ -325,14 +325,16 @@ export default function CarouselStudio({
             <FilePlus2 className="h-3.5 w-3.5" /> New
           </button>
 
-          {/* AI Storyboard Builder */}
-          <button
-            onClick={() => setStoryboardOpen(true)}
-            title="Generate lesson slides from curriculum PDFs using AI"
-            className="flex items-center gap-1.5 rounded-lg border border-violet-600/60 bg-violet-600/10 px-3 py-1.5 text-xs font-bold text-violet-300 hover:bg-violet-600/20 hover:border-violet-400 hover:text-white transition-colors"
-          >
-            <Sparkles className="h-3.5 w-3.5" /> AI Builder
-          </button>
+          {/* AI Storyboard Builder (ADMIN ONLY) */}
+          {viewerRole === "ADMIN" && (
+            <button
+              onClick={() => setStoryboardOpen(true)}
+              title="[ADMIN ONLY] Generate official lesson slides and Question Tanks from curriculum PDFs using AI"
+              className="flex items-center gap-1.5 rounded-lg border border-violet-600/60 bg-violet-600/10 px-3 py-1.5 text-xs font-bold text-violet-300 hover:bg-violet-600/20 hover:border-violet-400 hover:text-white transition-colors"
+            >
+              <Sparkles className="h-3.5 w-3.5" /> Admin AI Tank Builder
+            </button>
+          )}
 
           {/* Materials Library */}
           <button
