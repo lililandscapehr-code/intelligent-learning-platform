@@ -297,10 +297,7 @@ export default function EngineSimulator() {
           setSelectedCurriculumId(assignedCurriculum);
           setHasCurriculumAssignment(true);
         }
-        if (result.data.role === "TEACHER") setActiveTab("teacher");
-        if (result.data.role === "ADMIN") setActiveTab("admin");
-        if (result.data.role === "PARENT") setActiveTab("parent");
-        if (result.data.role === "STUDENT") setActiveTab("student");
+        // Always default to Public Homepage on initial load
       }
       setAuthChecking(false);
     });
