@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import pdf from 'pdf-parse';
 
 export async function extractTextFromPdf(filename: string): Promise<string> {
   const filePath = path.join(process.cwd(), 'material', filename);
@@ -12,6 +11,7 @@ export async function extractTextFromPdf(filename: string): Promise<string> {
   const dataBuffer = fs.readFileSync(filePath);
   
   try {
+    const pdf = require('pdf-parse');
     const data = await pdf(dataBuffer);
     return data.text;
   } catch (error) {

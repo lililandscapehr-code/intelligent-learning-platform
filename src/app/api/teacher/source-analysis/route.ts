@@ -9,6 +9,7 @@ import { generateText, generateVision } from "../../../../core/services/ai-provi
 import { recordSourceAnalysis } from "../../../../core/services/source-governance";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;

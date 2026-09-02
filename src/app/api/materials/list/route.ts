@@ -3,6 +3,7 @@ import { requireRole } from "@/core/services/auth";
 import { listMaterialFiles } from "@/core/services/pdf-service";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {

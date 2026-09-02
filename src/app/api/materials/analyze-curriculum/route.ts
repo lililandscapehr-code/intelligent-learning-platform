@@ -4,6 +4,7 @@ import { extractTextFromPdf } from "@/core/services/pdf-service";
 import { generateText } from "@/core/services/ai-provider";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 // Cache analyzed curricula in memory per server process to avoid re-analyzing on every request
 const analysisCache = new Map<string, { chapters: CurriculumChapter[]; analyzedAt: number }>();

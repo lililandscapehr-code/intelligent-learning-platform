@@ -4,6 +4,7 @@ import { extractTextFromPdf } from "@/core/services/pdf-service";
 import { generateText } from "@/core/services/ai-provider";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
