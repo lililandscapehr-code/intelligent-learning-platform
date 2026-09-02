@@ -231,7 +231,11 @@ export default function ClassManager() {
               >
                 <div className="flex items-center justify-between mb-2">
                   {getScopeBadge(cls.scope.scopeType)}
-                  {isPublic ? (
+                  {cls.archivedAt ? (
+                    <span className="flex items-center gap-1 text-[10px] font-bold text-red-400 bg-red-950/40 px-2 py-0.5 rounded-full border border-red-500/40">
+                      Archived
+                    </span>
+                  ) : isPublic ? (
                     <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-400">
                       <Globe className="h-3 w-3" /> Public
                     </span>

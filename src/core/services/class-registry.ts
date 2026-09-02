@@ -360,6 +360,7 @@ export interface ClassRecord {
   financials: PackageFinancials;
   studentIds: string[];
   announcement?: TeacherAnnouncement;
+  archivedAt?: string | null;
 }
 
 // Initial Mock Data
@@ -983,7 +984,7 @@ export const ClassRegistry = {
   // --- Public Package Announcement Portal ---
   getPublicPackageAnnouncements() {
     return mockClasses
-      .filter((c) => c.announcement && c.announcement.isPubliclyAnnounced)
+      .filter((c) => c.announcement && c.announcement.isPubliclyAnnounced && !c.archivedAt)
       .map((c) => {
         const effectiveRate = this.calculateEffectiveRate(c);
         return {
