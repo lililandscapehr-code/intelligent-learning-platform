@@ -56,14 +56,18 @@ export default function CarouselPresentationStudio({
   const [whiteboardMode, setWhiteboardMode] = useState<"overlay" | "blank-dark" | "blank-light">("overlay");
   const [laserPos, setLaserPos] = useState<{ x: number; y: number } | null>(null);
 
-  // Recording state
+  // Recording & Voice Enhancement state
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [recordMic, setRecordMic] = useState(true);
+  const [voiceEnhancerEnabled, setVoiceEnhancerEnabled] = useState(true);
+  const [micGainLevel, setMicGainLevel] = useState(1.2); // 120% default volume boost
   const [recordingBlob, setRecordingBlob] = useState<Blob | null>(null);
   const [recordingUrl, setRecordingUrl] = useState<string | null>(null);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+
+  const gainNodeRef = useRef<GainNode | null>(null);
 
   // YouTube Upload state
   const [showYoutubeModal, setShowYoutubeModal] = useState(false);
@@ -192,20 +196,71 @@ export default function CarouselPresentationStudio({
 
       let finalStream = screenStream;
 
-      // 2. Mix Microphone Audio if enabled
+      // 2. Mix Microphone Audio with Real-Time Web Audio DSP Enhancement Pipeline
       if (recordMic) {
         try {
-          const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const micStream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: voiceEnhancerEnabled,
+              noiseSuppression: voiceEnhancerEnabled,
+              autoGainControl: voiceEnhancerEnabled,
+              sampleRate: 48000
+            }
+          });
+
           const audioContext = new AudioContext();
           const dest = audioContext.createMediaStreamDestination();
 
+          // Mix Screen System Audio
           if (screenStream.getAudioTracks().length > 0) {
             const screenSource = audioContext.createMediaStreamSource(screenStream);
             screenSource.connect(dest);
           }
 
+          // Build Microphone Web Audio DSP Chain
           const micSource = audioContext.createMediaStreamSource(micStream);
-          micSource.connect(dest);
+
+          if (voiceEnhancerEnabled) {
+            // A. High-Pass Filter (removes low-frequency rumble & ambient hums < 80Hz)
+            const highPass = audioContext.createBiquadFilter();
+            highPass.type = "highpass";
+            highPass.frequency.value = 80;
+
+            // B. Speech Presence EQ Filter (boosts clarity frequencies at 3000Hz +3.5dB)
+            const speechEq = audioContext.createBiquadFilter();
+            speechEq.type = "peaking";
+            speechEq.frequency.value = 3000;
+            speechEq.Q.value = 1.0;
+            speechEq.gain.value = 3.5;
+
+            // C. Vocal Dynamic Compressor (smooths volume spikes & boosts quiet speech)
+            const compressor = audioContext.createDynamicsCompressor();
+            compressor.threshold.value = -24;
+            compressor.knee.value = 12;
+            compressor.ratio.value = 4;
+            compressor.attack.value = 0.003;
+            compressor.release.value = 0.25;
+
+            // D. Gain Booster Node (microphone volume multiplier controlled by teacher slider)
+            const gainNode = audioContext.createGain();
+            gainNode.gain.value = micGainLevel;
+            gainNodeRef.current = gainNode;
+
+            // Connect DSP Chain: micSource -> highPass -> speechEq -> compressor -> gainNode -> dest
+            micSource
+              .connect(highPass)
+              .connect(speechEq)
+              .connect(compressor)
+              .connect(gainNode)
+              .connect(dest);
+          } else {
+            // Direct pass-through without DSP filters
+            const gainNode = audioContext.createGain();
+            gainNode.gain.value = micGainLevel;
+            gainNodeRef.current = gainNode;
+
+            micSource.connect(gainNode).connect(dest);
+          }
 
           const combinedTracks = [
             ...screenStream.getVideoTracks(),
@@ -370,7 +425,7 @@ export default function CarouselPresentationStudio({
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <label className="flex items-center gap-1 text-[11px] text-neutral-400 cursor-pointer">
                 <input 
                   type="checkbox" 
@@ -381,6 +436,44 @@ export default function CarouselPresentationStudio({
                 {recordMic ? <Mic className="h-3.5 w-3.5 text-amber-400 inline" /> : <MicOff className="h-3.5 w-3.5 text-neutral-500 inline" />}
                 Mic Voice
               </label>
+
+              {recordMic && (
+                <>
+                  {/* Studio Voice Enhancer Toggle */}
+                  <button
+                    onClick={() => setVoiceEnhancerEnabled(!voiceEnhancerEnabled)}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold border transition ${
+                      voiceEnhancerEnabled
+                        ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40"
+                        : "bg-neutral-800 text-neutral-400 border-neutral-700"
+                    }`}
+                    title="Toggle Web Audio DSP Noise Suppression, Echo Cancellation & Speech EQ Boost"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    Studio Enhancer {voiceEnhancerEnabled ? "ON" : "OFF"}
+                  </button>
+
+                  {/* Mic Volume Boost Slider */}
+                  <div className="flex items-center gap-1.5 text-[10px] text-neutral-400 bg-neutral-950/60 border border-neutral-800 px-2 py-1 rounded-lg">
+                    <span>Mic Boost:</span>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="2.0"
+                      step="0.1"
+                      value={micGainLevel}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        setMicGainLevel(val);
+                        if (gainNodeRef.current) gainNodeRef.current.gain.value = val;
+                      }}
+                      className="w-16 accent-amber-500 cursor-pointer"
+                    />
+                    <span className="font-mono text-amber-400 font-bold w-7 text-right">{Math.round(micGainLevel * 100)}%</span>
+                  </div>
+                </>
+              )}
+
               <button 
                 onClick={startRecording}
                 className="flex items-center gap-1.5 px-3.5 py-1.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs shadow-lg transition"
