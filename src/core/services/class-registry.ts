@@ -313,6 +313,53 @@ let mockClasses: ClassRecord[] = [
       currency: "USD"
     },
     studentIds: ["std_001", "std_004", "std_005"]
+  },
+  {
+    id: "cls_103",
+    teacherId: "teacher_1",
+    name: "Cambridge IGCSE Math 0580 - Algebra & Number Pass",
+    curriculumPackageId: "cambridge-igcse-0580",
+    curriculumPackageName: "Cambridge IGCSE Mathematics 0580",
+    gradeLevel: "IGCSE / Secondary 1-2",
+    scope: {
+      scopeType: "CHAPTER_BUNDLE",
+      chapterNames: ["Topic 1: Number Skills & Fractions", "Topic 2: Algebra & Equations"],
+      lessonIds: ["LES-0580-NUM-01", "LES-0580-ALG-01"],
+      includedLiveSessions: 4
+    },
+    financials: {
+      pricingModel: "VOLUME_TIERED",
+      basePricePerStudent: 40,
+      tiers: [
+        { minStudents: 1, maxStudents: 10, pricePerStudent: 40 },
+        { minStudents: 11, maxStudents: 50, pricePerStudent: 30 }
+      ],
+      currency: "USD"
+    },
+    studentIds: ["std_001", "std_003"]
+  },
+  {
+    id: "cls_104",
+    teacherId: "teacher_1",
+    name: "Secondary 1 Integrated Science - Ecosystems Workshop",
+    curriculumPackageId: "egypt-secondary1-integrated-science",
+    curriculumPackageName: "Egyptian Secondary 1 Integrated Science",
+    gradeLevel: "Secondary 1 (Grade 10)",
+    scope: {
+      scopeType: "CHAPTER_BUNDLE",
+      chapterNames: ["Chapter 1: Aquatic Ecosystems & Energy Flow"],
+      lessonIds: ["LES-EGYPT-S1-AQUATIC-01"],
+      includedLiveSessions: 2
+    },
+    financials: {
+      pricingModel: "VOLUME_TIERED",
+      basePricePerStudent: 30,
+      tiers: [
+        { minStudents: 1, maxStudents: 20, pricePerStudent: 30 }
+      ],
+      currency: "USD"
+    },
+    studentIds: ["std_002", "std_005"]
   }
 ];
 
