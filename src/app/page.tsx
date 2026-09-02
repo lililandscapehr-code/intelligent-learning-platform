@@ -340,31 +340,137 @@ export default function EngineSimulator() {
     setSession(null);
   }
 
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  async function submitLogin(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoginBusy(true);
+    setLoginError("");
+    const result = await login(loginEmail, loginPassword);
+    if (result.success && result.data) {
+      setSession({ email: loginEmail.trim().toLowerCase(), role: result.data.role });
+      setShowAuthModal(false);
+      if (result.data.role === "TEACHER") setActiveTab("teacher");
+      if (result.data.role === "ADMIN") setActiveTab("admin");
+      if (result.data.role === "PARENT") setActiveTab("parent");
+      if (result.data.role === "STUDENT") setActiveTab("student");
+    } else {
+      setLoginError(result.errors[0] || "Unable to sign in.");
+    }
+    setLoginBusy(false);
+  }
+
+  async function signOut() {
+    await logout();
+    setSession(null);
+  }
+
   if (authChecking) {
     return <div className="flex min-h-screen items-center justify-center bg-neutral-950 text-sm text-neutral-400">Checking secure session...</div>;
   }
 
+  // ── PUBLIC HOMEPAGE (UNAUTHENTICATED) ───────────────────────────
   if (!session) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-neutral-950 px-4 text-neutral-100">
-        <section className="w-full max-w-md rounded-xl border border-neutral-800 bg-neutral-900 p-6 shadow-2xl">
+      <div className="min-h-screen bg-neutral-900 text-neutral-100 flex flex-col font-sans">
+        {/* Public Header */}
+        <header className="border-b border-neutral-800 bg-neutral-950 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500 text-xl font-black text-neutral-950">Ω</div>
+            <div className="h-10 w-10 rounded-xl bg-amber-500 flex items-center justify-center font-black text-xl text-neutral-950">Ω</div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-400">Secure learning platform</p>
-              <h1 className="mt-1 text-xl font-bold text-white">Sign in</h1>
+              <h1 className="text-base font-black text-white flex items-center gap-2">
+                EDUCATIONAL LEARNING PLATFORM
+                <span className="text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold">
+                  PUBLIC HOMEPAGE
+                </span>
+              </h1>
+              <p className="text-xs text-neutral-400">Public Package Catalog & Teacher Announcements</p>
             </div>
           </div>
-          <p className="mt-5 text-sm leading-6 text-neutral-400">Sign in to access your authorized learning workspace.</p>
-          <p className="mt-3 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-200">Student demo: student@platform.com / student123</p>
-          <form onSubmit={submitLogin} className="mt-6 space-y-4">
-            <label className="block text-xs font-semibold text-neutral-400">Email<input type="email" value={loginEmail} onChange={(event) => setLoginEmail(event.target.value)} required className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500" /></label>
-            <label className="block text-xs font-semibold text-neutral-400">Password<input type="password" value={loginPassword} onChange={(event) => setLoginPassword(event.target.value)} required className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500" /></label>
-            {loginError && <p className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-300">{loginError}</p>}
-            <button disabled={loginBusy} className="w-full rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-bold text-neutral-950 disabled:opacity-50">{loginBusy ? "Signing in..." : "Sign in"}</button>
-          </form>
-        </section>
-      </main>
+
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setShowAuthModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold rounded-xl text-xs transition"
+            >
+              Sign In to Dashboard
+            </button>
+          </div>
+        </header>
+
+        {/* Public Portal Showcase */}
+        <main className="flex-1 p-6 overflow-y-auto">
+          <PublicTeacherShowcase 
+            onDirectLaunchPackage={() => setShowAuthModal(true)}
+            onOpenLoginModal={() => setShowAuthModal(true)}
+          />
+        </main>
+
+        {/* Auth Modal Overlay */}
+        {showAuthModal && (
+          <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+            <div className="bg-neutral-950 border border-neutral-800 rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl relative">
+              <button 
+                onClick={() => setShowAuthModal(false)}
+                className="absolute top-4 right-4 text-neutral-400 hover:text-white"
+              >
+                ✕
+              </button>
+
+              <div className="flex items-center gap-3 border-b border-neutral-800 pb-3">
+                <div className="h-10 w-10 rounded-xl bg-amber-500 flex items-center justify-center font-black text-xl text-neutral-950">Ω</div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-400">Authorized Access Guard</p>
+                  <h2 className="text-lg font-bold text-white">Sign In to Platform</h2>
+                </div>
+              </div>
+
+              <p className="text-xs text-neutral-400 leading-relaxed">
+                Sign in to access your authorized teacher dashboard, student workspace, or parent portal.
+              </p>
+
+              <div className="p-3 bg-neutral-900 border border-neutral-800 rounded-xl text-[11px] text-amber-300 space-y-1">
+                <p className="font-bold">Quick Demo Credentials:</p>
+                <p>Teacher: <code className="text-white">teacher@platform.com</code> / <code className="text-white">teacher123</code></p>
+                <p>Student: <code className="text-white">student@platform.com</code> / <code className="text-white">student123</code></p>
+                <p>Parent: <code className="text-white">parent@platform.com</code> / <code className="text-white">parent123</code></p>
+              </div>
+
+              <form onSubmit={submitLogin} className="space-y-3 text-xs">
+                <div>
+                  <label className="block text-neutral-400 font-semibold mb-1">Email Address</label>
+                  <input 
+                    type="email" required value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)}
+                    placeholder="e.g. teacher@platform.com"
+                    className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-neutral-400 font-semibold mb-1">Password</label>
+                  <input 
+                    type="password" required value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                {loginError && (
+                  <p className="p-2.5 rounded-lg border border-red-500/30 bg-red-500/10 text-red-300 text-xs">
+                    {loginError}
+                  </p>
+                )}
+
+                <button 
+                  disabled={loginBusy}
+                  className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-lg text-xs transition disabled:opacity-50"
+                >
+                  {loginBusy ? "Authenticating..." : "Sign In & Unlock Workspace"}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
     );
   }
 

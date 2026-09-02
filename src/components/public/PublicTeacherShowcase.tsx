@@ -18,14 +18,16 @@ import {
   Layers, 
   PlayCircle,
   X,
-  UserPlus
+  UserPlus,
+  LogIn
 } from "lucide-react";
 
 interface PublicTeacherShowcaseProps {
   onDirectLaunchPackage: (curriculumId: string, classId: string) => void;
+  onOpenLoginModal?: () => void;
 }
 
-export default function PublicTeacherShowcase({ onDirectLaunchPackage }: PublicTeacherShowcaseProps) {
+export default function PublicTeacherShowcase({ onDirectLaunchPackage, onOpenLoginModal }: PublicTeacherShowcaseProps) {
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [subjectFilter, setSubjectFilter] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
@@ -49,7 +51,8 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage }: PublicT
     const matchesSubject = subjectFilter === "ALL" || pkg.curriculumPackageId.includes(subjectFilter);
     const matchesQuery = pkg.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           pkg.announcement.teacherName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          pkg.curriculumPackageName.toLowerCase().includes(searchQuery.toLowerCase());
+                          pkg.curriculumPackageName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          pkg.gradeLevel.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSubject && matchesQuery;
   });
 
@@ -89,38 +92,41 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage }: PublicT
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-2 max-w-3xl">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-amber-400">
-              <Sparkles className="h-3.5 w-3.5" /> Official Teacher Package Portal
+              <Sparkles className="h-3.5 w-3.5" /> Public Educational Information & Announcement Portal
             </span>
             <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-              Teacher Announced Classes & Packages
+              Teacher Announced Classes & Package Catalog
             </h1>
             <p className="text-sm text-neutral-300 leading-relaxed">
-              Explore teacher-announced packages across physics, math, and science. Review package prerequisites, inspect dynamic volume rates, register, or log on directly to your package session.
+              Search available packages by teacher name, subject, or grade level. Inspect package requirements, volume pricing, and register or log directly into your authorized package workspace.
             </p>
           </div>
 
-          <div className="bg-black/40 border border-neutral-800 rounded-2xl p-4 text-xs space-y-1 text-right shrink-0">
-            <span className="text-neutral-400 block font-semibold">Public Announcements</span>
-            <p className="text-2xl font-black text-amber-400">{announcements.length} Active Packages</p>
-            <p className="text-[11px] text-emerald-400 font-medium">Verified Teacher Contracts</p>
-          </div>
+          {onOpenLoginModal && (
+            <button 
+              onClick={onOpenLoginModal}
+              className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs shadow-lg shadow-amber-500/20 transition shrink-0"
+            >
+              <LogIn className="h-4 w-4" /> Sign In to Workspace
+            </button>
+          )}
         </div>
       </div>
 
       {/* ── Search & Subject Filter Bar ──────────────────────── */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-neutral-950 border border-neutral-800 rounded-2xl p-4">
-        <div className="relative flex-1 min-w-[240px]">
+        <div className="relative flex-1 min-w-[280px]">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" />
           <input 
             type="text" 
-            placeholder="Search package title, teacher name, or curriculum..."
+            placeholder="Search by Teacher Name, Curriculum Package, or Grade..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-neutral-900 border border-neutral-700 rounded-xl py-2.5 pl-10 pr-4 text-xs text-white outline-none focus:border-amber-500"
           />
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {[
             { id: "ALL", label: "All Curriculums" },
             { id: "physics", label: "Physics 2nd Year" },
@@ -224,10 +230,13 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage }: PublicT
                   <UserPlus className="h-4 w-4" /> Register (${pkg.effectiveRate})
                 </button>
                 <button 
-                  onClick={() => onDirectLaunchPackage(pkg.curriculumPackageId, pkg.classId)}
+                  onClick={() => {
+                    if (onOpenLoginModal) onOpenLoginModal();
+                    else onDirectLaunchPackage(pkg.curriculumPackageId, pkg.classId);
+                  }}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-black font-black text-xs rounded-xl shadow-lg shadow-amber-500/20 hover:brightness-110 transition"
                 >
-                  <PlayCircle className="h-4 w-4" /> Direct Logon & Launch
+                  <PlayCircle className="h-4 w-4" /> Login & Launch Package
                 </button>
               </div>
             </div>
@@ -238,7 +247,7 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage }: PublicT
           <div className="col-span-full py-16 text-center text-neutral-500 border border-dashed border-neutral-800 rounded-3xl space-y-2">
             <BookOpen className="h-10 w-10 mx-auto opacity-40 text-neutral-400" />
             <p className="font-bold text-white">No teacher package announcements found.</p>
-            <p className="text-xs text-neutral-400">Try adjusting your search query or subject filter.</p>
+            <p className="text-xs text-neutral-400">Try searching for a different teacher name or subject.</p>
           </div>
         )}
       </div>
