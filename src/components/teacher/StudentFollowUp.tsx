@@ -24,7 +24,8 @@ import {
   ShieldCheck,
   Send,
   Sparkles,
-  Plus
+  Plus,
+  Lock
 } from "lucide-react";
 
 export default function StudentFollowUp() {
@@ -33,6 +34,7 @@ export default function StudentFollowUp() {
   const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
   const [activeTab, setActiveTab] = useState<"academics" | "financials" | "parents">("academics");
   const [searchQuery, setSearchQuery] = useState("");
+  const teacherPermissions = ClassRegistry.getTeacherPermissions("teacher_1");
 
   // Swapping State
   const [showSwapModal, setShowSwapModal] = useState(false);
@@ -283,35 +285,46 @@ export default function StudentFollowUp() {
             </div>
 
             {/* Send Follow-up Note */}
-            <div className="bg-neutral-900/40 border border-neutral-800 rounded-2xl p-6 space-y-4">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Send className="h-4 w-4 text-amber-500" /> Log Teacher Follow-up / Send Parent Update
-              </h3>
-              <form onSubmit={handleSendParentNote} className="space-y-3 text-xs">
-                <div className="grid grid-cols-2 gap-3">
-                  <input 
-                    type="text" required placeholder="Note Title..." value={noteTitle} onChange={(e) => setNoteTitle(e.target.value)}
-                    className="bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
+            {teacherPermissions.canContactParents ? (
+              <div className="bg-neutral-900/40 border border-neutral-800 rounded-2xl p-6 space-y-4">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <Send className="h-4 w-4 text-amber-500" /> Log Teacher Follow-up / Send Parent Update
+                </h3>
+                <form onSubmit={handleSendParentNote} className="space-y-3 text-xs">
+                  <div className="grid grid-cols-2 gap-3">
+                    <input 
+                      type="text" required placeholder="Note Title..." value={noteTitle} onChange={(e) => setNoteTitle(e.target.value)}
+                      className="bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
+                    />
+                    <select 
+                      value={noteCategory} onChange={(e) => setNoteCategory(e.target.value as any)}
+                      className="bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
+                    >
+                      <option value="TEACHER_NOTE">Teacher Note</option>
+                      <option value="PARENT_NOTIFICATION">Parent Notification</option>
+                      <option value="ACADEMIC_WARNING">Academic Warning</option>
+                      <option value="COMMENDATION">Commendation / Praise</option>
+                    </select>
+                  </div>
+                  <textarea 
+                    required rows={3} placeholder="Write evaluation detail or guidance for parent..." value={noteMessage} onChange={(e) => setNoteMessage(e.target.value)}
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
                   />
-                  <select 
-                    value={noteCategory} onChange={(e) => setNoteCategory(e.target.value as any)}
-                    className="bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
-                  >
-                    <option value="TEACHER_NOTE">Teacher Note</option>
-                    <option value="PARENT_NOTIFICATION">Parent Notification</option>
-                    <option value="ACADEMIC_WARNING">Academic Warning</option>
-                    <option value="COMMENDATION">Commendation / Praise</option>
-                  </select>
+                  <button type="submit" className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-lg transition">
+                    Save & Dispatch to Parent
+                  </button>
+                </form>
+              </div>
+            ) : (
+              <div className="bg-neutral-950 border border-red-500/30 rounded-2xl p-5 space-y-2 text-xs">
+                <div className="flex items-center gap-2 text-red-400 font-bold">
+                  <Lock className="h-4 w-4" /> Direct Parent Messaging Restricted
                 </div>
-                <textarea 
-                  required rows={3} placeholder="Write evaluation detail or guidance for parent..." value={noteMessage} onChange={(e) => setNoteMessage(e.target.value)}
-                  className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
-                />
-                <button type="submit" className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-lg transition">
-                  Save & Dispatch to Parent
-                </button>
-              </form>
-            </div>
+                <p className="text-neutral-400">
+                  Platform Admin has disabled outbound parent communication for your teacher account. You can view student contact info and communication logs, but direct messages cannot be dispatched.
+                </p>
+              </div>
+            )}
 
             {/* Logs List */}
             <div className="space-y-3">

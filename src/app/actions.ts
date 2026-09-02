@@ -285,3 +285,35 @@ export async function getDiagnosticAttemptForStudent(attemptId: string): Promise
     return { success: false, errors: [error.message || "Failed to load diagnostic attempt."] };
   }
 }
+
+// ── Admin AI & Ollama Configuration Actions ─────────────────
+export async function getAIConfigAction(): Promise<ServerActionResponse<any>> {
+  try {
+    const { getAIConfiguration } = await import("../core/services/ai-provider");
+    const config = getAIConfiguration();
+    return { success: true, errors: [], data: config };
+  } catch (error: any) {
+    return { success: false, errors: [error.message || "Failed to load AI configuration."] };
+  }
+}
+
+export async function saveAIConfigAction(config: any): Promise<ServerActionResponse<any>> {
+  try {
+    const { updateAIConfiguration } = await import("../core/services/ai-provider");
+    const updated = updateAIConfiguration(config);
+    return { success: true, errors: [], data: updated };
+  } catch (error: any) {
+    return { success: false, errors: [error.message || "Failed to save AI configuration."] };
+  }
+}
+
+export async function testAIConnectionAction(config?: any): Promise<ServerActionResponse<any>> {
+  try {
+    const { testAIConnection } = await import("../core/services/ai-provider");
+    const result = await testAIConnection(config);
+    return { success: result.success, errors: result.success ? [] : [result.message], data: result };
+  } catch (error: any) {
+    return { success: false, errors: [error.message || "AI connection test failed."] };
+  }
+}
+

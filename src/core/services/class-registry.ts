@@ -327,11 +327,26 @@ export interface TeacherAnnouncement {
   publishedAt: string;
 }
 
+export interface TeacherPermissions {
+  canAddCarousels: boolean;       // Whom of teachers can add carousels, whom can not
+  canContactParents: boolean;     // Whom of teachers can contact parents, whom can not
+  canRecordDemos: boolean;        // Permission to use Screen/Mic recording studio
+  canHostLiveSessions: boolean;   // Permission to schedule Meet/Zoom live classes
+}
+
+export const DEFAULT_TEACHER_PERMISSIONS: TeacherPermissions = {
+  canAddCarousels: true,
+  canContactParents: true,
+  canRecordDemos: true,
+  canHostLiveSessions: true
+};
+
 export interface TeacherAssignment {
   teacherId: string;
   teacherName: string;
   teacherEmail: string;
   approvedCurriculumIds: string[];
+  permissions: TeacherPermissions;
 }
 
 export interface ClassRecord {
@@ -745,9 +760,30 @@ let mockTeacherAssignments: TeacherAssignment[] = [
     approvedCurriculumIds: [
       "egypt-baccalaureate-second-year-physics-part1",
       "egypt-baccalaureate-second-year-physics-part2",
-      "cambridge-igcse-0580-math",
+      "cambridge-igcse-0580",
       "egypt-secondary1-integrated-science"
-    ]
+    ],
+    permissions: {
+      canAddCarousels: true,
+      canContactParents: true,
+      canRecordDemos: true,
+      canHostLiveSessions: true
+    }
+  },
+  {
+    teacherId: "teacher_2",
+    teacherName: "Eng. Mariam Adel",
+    teacherEmail: "mariam.adel@platform.com",
+    approvedCurriculumIds: [
+      "cambridge-igcse-0580",
+      "egypt-secondary1-integrated-science"
+    ],
+    permissions: {
+      canAddCarousels: false,  // Restricted: Cannot create carousels
+      canContactParents: false, // Restricted: Cannot contact parents directly
+      canRecordDemos: true,
+      canHostLiveSessions: true
+    }
   }
 ];
 
@@ -1083,6 +1119,18 @@ export const ClassRegistry = {
     return mockTeacherAssignments;
   },
 
+  getTeacherPermissions(teacherId: string): TeacherPermissions {
+    const assignment = mockTeacherAssignments.find(t => t.teacherId === teacherId);
+    return assignment?.permissions ?? { ...DEFAULT_TEACHER_PERMISSIONS };
+  },
+
+  updateTeacherPermissions(teacherId: string, permissions: Partial<TeacherPermissions>): boolean {
+    const assignment = mockTeacherAssignments.find(t => t.teacherId === teacherId);
+    if (!assignment) return false;
+    assignment.permissions = { ...assignment.permissions, ...permissions };
+    return true;
+  },
+
   assignCurriculumToTeacher(teacherId: string, curriculumId: string): boolean {
     let assignment = mockTeacherAssignments.find(t => t.teacherId === teacherId);
     if (!assignment) {
@@ -1090,7 +1138,8 @@ export const ClassRegistry = {
         teacherId,
         teacherName: "Teacher",
         teacherEmail: `${teacherId}@platform.com`,
-        approvedCurriculumIds: []
+        approvedCurriculumIds: [],
+        permissions: { ...DEFAULT_TEACHER_PERMISSIONS }
       };
       mockTeacherAssignments.push(assignment);
     }

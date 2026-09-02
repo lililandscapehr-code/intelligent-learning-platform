@@ -29,7 +29,8 @@ import {
   XCircle,
   Bell,
   Edit3,
-  Video
+  Video,
+  Lock
 } from "lucide-react";
 import CarouselPresentationStudio from "../carousel/presentation/CarouselPresentationStudio";
 
@@ -60,6 +61,7 @@ export default function ClassManager() {
   const [newPrereqInput, setNewPrereqInput] = useState("");
   const [announceSaved, setAnnounceSaved] = useState(false);
 
+  const teacherPermissions = ClassRegistry.getTeacherPermissions("teacher_1");
   const approvedCurriculums = ClassRegistry.getApprovedCurriculumsForTeacher("teacher_1");
   const activeCurriculumSpec: CurriculumSpec = approvedCurriculums.find(c => c.id === selectedCurriculumId) || approvedCurriculums[0] || REGISTERED_CURRICULUM_SPECS["egypt-baccalaureate-second-year-physics-part1"];
 
@@ -343,20 +345,39 @@ export default function ClassManager() {
                     </div>
 
                     {/* Teacher Package Custom Carousels */}
-                    <div className="p-3.5 bg-neutral-950 border border-amber-500/30 rounded-xl space-y-2">
+                    <div className={`p-3.5 bg-neutral-950 rounded-xl space-y-2 border ${
+                      teacherPermissions.canAddCarousels ? "border-amber-500/30" : "border-neutral-800 opacity-80"
+                    }`}>
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-white flex items-center gap-1.5">
                           <Sparkles className="h-4 w-4 text-amber-400" /> Teacher Package Carousels
                         </span>
-                        <span className="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded font-bold">CUSTOM EXTRAS</span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${
+                          teacherPermissions.canAddCarousels 
+                            ? "bg-amber-500/20 text-amber-400" 
+                            : "bg-neutral-800 text-neutral-500"
+                        }`}>
+                          {teacherPermissions.canAddCarousels ? "CUSTOM EXTRAS" : "LOCKED BY ADMIN"}
+                        </span>
                       </div>
-                      <p className="text-neutral-400 text-[11px]">Teacher can add package-specific explanation slides, worked examples & custom quizzes.</p>
-                      <button
-                        onClick={() => setShowRecordingStudio(true)}
-                        className="w-full py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold rounded-lg text-[11px] transition"
-                      >
-                        + Record Demo / Add Custom Carousel
-                      </button>
+                      <p className="text-neutral-400 text-[11px]">
+                        {teacherPermissions.canAddCarousels
+                          ? "Teacher can add package-specific explanation slides, worked examples & custom quizzes."
+                          : "Custom carousel authoring is disabled for this teacher account by Platform Admin."}
+                      </p>
+                      {teacherPermissions.canAddCarousels ? (
+                        <button
+                          onClick={() => setShowRecordingStudio(true)}
+                          className="w-full py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold rounded-lg text-[11px] transition"
+                        >
+                          + Record Demo / Add Custom Carousel
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-1.5 py-1 px-2.5 bg-neutral-900 border border-neutral-800 rounded-lg text-[10px] text-neutral-400">
+                          <Lock className="h-3 w-3 text-neutral-500" />
+                          <span>Contact Admin to enable custom carousel authoring</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
