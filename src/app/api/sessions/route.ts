@@ -30,18 +30,24 @@ async function ensureTable(db: mysql.Connection) {
   `);
 }
 
-// GET /api/sessions?email=teacher@example.com
+// GET /api/sessions?email=teacher@example.com (or no email to get all active/scheduled sessions)
 export async function GET(req: NextRequest) {
   const email = req.nextUrl.searchParams.get("email");
-  if (!email) return NextResponse.json({ error: "email required" }, { status: 400 });
 
   const db = await getDb();
   try {
     await ensureTable(db);
-    const [rows] = await db.execute(
-      "SELECT * FROM live_sessions WHERE teacher_email = ? ORDER BY scheduled_time ASC",
-      [email]
-    );
+    let rows;
+    if (email) {
+      [rows] = await db.execute(
+        "SELECT * FROM live_sessions WHERE teacher_email = ? ORDER BY scheduled_time ASC",
+        [email]
+      );
+    } else {
+      [rows] = await db.execute(
+        "SELECT * FROM live_sessions WHERE status IN ('live', 'scheduled') ORDER BY CASE WHEN status = 'live' THEN 0 ELSE 1 END, scheduled_time ASC LIMIT 20"
+      );
+    }
     return NextResponse.json({ sessions: rows });
   } finally {
     await db.end();

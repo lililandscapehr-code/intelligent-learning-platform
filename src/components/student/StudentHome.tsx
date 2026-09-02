@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   BookOpen,
   CheckCircle2,
@@ -14,6 +14,9 @@ import {
   ShieldCheck,
   Sparkles,
   Zap,
+  Video,
+  Calendar,
+  ExternalLink,
 } from "lucide-react";
 
 export interface StudentTrackInfo {
@@ -110,6 +113,18 @@ export default function StudentHome({
   const [tracks, setTracks] = useState<StudentTrackInfo[]>(DEFAULT_TRACKS);
   const [activePart, setActivePart] = useState<"part1" | "part2" | "full">("part1");
   const [showCatalogModal, setShowCatalogModal] = useState(false);
+  const [liveSessions, setLiveSessions] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch("/api/sessions")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && Array.isArray(data.sessions)) {
+          setLiveSessions(data.sessions);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Active track identification
   const activeTrack =
@@ -217,6 +232,76 @@ export default function StudentHome({
           </div>
         </div>
       </section>
+
+      {/* ── Live Online Classes & Video Sessions ─────────────────── */}
+      {liveSessions.length > 0 && (
+        <section className="rounded-2xl border border-sky-500/30 bg-neutral-950 p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="flex h-2.5 w-2.5 rounded-full bg-red-500 animate-ping" />
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <Video className="h-4 w-4 text-sky-400" />
+                Live Online Classes & Video Sessions
+              </h3>
+            </div>
+            <span className="text-xs text-neutral-400 font-mono">
+              {liveSessions.filter((s) => s.status === "live").length > 0 ? "🔴 Live classes in progress" : "Upcoming sessions"}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {liveSessions.map((session) => (
+              <div
+                key={session.id}
+                className={`flex flex-col justify-between rounded-xl border p-4 transition-all ${
+                  session.status === "live"
+                    ? "border-red-500/50 bg-red-950/20 shadow-lg shadow-red-500/10"
+                    : "border-neutral-800 bg-neutral-900/60"
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span
+                      className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
+                        session.status === "live"
+                          ? "bg-red-500 text-white animate-pulse"
+                          : "bg-sky-500/10 text-sky-300 border border-sky-500/20"
+                      }`}
+                    >
+                      {session.status === "live" ? "🔴 LIVE NOW" : "Scheduled"}
+                    </span>
+                    <span className="text-[11px] text-neutral-400 font-mono">
+                      {session.class_name}
+                    </span>
+                  </div>
+                  <h4 className="text-sm font-bold text-white mb-1">{session.title}</h4>
+                  <div className="flex items-center gap-1.5 text-xs text-neutral-400 mb-4">
+                    <Calendar className="h-3.5 w-3.5 text-neutral-500" />
+                    {new Date(session.scheduled_time).toLocaleString([], {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    })}
+                  </div>
+                </div>
+
+                <a
+                  href={session.meeting_link}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={`flex items-center justify-center gap-2 rounded-lg py-2 text-xs font-bold transition ${
+                    session.status === "live"
+                      ? "bg-red-600 hover:bg-red-500 text-white shadow-md shadow-red-600/30"
+                      : "bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700"
+                  }`}
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  {session.status === "live" ? "Join Live Classroom (Zoom/Meet)" : "Meeting Link"}
+                </a>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ── My Registered Curriculum Tracks (Part by Part) ────── */}
       <section className="space-y-4">
