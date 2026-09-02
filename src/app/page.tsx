@@ -435,9 +435,10 @@ export default function EngineSimulator() {
               </div>
               <div className="p-3 bg-neutral-900 border border-neutral-800 rounded-xl text-[11px] text-amber-300 space-y-1">
                 <p className="font-bold">Demo Credentials:</p>
-                <p>Teacher: <code className="text-white">teacher@platform.com</code> / <code className="text-white">teacher123</code></p>
-                <p>Student: <code className="text-white">student@platform.com</code> / <code className="text-white">student123</code></p>
-                <p>Parent: <code className="text-white">parent@platform.com</code> / <code className="text-white">parent123</code></p>
+                <p>Admin: <code className="text-white font-mono font-bold">admin@platform.com</code> / <code className="text-white font-mono font-bold">admin123</code></p>
+                <p>Teacher: <code className="text-white font-mono font-bold">teacher@platform.com</code> / <code className="text-white font-mono font-bold">teacher123</code></p>
+                <p>Student: <code className="text-white font-mono font-bold">student@platform.com</code> / <code className="text-white font-mono font-bold">student123</code></p>
+                <p>Parent: <code className="text-white font-mono font-bold">parent@platform.com</code> / <code className="text-white font-mono font-bold">parent123</code></p>
               </div>
               <form onSubmit={submitLogin} className="space-y-3 text-xs">
                 <div>
