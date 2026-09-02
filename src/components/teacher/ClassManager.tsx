@@ -28,14 +28,17 @@ import {
   CheckCircle,
   XCircle,
   Bell,
-  Edit3
+  Edit3,
+  Video
 } from "lucide-react";
+import CarouselPresentationStudio from "../carousel/presentation/CarouselPresentationStudio";
 
 export default function ClassManager() {
   const [classes, setClasses] = useState<ClassRecord[]>([]);
   const [selectedClass, setSelectedClass] = useState<ClassRecord | null>(null);
   const [students, setStudents] = useState<StudentProfile[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showRecordingStudio, setShowRecordingStudio] = useState(false);
   const [activePanel, setActivePanel] = useState<"details" | "announce" | "inbox">("details");
   const [pendingRegs, setPendingRegs] = useState<PendingRegistration[]>([]);
 
@@ -254,6 +257,12 @@ export default function ClassManager() {
             {/* Panel Tabs */}
             <div className="flex items-center gap-2 border-b border-neutral-800 pb-3 mb-5">
               <h2 className="text-lg font-bold text-white flex-1 truncate">{selectedClass.name}</h2>
+              <button
+                onClick={() => setShowRecordingStudio(true)}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold bg-red-600 hover:bg-red-500 text-white shadow-md transition"
+              >
+                <Video className="h-4 w-4" /> Record Full-Screen Demo
+              </button>
               {[
                 { key: "details", label: "Package Details", icon: Layers },
                 { key: "announce", label: "Announce on Homepage", icon: Megaphone },
@@ -626,6 +635,37 @@ export default function ClassManager() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* ── RECORDING STUDIO MODAL ── */}
+      {showRecordingStudio && selectedClass && (
+        <CarouselPresentationStudio
+          carousel={{
+            id: `CAROUSEL-${selectedClass.id}`,
+            title: selectedClass.name,
+            skillId: "SKILL-PHYS-VECTORS",
+            blueprintId: "BLUEPRINT-BAC-2",
+            showProgressBar: true,
+            showScoreTally: true,
+            sequenceMode: "SEQUENTIAL",
+            slides: [
+              {
+                id: "slide-1",
+                type: "lesson_text",
+                title: selectedClass.name,
+                body: selectedClass.announcement?.description || "Welcome to this interactive presentation.",
+                learningObjective: "Master the key concepts covered in this curriculum package.",
+                keyTerms: ["Vectors", "Relative Velocity", "Forces"],
+                theme: "default"
+              }
+            ]
+          }}
+          onClose={() => setShowRecordingStudio(false)}
+          onSaveRecordingToPackage={(url, title) => {
+            alert(`Demo video "${title}" attached to ${selectedClass.name}!`);
+            setShowRecordingStudio(false);
+          }}
+        />
       )}
     </div>
   );

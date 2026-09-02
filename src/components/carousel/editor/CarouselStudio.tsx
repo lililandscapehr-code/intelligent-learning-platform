@@ -15,7 +15,10 @@ import {
   Sparkles,
   Library,
   X,
+  Video,
+  Monitor
 } from "lucide-react";
+import CarouselPresentationStudio from "../presentation/CarouselPresentationStudio";
 import PdfCropAssistant from "./PdfCropAssistant";
 import AIStoryboardBuilder from "./AIStoryboardBuilder";
 import MaterialsLibraryPanel from "./MaterialsLibraryPanel";
@@ -101,6 +104,7 @@ export default function CarouselStudio({
   const [pdfCropOpen, setPdfCropOpen] = useState(false);
   const [storyboardOpen, setStoryboardOpen] = useState(false);
   const [materialsOpen, setMaterialsOpen] = useState(false);
+  const [presentationOpen, setPresentationOpen] = useState(false);
   const [storyboardPrefill, setStoryboardPrefill] = useState<{ lessonName: string; books: string[] } | null>(null);
   const [mobileTab, setMobileTab] = useState<"slides" | "editor" | "settings">("editor");
 
