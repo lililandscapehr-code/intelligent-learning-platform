@@ -109,6 +109,26 @@ export interface PendingRegistration {
 }
 
 // ── Official Registered Curriculum Packages & Specifications ─────────────────
+export interface CurriculumPolicy {
+  maxAuthorizedTeachers: number;        // 0 = unlimited
+  teacherMustBeVerified: boolean;       // teacher profile verified before assignment
+  allowTeacherCustomSlides: boolean;    // can teacher add their own slides?
+  allowTeacherCustomQuestions: boolean; // can teacher add their own questions?
+  aiTankEnabled: boolean;               // admin can push AI Question DNA tanks
+  expiryDate: string | null;            // ISO date "2027-06-30" or null = no expiry
+  notes: string;                        // admin internal notes
+}
+
+export const DEFAULT_CURRICULUM_POLICY: CurriculumPolicy = {
+  maxAuthorizedTeachers: 0,
+  teacherMustBeVerified: false,
+  allowTeacherCustomSlides: true,
+  allowTeacherCustomQuestions: true,
+  aiTankEnabled: true,
+  expiryDate: null,
+  notes: ""
+};
+
 export interface CurriculumSpec {
   id: string;
   name: string;
@@ -119,7 +139,18 @@ export interface CurriculumSpec {
   terms: Array<{ id: "term1" | "term2" | "full"; label: string; dateRange: string }>;
   chapters: string[];
   lessons: Array<{ id: string; title: string }>;
+  policy?: CurriculumPolicy;
+  registeredAt?: string;
+  archivedAt?: string | null;
 }
+
+export interface CurriculumRemovalReport {
+  curriculumId: string;
+  curriculumName: string;
+  revokedFromTeachers: string[];
+  archivedPackages: string[];
+}
+
 
 export const REGISTERED_CURRICULUM_SPECS: Record<string, CurriculumSpec> = {
   "egypt-baccalaureate-second-year-physics-part1": {
@@ -154,7 +185,10 @@ export const REGISTERED_CURRICULUM_SPECS: Record<string, CurriculumSpec> = {
       { id: "CAROUSEL-PHYS-EB-MECH-1-10", title: "1-10 Uniform Circular Motion" },
       { id: "CAROUSEL-PHYS-EB-MECH-1-11", title: "1-11 Horizontal & Vertical Circular Dynamics" },
       { id: "CAROUSEL-PHYS-EB-MECH-1-12", title: "1-12 Kepler's Laws & Universal Gravitation" }
-    ]
+    ],
+    registeredAt: "2026-08-01",
+    archivedAt: null,
+    policy: { ...DEFAULT_CURRICULUM_POLICY, notes: "Official MoE Physics Term 1 — AI Tank Enabled" }
   },
   "egypt-baccalaureate-second-year-physics-part2": {
     id: "egypt-baccalaureate-second-year-physics-part2",
@@ -178,7 +212,10 @@ export const REGISTERED_CURRICULUM_SPECS: Record<string, CurriculumSpec> = {
       { id: "CAROUSEL-PHYS-EB-GASES-2-2", title: "2-2 Boyle's Law (p-V Isothermal)" },
       { id: "CAROUSEL-PHYS-EB-GASES-2-3", title: "2-3 Charles's Law & Absolute Temperature" },
       { id: "CAROUSEL-PHYS-EB-GASES-2-4", title: "2-4 Ideal Gas Equation (pV = nRT)" }
-    ]
+    ],
+    registeredAt: "2026-08-01",
+    archivedAt: null,
+    policy: { ...DEFAULT_CURRICULUM_POLICY, notes: "Official MoE Physics Term 2 — AI Tank Enabled" }
   },
   "egypt-baccalaureate-second-year-physics": {
     id: "egypt-baccalaureate-second-year-physics",
@@ -207,7 +244,10 @@ export const REGISTERED_CURRICULUM_SPECS: Record<string, CurriculumSpec> = {
       { id: "CAROUSEL-PHYS-EB-MECH-1-3", title: "1-3 Projectile Motion at an Angle" },
       { id: "CAROUSEL-PHYS-EB-GASES-2-2", title: "2-2 Boyle's Law" },
       { id: "CAROUSEL-PHYS-EB-GASES-2-3", title: "2-3 Charles's Law" }
-    ]
+    ],
+    registeredAt: "2026-08-01",
+    archivedAt: null,
+    policy: { ...DEFAULT_CURRICULUM_POLICY, notes: "Full-year bundle — both terms" }
   },
   "cambridge-igcse-0580": {
     id: "cambridge-igcse-0580",
@@ -229,7 +269,10 @@ export const REGISTERED_CURRICULUM_SPECS: Record<string, CurriculumSpec> = {
     lessons: [
       { id: "LES-0580-NUM-01", title: "Fraction Arithmetic & Simplification" },
       { id: "LES-0580-ALG-01", title: "Algebraic Expansion & Factorization" }
-    ]
+    ],
+    registeredAt: "2026-08-01",
+    archivedAt: null,
+    policy: { ...DEFAULT_CURRICULUM_POLICY, maxAuthorizedTeachers: 10, notes: "Cambridge IGCSE — max 10 authorized teachers" }
   },
   "egypt-secondary1-integrated-science": {
     id: "egypt-secondary1-integrated-science",
@@ -247,7 +290,10 @@ export const REGISTERED_CURRICULUM_SPECS: Record<string, CurriculumSpec> = {
     ],
     lessons: [
       { id: "LES-EGYPT-S1-AQUATIC-01", title: "Aquatic Ecosystem: Observation to Evidence" }
-    ]
+    ],
+    registeredAt: "2026-08-01",
+    archivedAt: null,
+    policy: { ...DEFAULT_CURRICULUM_POLICY, notes: "MoE Integrated Science Grade 10" }
   },
   "arts-drama-201": {
     id: "arts-drama-201",
@@ -265,7 +311,10 @@ export const REGISTERED_CURRICULUM_SPECS: Record<string, CurriculumSpec> = {
     ],
     lessons: [
       { id: "LES-DRAMA-VOCAL-01", title: "Voice Projection & Resonator Technique" }
-    ]
+    ],
+    registeredAt: "2026-08-01",
+    archivedAt: null,
+    policy: { ...DEFAULT_CURRICULUM_POLICY, aiTankEnabled: false, notes: "Arts module — AI Tank disabled" }
   }
 };
 
@@ -1061,5 +1110,74 @@ export const ClassRegistry = {
   importOfficialCurriculumSpec(spec: CurriculumSpec): boolean {
     REGISTERED_CURRICULUM_SPECS[spec.id] = spec;
     return true;
+  },
+
+  // ── Curriculum Lifecycle: Add ─────────────────────────────────────────────
+  addCurriculumSpec(spec: CurriculumSpec): { success: boolean; message: string } {
+    if (REGISTERED_CURRICULUM_SPECS[spec.id]) {
+      return { success: false, message: `A curriculum with ID "${spec.id}" already exists.` };
+    }
+    REGISTERED_CURRICULUM_SPECS[spec.id] = {
+      ...spec,
+      registeredAt: new Date().toISOString().split("T")[0],
+      archivedAt: null,
+      policy: spec.policy ?? { ...DEFAULT_CURRICULUM_POLICY }
+    };
+    return { success: true, message: `Curriculum "${spec.name}" registered successfully.` };
+  },
+
+  updateCurriculumPolicy(curriculumId: string, policy: CurriculumPolicy): boolean {
+    if (!REGISTERED_CURRICULUM_SPECS[curriculumId]) return false;
+    REGISTERED_CURRICULUM_SPECS[curriculumId].policy = policy;
+    return true;
+  },
+
+  // ── Curriculum Lifecycle: Dependency Inspection ───────────────────────────
+  getCurriculumDependencies(curriculumId: string): {
+    authorizedTeachers: TeacherAssignment[];
+    affectedPackages: ClassRecord[];
+  } {
+    const authorizedTeachers = mockTeacherAssignments.filter(t =>
+      t.approvedCurriculumIds.includes(curriculumId)
+    );
+    const affectedPackages = mockClasses.filter(
+      c => c.curriculumPackageId === curriculumId
+    );
+    return { authorizedTeachers, affectedPackages };
+  },
+
+  // ── Curriculum Lifecycle: Remove (cascade archive) ────────────────────────
+  removeCurriculumSpec(curriculumId: string): { success: boolean; report: CurriculumRemovalReport | null } {
+    const spec = REGISTERED_CURRICULUM_SPECS[curriculumId];
+    if (!spec) return { success: false, report: null };
+
+    const report: CurriculumRemovalReport = {
+      curriculumId,
+      curriculumName: spec.name,
+      revokedFromTeachers: [],
+      archivedPackages: []
+    };
+
+    // 1. Revoke from all teacher assignments
+    mockTeacherAssignments.forEach(t => {
+      if (t.approvedCurriculumIds.includes(curriculumId)) {
+        t.approvedCurriculumIds = t.approvedCurriculumIds.filter(id => id !== curriculumId);
+        report.revokedFromTeachers.push(t.teacherName);
+      }
+    });
+
+    // 2. Archive all packages using this curriculum
+    mockClasses.forEach(cls => {
+      if (cls.curriculumPackageId === curriculumId) {
+        (cls as any).archivedAt = new Date().toISOString();
+        report.archivedPackages.push(cls.name);
+      }
+    });
+
+    // 3. Mark curriculum as archived (soft delete)
+    REGISTERED_CURRICULUM_SPECS[curriculumId].archivedAt = new Date().toISOString().split("T")[0];
+    delete REGISTERED_CURRICULUM_SPECS[curriculumId];
+
+    return { success: true, report };
   }
 };
