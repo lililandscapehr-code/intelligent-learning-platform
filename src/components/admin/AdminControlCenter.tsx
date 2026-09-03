@@ -2564,8 +2564,39 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
             </div>
 
             <div className="space-y-3">
+              {/* Quick Presets */}
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">Quick Provider Presets:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { name: "Gemini 2.5 Flash", type: "gemini", model: "gemini-2.5-flash", desc: "Free Cloud Tier" },
+                    { name: "ChatGPT (gpt-4o-mini)", type: "openai", model: "gpt-4o-mini", desc: "OpenAI Cloud" },
+                    { name: "ChatGPT (gpt-4o)", type: "openai", model: "gpt-4o", desc: "OpenAI Flagship" },
+                    { name: "DeepSeek Chat", type: "openai", model: "deepseek-chat", apiBaseUrl: "https://api.deepseek.com/v1", desc: "DeepSeek API" },
+                    { name: "Claude (OpenRouter)", type: "openai", model: "anthropic/claude-3.5-sonnet", apiBaseUrl: "https://openrouter.ai/api/v1", desc: "Anthropic via OpenRouter" },
+                    { name: "Ollama (Local Free)", type: "ollama", model: "qwen2.5:3b", endpoint: "http://127.0.0.1:11434", desc: "100% Free Offline" }
+                  ].map(preset => (
+                    <button
+                      key={preset.name}
+                      type="button"
+                      onClick={() => setNewProviderForm({
+                        name: preset.name,
+                        type: preset.type as any,
+                        model: preset.model,
+                        apiKey: "",
+                        endpoint: preset.endpoint || "http://127.0.0.1:11434",
+                        apiBaseUrl: preset.apiBaseUrl || "https://api.openai.com/v1"
+                      })}
+                      className="px-2.5 py-1 rounded-lg border border-neutral-700 bg-neutral-900 hover:border-violet-400 hover:text-white text-[10px] font-bold text-neutral-300 transition"
+                    >
+                      + {preset.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <label className="block">
-                <span className="text-neutral-400 font-semibold block mb-1">Provider Type</span>
+                <span className="text-neutral-400 font-semibold block mb-1">Provider Protocol Type</span>
                 <select
                   value={newProviderForm.type}
                   onChange={e => setNewProviderForm(p => ({
@@ -2573,19 +2604,19 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
                     type: e.target.value as any,
                     model: e.target.value === "gemini" ? "gemini-2.5-flash" : e.target.value === "ollama" ? "qwen2.5:3b" : "gpt-4o-mini"
                   }))}
-                  className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500"
+                  className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500 font-bold"
                 >
-                  <option value="gemini">Google Gemini API (Cloud Fast)</option>
-                  <option value="ollama">Ollama (Local Offline LLM)</option>
-                  <option value="openai">OpenAI / DeepSeek / Custom REST</option>
+                  <option value="gemini">Google Gemini REST API (Cloud Fast & Free Tier)</option>
+                  <option value="openai">OpenAI / ChatGPT / Claude / DeepSeek REST Protocol</option>
+                  <option value="ollama">Ollama (Local 100% Free Offline LLM Server)</option>
                 </select>
               </label>
 
               <label className="block">
-                <span className="text-neutral-400 font-semibold block mb-1">Friendly Name</span>
+                <span className="text-neutral-400 font-semibold block mb-1">Display Name</span>
                 <input
                   type="text"
-                  placeholder="e.g. Gemini Backup Key #2"
+                  placeholder="e.g. OpenAI GPT-4o / Claude 3.5 Sonnet / Ollama Local"
                   value={newProviderForm.name}
                   onChange={e => setNewProviderForm(p => ({ ...p, name: e.target.value }))}
                   className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500"
@@ -2593,36 +2624,49 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
               </label>
 
               <label className="block">
-                <span className="text-neutral-400 font-semibold block mb-1">Model Identifier</span>
+                <span className="text-neutral-400 font-semibold block mb-1">Target Model Identifier</span>
                 <input
                   type="text"
-                  placeholder="gemini-2.5-flash, qwen2.5:3b, gpt-4o-mini"
+                  placeholder="e.g. gpt-4o, gpt-4o-mini, claude-3-5-sonnet, gemini-2.5-flash, qwen2.5:3b"
                   value={newProviderForm.model}
                   onChange={e => setNewProviderForm(p => ({ ...p, model: e.target.value }))}
-                  className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500"
+                  className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500 font-mono"
                 />
               </label>
 
+              {newProviderForm.type === "openai" && (
+                <label className="block">
+                  <span className="text-neutral-400 font-semibold block mb-1">API Base URL (Endpoint)</span>
+                  <input
+                    type="text"
+                    placeholder="https://api.openai.com/v1 or https://openrouter.ai/api/v1 or https://api.deepseek.com/v1"
+                    value={newProviderForm.apiBaseUrl || "https://api.openai.com/v1"}
+                    onChange={e => setNewProviderForm(p => ({ ...p, apiBaseUrl: e.target.value }))}
+                    className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500 font-mono text-[11px]"
+                  />
+                </label>
+              )}
+
               {newProviderForm.type !== "ollama" ? (
                 <label className="block">
-                  <span className="text-neutral-400 font-semibold block mb-1">API Key</span>
+                  <span className="text-neutral-400 font-semibold block mb-1">API Secret Key</span>
                   <input
                     type="password"
-                    placeholder="AIzaSy... / sk-..."
+                    placeholder="sk-... / AIzaSy..."
                     value={newProviderForm.apiKey}
                     onChange={e => setNewProviderForm(p => ({ ...p, apiKey: e.target.value }))}
-                    className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500"
+                    className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500 font-mono"
                   />
                 </label>
               ) : (
                 <label className="block">
-                  <span className="text-neutral-400 font-semibold block mb-1">Ollama Server Endpoint</span>
+                  <span className="text-neutral-400 font-semibold block mb-1">Ollama Local Server Endpoint</span>
                   <input
                     type="text"
                     placeholder="http://127.0.0.1:11434"
                     value={newProviderForm.endpoint}
                     onChange={e => setNewProviderForm(p => ({ ...p, endpoint: e.target.value }))}
-                    className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500"
+                    className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500 font-mono"
                   />
                 </label>
               )}
