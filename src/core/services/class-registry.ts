@@ -1880,6 +1880,39 @@ export const ClassRegistry = {
       };
     }
     return { allowed: true };
+  },
+
+  adminUpdateCurriculumStructure(
+    curriculumId: string,
+    patch: {
+      name?: string;
+      chapters?: string[];
+      lessons?: Array<{ id: string; title: string }>;
+      notes?: string;
+      version?: string;
+    }
+  ): { success: boolean; message: string } {
+    const spec = REGISTERED_CURRICULUM_SPECS[curriculumId];
+    if (!spec) return { success: false, message: `Curriculum "${curriculumId}" not found in registry.` };
+
+    if (patch.name !== undefined) spec.name = patch.name;
+    if (patch.chapters !== undefined) spec.chapters = patch.chapters;
+    if (patch.lessons !== undefined) spec.lessons = patch.lessons;
+    if (patch.version !== undefined) spec.version = patch.version;
+    if (patch.notes !== undefined) {
+      if (!spec.policy) spec.policy = { ...DEFAULT_CURRICULUM_POLICY };
+      spec.policy.notes = (spec.policy.notes ? spec.policy.notes + "\n\n" : "") +
+        `[AI Studio Update — ${new Date().toISOString()}]\n${patch.notes}`;
+    }
+
+    return {
+      success: true,
+      message: `Curriculum "${spec.name}" updated: ${[
+        patch.chapters ? `${patch.chapters.length} chapters` : "",
+        patch.lessons ? `${patch.lessons.length} lessons` : "",
+        patch.notes ? "notes updated" : ""
+      ].filter(Boolean).join(", ")}.`
+    };
   }
 };
 

@@ -10,8 +10,9 @@ import {
   Sliders, Eye, EyeOff, Layers, ArrowUp, ArrowDown, Brain,
   Award, Zap, Check, Bell, Send, FileText, BarChart2,
   TrendingUp, DollarSign, Target, Radio, AlertOctagon, Filter,
-  Dna, RotateCcw, Copy, Package, Globe
+  Dna, RotateCcw, Copy, Package, Globe, FileEdit
 } from "lucide-react";
+import CurriculumAIStudio from "./CurriculumAIStudio";
 import { 
   uploadCurriculumPackage,
   getAIProviderPoolAction,
@@ -54,7 +55,7 @@ interface AdminControlCenterProps {
   onCurriculumAdded: (curriculum: CurriculumPackage) => void;
 }
 
-type AdminTab = "reports" | "packages" | "tanks" | "alarms" | "broadcasts" | "notes" | "registry" | "add" | "teachers" | "ai";
+type AdminTab = "reports" | "packages" | "tanks" | "alarms" | "broadcasts" | "notes" | "registry" | "add" | "teachers" | "ai" | "curriculum-studio";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function PolicyBadge({ on, label }: { on: boolean; label: string }) {
@@ -771,6 +772,7 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
     { key: "add", label: "➕ Add Curriculum", icon: PlusCircle },
     { key: "teachers", label: "👩‍🏫 Teacher Governance", icon: UserCheck },
     { key: "ai", label: "🤖 AI & Ollama Pool", icon: Cpu },
+    { key: "curriculum-studio", label: "📄 Curriculum AI Studio", icon: FileEdit },
   ];
 
   const filteredNotes = notes.filter(n => noteFilterStatus === "ALL" || n.status === noteFilterStatus);
@@ -2295,6 +2297,13 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* ── TAB 10: CURRICULUM AI STUDIO ───────────────────────────────── */}
+      {activeTab === "curriculum-studio" && (
+        <div className="space-y-5">
+          <CurriculumAIStudio />
         </div>
       )}
 
