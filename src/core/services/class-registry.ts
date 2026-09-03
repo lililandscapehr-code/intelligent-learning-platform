@@ -123,6 +123,27 @@ export interface PendingRegistration {
 }
 
 // ── Official Registered Curriculum Packages & Specifications ─────────────────
+export interface DomainActionPolicy {
+  canAdd: boolean;
+  canModify: boolean;
+  canRemove: boolean;
+  requireAdminApprovalForRemove?: boolean;
+}
+
+export interface CurriculumDomainPolicies {
+  questionTank: DomainActionPolicy;
+  syllabus: DomainActionPolicy;
+  packages: DomainActionPolicy;
+  carouselContent: DomainActionPolicy;
+}
+
+export const DEFAULT_DOMAIN_POLICIES: CurriculumDomainPolicies = {
+  questionTank: { canAdd: true, canModify: true, canRemove: false, requireAdminApprovalForRemove: true },
+  syllabus: { canAdd: false, canModify: true, canRemove: false, requireAdminApprovalForRemove: true },
+  packages: { canAdd: true, canModify: true, canRemove: false, requireAdminApprovalForRemove: true },
+  carouselContent: { canAdd: true, canModify: true, canRemove: true, requireAdminApprovalForRemove: false }
+};
+
 export interface CurriculumPolicy {
   maxAuthorizedTeachers: number;        // 0 = unlimited
   teacherMustBeVerified: boolean;       // teacher profile verified before assignment
@@ -131,6 +152,7 @@ export interface CurriculumPolicy {
   aiTankEnabled: boolean;               // admin can push AI Question DNA tanks
   expiryDate: string | null;            // ISO date "2027-06-30" or null = no expiry
   notes: string;                        // admin internal notes
+  domains?: CurriculumDomainPolicies;   // Granular domain-level permissions for questions tank, syllabus, packages, etc.
 }
 
 export interface CurriculumPolicyProfile extends CurriculumPolicy {
@@ -146,7 +168,8 @@ export const DEFAULT_CURRICULUM_POLICY: CurriculumPolicy = {
   allowTeacherCustomQuestions: true,
   aiTankEnabled: true,
   expiryDate: null,
-  notes: ""
+  notes: "",
+  domains: { ...DEFAULT_DOMAIN_POLICIES }
 };
 
 export const DEFAULT_POLICY_PROFILES: CurriculumPolicyProfile[] = [
@@ -160,7 +183,8 @@ export const DEFAULT_POLICY_PROFILES: CurriculumPolicyProfile[] = [
     allowTeacherCustomQuestions: true,
     aiTankEnabled: true,
     expiryDate: null,
-    notes: "Default open policy for authorized teachers."
+    notes: "Default open policy for authorized teachers.",
+    domains: { ...DEFAULT_DOMAIN_POLICIES }
   },
   {
     id: "pol_strict_exam",
@@ -172,7 +196,13 @@ export const DEFAULT_POLICY_PROFILES: CurriculumPolicyProfile[] = [
     allowTeacherCustomQuestions: false,
     aiTankEnabled: true,
     expiryDate: null,
-    notes: "Locked down for official examination packages. Custom edits disabled."
+    notes: "Locked down for official examination packages. Custom edits disabled.",
+    domains: {
+      questionTank: { canAdd: false, canModify: false, canRemove: false, requireAdminApprovalForRemove: true },
+      syllabus: { canAdd: false, canModify: false, canRemove: false, requireAdminApprovalForRemove: true },
+      packages: { canAdd: false, canModify: false, canRemove: false, requireAdminApprovalForRemove: true },
+      carouselContent: { canAdd: false, canModify: false, canRemove: false, requireAdminApprovalForRemove: true }
+    }
   },
   {
     id: "pol_trial_30d",
@@ -184,7 +214,13 @@ export const DEFAULT_POLICY_PROFILES: CurriculumPolicyProfile[] = [
     allowTeacherCustomQuestions: true,
     aiTankEnabled: true,
     expiryDate: "2027-06-30",
-    notes: "Temporary promotional policy for trial packages."
+    notes: "Temporary promotional policy for trial packages.",
+    domains: {
+      questionTank: { canAdd: true, canModify: true, canRemove: false, requireAdminApprovalForRemove: true },
+      syllabus: { canAdd: true, canModify: true, canRemove: false, requireAdminApprovalForRemove: true },
+      packages: { canAdd: true, canModify: true, canRemove: false, requireAdminApprovalForRemove: true },
+      carouselContent: { canAdd: true, canModify: true, canRemove: true, requireAdminApprovalForRemove: false }
+    }
   }
 ];
 
@@ -1808,6 +1844,42 @@ export const ClassRegistry = {
     spec.activePolicyId = profileId;
     spec.policy = { ...target };
     return true;
+  },
+
+  getCurriculumDomainPolicies(curriculumId: string): CurriculumDomainPolicies {
+    const spec = REGISTERED_CURRICULUM_SPECS[curriculumId];
+    return spec?.policy?.domains || DEFAULT_DOMAIN_POLICIES;
+  },
+
+  updateCurriculumDomainPolicies(curriculumId: string, domains: Partial<CurriculumDomainPolicies>): boolean {
+    const spec = REGISTERED_CURRICULUM_SPECS[curriculumId];
+    if (!spec) return false;
+    if (!spec.policy) spec.policy = { ...DEFAULT_CURRICULUM_POLICY };
+    spec.policy.domains = {
+      ...(spec.policy.domains || DEFAULT_DOMAIN_POLICIES),
+      ...domains
+    };
+    return true;
+  },
+
+  checkDomainPermission(
+    curriculumId: string,
+    domain: keyof CurriculumDomainPolicies,
+    action: "canAdd" | "canModify" | "canRemove"
+  ): { allowed: boolean; reason?: string } {
+    const policies = this.getCurriculumDomainPolicies(curriculumId);
+    const domainPolicy = policies[domain];
+    if (!domainPolicy) return { allowed: true };
+    const allowed = domainPolicy[action];
+    if (!allowed) {
+      const actionName = action === "canAdd" ? "ADD" : action === "canModify" ? "MODIFY" : "REMOVE";
+      const domainName = domain === "questionTank" ? "Question DNA Tank" : domain === "syllabus" ? "Syllabus Structure" : domain === "packages" ? "Packages & Offerings" : "Carousel Content";
+      return {
+        allowed: false,
+        reason: `Policy Restriction: Teachers do not have permission to ${actionName} items in ${domainName}. An administrative proposal or approval is required.`
+      };
+    }
+    return { allowed: true };
   }
 };
 

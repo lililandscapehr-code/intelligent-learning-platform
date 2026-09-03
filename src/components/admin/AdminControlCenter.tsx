@@ -37,7 +37,10 @@ import {
   AdminDirectiveNote,
   ExecutiveAuditReport,
   ClassRecord,
-  PackageScopeType
+  PackageScopeType,
+  CurriculumDomainPolicies,
+  DomainActionPolicy,
+  DEFAULT_DOMAIN_POLICIES
 } from "../../core/services/class-registry";
 import { 
   AIProviderEntry, 
@@ -118,6 +121,85 @@ function PolicyEditor({
         <textarea rows={2} value={policy.notes} onChange={e => set("notes", e.target.value)}
           className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500 resize-none" />
       </label>
+
+      {/* ── Granular Domain Action Policies ── */}
+      <div className="space-y-2 pt-3 border-t border-neutral-800">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block">
+            Domain Action Policies (Teacher Permissions)
+          </span>
+          <span className="text-[10px] text-neutral-400">Configure Add, Modify, or Remove rights per sector</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+          {[
+            { key: "questionTank" as const, label: "🧬 Question DNA Tank", desc: "Baseline Case B, Pre trials & C challenges" },
+            { key: "syllabus" as const, label: "📖 Syllabus & Structure", desc: "Curriculum parts, chapters & lessons" },
+            { key: "packages" as const, label: "📦 Parts & Packages", desc: "Commercial offerings, quotas & student pricing" },
+            { key: "carouselContent" as const, label: "🎠 Carousel Slides & Media", desc: "Slide cards, formulas, videos & rich text" }
+          ].map(({ key, label, desc }) => {
+            const domainPolicy = policy.domains?.[key] || DEFAULT_DOMAIN_POLICIES[key];
+            const updateDomain = (action: keyof DomainActionPolicy, val: boolean) => {
+              const currentDomains = policy.domains || { ...DEFAULT_DOMAIN_POLICIES };
+              const currentSector = currentDomains[key] || { ...DEFAULT_DOMAIN_POLICIES[key] };
+              set("domains", {
+                ...currentDomains,
+                [key]: {
+                  ...currentSector,
+                  [action]: val
+                }
+              });
+            };
+
+            return (
+              <div key={key} className="bg-neutral-900/90 border border-neutral-800 rounded-xl p-3 space-y-2">
+                <div>
+                  <h5 className="font-bold text-white text-xs">{label}</h5>
+                  <p className="text-[10px] text-neutral-400">{desc}</p>
+                </div>
+
+                <div className="grid grid-cols-3 gap-1.5 pt-1">
+                  <label className={`flex items-center justify-center gap-1 py-1 px-1.5 rounded-lg border text-[11px] font-bold cursor-pointer transition ${
+                    domainPolicy.canAdd ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-300" : "bg-neutral-950 border-neutral-800 text-neutral-500"
+                  }`}>
+                    <input
+                      type="checkbox"
+                      checked={domainPolicy.canAdd}
+                      onChange={(e) => updateDomain("canAdd", e.target.checked)}
+                      className="accent-emerald-500 h-3 w-3"
+                    />
+                    <span>+ Add</span>
+                  </label>
+
+                  <label className={`flex items-center justify-center gap-1 py-1 px-1.5 rounded-lg border text-[11px] font-bold cursor-pointer transition ${
+                    domainPolicy.canModify ? "bg-sky-500/15 border-sky-500/40 text-sky-300" : "bg-neutral-950 border-neutral-800 text-neutral-500"
+                  }`}>
+                    <input
+                      type="checkbox"
+                      checked={domainPolicy.canModify}
+                      onChange={(e) => updateDomain("canModify", e.target.checked)}
+                      className="accent-sky-500 h-3 w-3"
+                    />
+                    <span>✎ Modify</span>
+                  </label>
+
+                  <label className={`flex items-center justify-center gap-1 py-1 px-1.5 rounded-lg border text-[11px] font-bold cursor-pointer transition ${
+                    domainPolicy.canRemove ? "bg-red-500/15 border-red-500/40 text-red-300" : "bg-neutral-950 border-neutral-800 text-neutral-500"
+                  }`}>
+                    <input
+                      type="checkbox"
+                      checked={domainPolicy.canRemove}
+                      onChange={(e) => updateDomain("canRemove", e.target.checked)}
+                      className="accent-red-500 h-3 w-3"
+                    />
+                    <span>✕ Remove</span>
+                  </label>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
