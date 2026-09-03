@@ -55,17 +55,20 @@ export const DEFAULT_AI_POOL_CONFIG: AIProviderPoolConfig = {
 };
 
 // ── Persistent Storage Paths ─────────────────────────────────────────────────
+// On Vercel (VERCEL=1), the filesystem is read-only. We use in-memory cache only.
+const IS_VERCEL = process.env.VERCEL === "1";
 const DATA_DIR = path.join(process.cwd(), "data");
 const CONFIG_FILE = path.join(DATA_DIR, "ai-config.json");
 const DISTILLATION_FILE = path.join(DATA_DIR, "ai-distillation-memory.json");
 
 function ensureDataDir() {
+  if (IS_VERCEL) return; // Skip on Vercel read-only FS
   try {
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
     }
-  } catch (e) {
-    console.error("Failed to create data directory:", e);
+  } catch {
+    // Ignore — likely read-only
   }
 }
 
@@ -75,32 +78,46 @@ let cachedPoolConfig: AIProviderPoolConfig | null = null;
 export function getAIProviderPoolConfig(): AIProviderPoolConfig {
   if (cachedPoolConfig) return { ...cachedPoolConfig };
 
-  ensureDataDir();
-  try {
-    if (fs.existsSync(CONFIG_FILE)) {
-      const data = fs.readFileSync(CONFIG_FILE, "utf-8");
-      cachedPoolConfig = JSON.parse(data);
-      return { ...cachedPoolConfig! };
+  if (!IS_VERCEL) {
+    ensureDataDir();
+    try {
+      if (fs.existsSync(CONFIG_FILE)) {
+        const data = fs.readFileSync(CONFIG_FILE, "utf-8");
+        cachedPoolConfig = JSON.parse(data);
+        return { ...cachedPoolConfig! };
+      }
+    } catch (err) {
+      console.error("Error reading ai-config.json, using defaults:", err);
     }
-  } catch (err) {
-    console.error("Error reading ai-config.json, using defaults:", err);
   }
 
-  cachedPoolConfig = { ...DEFAULT_AI_POOL_CONFIG };
-  saveAIProviderPoolConfig(cachedPoolConfig);
+  // On Vercel or first run: build config from env vars
+  const envConfig: AIProviderPoolConfig = {
+    ...DEFAULT_AI_POOL_CONFIG,
+    providers: DEFAULT_AI_POOL_CONFIG.providers.map(p =>
+      p.type === "gemini"
+        ? { ...p, apiKey: process.env.AI_API_KEY || p.apiKey, model: process.env.AI_MODEL || p.model }
+        : p
+    )
+  };
+  cachedPoolConfig = envConfig;
+  if (!IS_VERCEL) saveAIProviderPoolConfig(cachedPoolConfig);
   return { ...cachedPoolConfig };
 }
 
 export function saveAIProviderPoolConfig(config: AIProviderPoolConfig): AIProviderPoolConfig {
-  ensureDataDir();
   // Ensure providers are sorted by priority
   config.providers.sort((a, b) => a.priority - b.priority);
   cachedPoolConfig = { ...config };
 
-  try {
-    fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), "utf-8");
-  } catch (err) {
-    console.error("Failed to write ai-config.json:", err);
+  // Only write to disk when not in a Vercel serverless environment
+  if (!IS_VERCEL) {
+    try {
+      ensureDataDir();
+      fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), "utf-8");
+    } catch {
+      // Silently keep in-memory only
+    }
   }
   return { ...cachedPoolConfig };
 }
@@ -111,15 +128,17 @@ let cachedDistillationMemory: DistilledExemplar[] | null = null;
 export function getDistillationMemory(): DistilledExemplar[] {
   if (cachedDistillationMemory) return [...cachedDistillationMemory];
 
-  ensureDataDir();
-  try {
-    if (fs.existsSync(DISTILLATION_FILE)) {
-      const data = fs.readFileSync(DISTILLATION_FILE, "utf-8");
-      cachedDistillationMemory = JSON.parse(data);
-      return [...cachedDistillationMemory!];
+  if (!IS_VERCEL) {
+    ensureDataDir();
+    try {
+      if (fs.existsSync(DISTILLATION_FILE)) {
+        const data = fs.readFileSync(DISTILLATION_FILE, "utf-8");
+        cachedDistillationMemory = JSON.parse(data);
+        return [...cachedDistillationMemory!];
+      }
+    } catch {
+      // Fall through to seed
     }
-  } catch (err) {
-    console.error("Error reading distillation memory:", err);
   }
 
   // Initial seed exemplars for physics and curriculum authoring
@@ -140,17 +159,19 @@ export function getDistillationMemory(): DistilledExemplar[] {
       verifiedByTeacher: true
     }
   ];
-  saveDistillationMemory(cachedDistillationMemory);
+  if (!IS_VERCEL) saveDistillationMemory(cachedDistillationMemory);
   return [...cachedDistillationMemory];
 }
 
 export function saveDistillationMemory(memory: DistilledExemplar[]): void {
-  ensureDataDir();
   cachedDistillationMemory = [...memory];
-  try {
-    fs.writeFileSync(DISTILLATION_FILE, JSON.stringify(memory, null, 2), "utf-8");
-  } catch (err) {
-    console.error("Failed to write ai-distillation-memory.json:", err);
+  if (!IS_VERCEL) {
+    try {
+      ensureDataDir();
+      fs.writeFileSync(DISTILLATION_FILE, JSON.stringify(memory, null, 2), "utf-8");
+    } catch {
+      // Silently keep in-memory only on read-only environments
+    }
   }
 }
 

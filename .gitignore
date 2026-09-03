@@ -34,3 +34,8 @@ coverage/
 # CI / Workflows
 .github/
 
+.vercel
+.env*
+
+data/ai-config.json
+data/ai-distillation-memory.json
