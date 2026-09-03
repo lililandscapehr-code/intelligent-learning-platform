@@ -639,6 +639,9 @@ export default function EngineSimulator() {
           </div>
         </nav>
 
+        {/* Access Denied Guard Helper */}
+        {(() => { return null; })()}
+
         {/* Canvas */}
         <section className="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto bg-neutral-900">
 
@@ -939,53 +942,219 @@ export default function EngineSimulator() {
             </div>
           )}
 
-          {activeTab === "authoring" && <TeacherAuthoringStudio curriculumId={selectedCurriculumId} />}
+          {/* TEACHER / EDUCATOR PROTECTED TABS */}
+          {activeTab === "authoring" && (
+            ["TEACHER", "ADMIN"].includes(session.role) ? (
+              <TeacherAuthoringStudio curriculumId={selectedCurriculumId} />
+            ) : (
+              <div className="p-8 sm:p-12 text-center max-w-lg mx-auto space-y-4 bg-neutral-950 border border-red-500/30 rounded-3xl shadow-2xl">
+                <div className="h-16 w-16 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 flex items-center justify-center mx-auto text-2xl font-black">
+                  <Lock className="h-8 w-8" />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-red-400">Security Access Guard</span>
+                  <h3 className="text-xl font-black text-white">Teacher Authorization Required</h3>
+                  <p className="text-xs text-neutral-400 leading-relaxed">
+                    Access to the Authoring Studio is restricted strictly to authorized <strong>Educator / Teacher</strong> accounts.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setActiveTab(session.role === "STUDENT" ? "student" : session.role === "PARENT" ? "parent" : "admin")}
+                  className="px-5 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white font-bold rounded-xl text-xs transition"
+                >
+                  Return to Authorized Dashboard
+                </button>
+              </div>
+            )
+          )}
 
-          {activeTab === "teacher" && <TeacherDashboard onOpenAuthoring={() => setActiveTab("authoring")} />}
+          {activeTab === "teacher" && (
+            ["TEACHER", "ADMIN"].includes(session.role) ? (
+              <TeacherDashboard onOpenAuthoring={() => setActiveTab("authoring")} />
+            ) : (
+              <div className="p-8 sm:p-12 text-center max-w-lg mx-auto space-y-4 bg-neutral-950 border border-red-500/30 rounded-3xl shadow-2xl">
+                <div className="h-16 w-16 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 flex items-center justify-center mx-auto text-2xl font-black">
+                  <Lock className="h-8 w-8" />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-red-400">Security Access Guard</span>
+                  <h3 className="text-xl font-black text-white">Teacher Dashboard Restricted</h3>
+                  <p className="text-xs text-neutral-400 leading-relaxed">
+                    Access to Teacher Classroom Management, Lesson Builder, and Student Logs is restricted strictly to authorized <strong>Teacher</strong> accounts.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setActiveTab(session.role === "STUDENT" ? "student" : session.role === "PARENT" ? "parent" : "admin")}
+                  className="px-5 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white font-bold rounded-xl text-xs transition"
+                >
+                  Return to Authorized Dashboard
+                </button>
+              </div>
+            )
+          )}
 
-          {activeTab === "whiteboard" && ["TEACHER", "ADMIN"].includes(session.role) && (
-            <div className="p-4 sm:p-6">
-              <VirtualWhiteboardStudio />
-            </div>
+          {activeTab === "whiteboard" && (
+            ["TEACHER", "ADMIN"].includes(session.role) ? (
+              <div className="p-4 sm:p-6">
+                <VirtualWhiteboardStudio />
+              </div>
+            ) : (
+              <div className="p-8 sm:p-12 text-center max-w-lg mx-auto space-y-4 bg-neutral-950 border border-red-500/30 rounded-3xl shadow-2xl">
+                <div className="h-16 w-16 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 flex items-center justify-center mx-auto text-2xl font-black">
+                  <Lock className="h-8 w-8" />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-red-400">Security Access Guard</span>
+                  <h3 className="text-xl font-black text-white">Studio Recorder Restricted</h3>
+                  <p className="text-xs text-neutral-400 leading-relaxed">
+                    The Virtual Board &amp; Screen Recording Studio is reserved for authorized Educators.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setActiveTab(session.role === "STUDENT" ? "student" : session.role === "PARENT" ? "parent" : "admin")}
+                  className="px-5 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white font-bold rounded-xl text-xs transition"
+                >
+                  Return to Authorized Dashboard
+                </button>
+              </div>
+            )
           )}
 
           {activeTab === "services" && <ServiceCatalog curriculumName={selectedCurriculum.identity.name} />}
 
-          {activeTab === "source-analysis" && ["TEACHER", "ADMIN"].includes(session.role) && <SourceAnalysisExplorer />}
+          {activeTab === "source-analysis" && (
+            ["TEACHER", "ADMIN"].includes(session.role) ? (
+              <SourceAnalysisExplorer />
+            ) : (
+              <div className="p-8 sm:p-12 text-center max-w-lg mx-auto space-y-4 bg-neutral-950 border border-red-500/30 rounded-3xl shadow-2xl">
+                <div className="h-16 w-16 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 flex items-center justify-center mx-auto text-2xl font-black">
+                  <Lock className="h-8 w-8" />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-red-400">Security Access Guard</span>
+                  <h3 className="text-xl font-black text-white">Source Analysis Restricted</h3>
+                  <p className="text-xs text-neutral-400 leading-relaxed">
+                    Source and question bank analysis tools are reserved for Educators and Administrators.
+                  </p>
+                </div>
+              </div>
+            )
+          )}
 
+          {/* STUDENT PROTECTED TABS */}
           {activeTab === "student" && (
-            <StudentHome
-              curriculumName={selectedCurriculum.identity.name}
-              selectedCurriculumId={selectedCurriculumId}
-              onBrowseServices={() => setActiveTab("services")}
-              onStartLesson={() => setActiveTab("carousel")}
-              onSelectTrack={(currId) => {
-                selectCurriculum(currId as CurriculumId);
-                setActiveTab("carousel");
-              }}
-            />
+            ["STUDENT", "ADMIN"].includes(session.role) ? (
+              <StudentHome
+                curriculumName={selectedCurriculum.identity.name}
+                selectedCurriculumId={selectedCurriculumId}
+                onBrowseServices={() => setActiveTab("services")}
+                onStartLesson={() => setActiveTab("carousel")}
+                onSelectTrack={(currId) => {
+                  selectCurriculum(currId as CurriculumId);
+                  setActiveTab("carousel");
+                }}
+              />
+            ) : (
+              <div className="p-8 sm:p-12 text-center max-w-lg mx-auto space-y-4 bg-neutral-950 border border-red-500/30 rounded-3xl shadow-2xl">
+                <div className="h-16 w-16 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 flex items-center justify-center mx-auto text-2xl font-black">
+                  <Lock className="h-8 w-8" />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-red-400">Security Access Guard</span>
+                  <h3 className="text-xl font-black text-white">Student Study Tracks Only</h3>
+                  <p className="text-xs text-neutral-400 leading-relaxed">
+                    Student Study Tracks view is tailored for enrolled students.
+                  </p>
+                </div>
+              </div>
+            )
           )}
 
           {activeTab === "student-diagnostic" && (
-            <StudentDiagnostic
-              lessonId={selectedLessonId || "CAROUSEL-PHYS-EB-MECH-1-1"}
-              lessonTitle={
-                currentLessonCatalog.find((l) => l.lessonId === selectedLessonId)?.title ||
-                "Lesson 1-1 · Velocity Vectors & Relative Velocity"
-              }
-              questionDNA={dnaMap[selectedLessonId] || lesson11QuestionDNA}
-              onComplete={() => setActiveTab("curriculum")}
-              onBack={() => setActiveTab("curriculum")}
-            />
+            ["STUDENT", "ADMIN"].includes(session.role) ? (
+              <StudentDiagnostic
+                lessonId={selectedLessonId || "CAROUSEL-PHYS-EB-MECH-1-1"}
+                lessonTitle={
+                  currentLessonCatalog.find((l) => l.lessonId === selectedLessonId)?.title ||
+                  "Lesson 1-1 · Velocity Vectors & Relative Velocity"
+                }
+                questionDNA={dnaMap[selectedLessonId] || lesson11QuestionDNA}
+                onComplete={() => setActiveTab("curriculum")}
+                onBack={() => setActiveTab("curriculum")}
+              />
+            ) : (
+              <div className="p-8 sm:p-12 text-center max-w-lg mx-auto space-y-4 bg-neutral-950 border border-red-500/30 rounded-3xl shadow-2xl">
+                <div className="h-16 w-16 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 flex items-center justify-center mx-auto text-2xl font-black">
+                  <Lock className="h-8 w-8" />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-red-400">Security Access Guard</span>
+                  <h3 className="text-xl font-black text-white">Diagnostic Session Restricted</h3>
+                  <p className="text-xs text-neutral-400 leading-relaxed">
+                    3-Case diagnostic assessment sessions are designed for student test takers.
+                  </p>
+                </div>
+              </div>
+            )
           )}
 
-          {activeTab === "parent" && <ParentHome onChooseProgram={() => setActiveTab("services")} />}
+          {/* PARENT PROTECTED TAB (RESTRICTED FROM STUDENTS) */}
+          {activeTab === "parent" && (
+            ["PARENT", "ADMIN"].includes(session.role) ? (
+              <ParentHome onChooseProgram={() => setActiveTab("services")} />
+            ) : (
+              <div className="p-8 sm:p-12 text-center max-w-lg mx-auto space-y-4 bg-neutral-950 border border-red-500/30 rounded-3xl shadow-2xl">
+                <div className="h-16 w-16 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 flex items-center justify-center mx-auto text-2xl font-black">
+                  <Lock className="h-8 w-8" />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-red-400">Parental Privacy Guard</span>
+                  <h3 className="text-xl font-black text-white">Parent Portal &amp; Reports Restricted</h3>
+                  <p className="text-xs text-neutral-400 leading-relaxed">
+                    Student accounts are strictly prohibited from viewing parent evaluation reports, diagnostic summaries, and parental correspondence.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setActiveTab("student")}
+                  className="px-5 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white font-bold rounded-xl text-xs transition"
+                >
+                  Return to Student Study Tracks
+                </button>
+              </div>
+            )
+          )}
 
+          {/* ADMIN PROTECTED TABS (ELIMINATED FROM TEACHERS, STUDENTS, PARENTS) */}
           {activeTab === "admin" && (
-            <AdminControlCenter onCurriculumAdded={(curriculum) => {
-              setCurriculumOptions((current) => ({ ...current, [curriculum.identity.id]: curriculum }));
-              selectCurriculum(curriculum.identity.id);
-            }} />
+            session.role === "ADMIN" ? (
+              <AdminControlCenter onCurriculumAdded={(curriculum) => {
+                setCurriculumOptions((current) => ({ ...current, [curriculum.identity.id]: curriculum }));
+                selectCurriculum(curriculum.identity.id);
+              }} />
+            ) : (
+              <div className="p-8 sm:p-12 text-center max-w-lg mx-auto space-y-4 bg-neutral-950 border border-red-500/30 rounded-3xl shadow-2xl">
+                <div className="h-16 w-16 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 flex items-center justify-center mx-auto text-2xl font-black">
+                  <Lock className="h-8 w-8" />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-red-400">Security Access Guard</span>
+                  <h3 className="text-xl font-black text-white">Administrator Access Restricted</h3>
+                  <p className="text-xs text-neutral-400 leading-relaxed">
+                    Admin Governance, Teacher Account Provisioning, Password Inspection, and Sovereign Curriculum Rules are strictly reserved for <strong>Administrator</strong> accounts.
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    if (session.role === "TEACHER") setActiveTab("teacher");
+                    else if (session.role === "STUDENT") setActiveTab("student");
+                    else setActiveTab("parent");
+                  }}
+                  className="px-5 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white font-bold rounded-xl text-xs transition"
+                >
+                  Return to Your Dashboard
+                </button>
+              </div>
+            )
           )}
 
           {/* CURRICULUM TAB */}

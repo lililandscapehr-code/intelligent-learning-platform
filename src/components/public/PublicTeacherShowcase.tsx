@@ -44,6 +44,17 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage, onOpenLog
   const [enrollStatus, setEnrollStatus] = useState("");
 
   const [studentEmailInput, setStudentEmailInput] = useState("ahmed@student.com");
+  
+  // Dual-Parent / Two Follow-up Relatives Registration
+  const [parent1Name, setParent1Name] = useState("Tarek Youssef");
+  const [parent1Relationship, setParent1Relationship] = useState("Father");
+  const [parent1Email, setParent1Email] = useState("tarek.youssef@parent.com");
+  const [parent1Phone, setParent1Phone] = useState("+20 100 123 4567");
+
+  const [parent2Name, setParent2Name] = useState("Nouran Youssef");
+  const [parent2Relationship, setParent2Relationship] = useState("Mother");
+  const [parent2Email, setParent2Email] = useState("nouran.youssef@parent.com");
+  const [parent2Phone, setParent2Phone] = useState("+20 100 987 6543");
 
   const loadAnnouncements = () => {
     setAnnouncements(ClassRegistry.getPublicPackageAnnouncements());
@@ -76,7 +87,25 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage, onOpenLog
       selectedPackage.classId,
       studentNameInput,
       studentEmailInput,
-      prereqMet
+      prereqMet,
+      {
+        name: parent1Name,
+        relationship: parent1Relationship,
+        email: parent1Email,
+        phone: parent1Phone,
+        preferredChannel: "WHATSAPP",
+        verified: true,
+        receiveReports: true
+      },
+      parent2Name ? {
+        name: parent2Name,
+        relationship: parent2Relationship,
+        email: parent2Email,
+        phone: parent2Phone,
+        preferredChannel: "EMAIL",
+        verified: true,
+        receiveReports: true
+      } : undefined
     );
     if (result.success) {
       setEnrollStatus("✅ " + result.message);
@@ -323,7 +352,7 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage, onOpenLog
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-neutral-400 font-semibold mb-1">Full Name</label>
+                    <label className="block text-neutral-400 font-semibold mb-1">Student Full Name</label>
                     <input 
                       type="text" required value={studentNameInput} onChange={(e) => setStudentNameInput(e.target.value)}
                       placeholder="Your full name"
@@ -331,11 +360,72 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage, onOpenLog
                     />
                   </div>
                   <div>
-                    <label className="block text-neutral-400 font-semibold mb-1">Email Address</label>
+                    <label className="block text-neutral-400 font-semibold mb-1">Student Email Address</label>
                     <input 
                       type="email" required value={studentEmailInput} onChange={(e) => setStudentEmailInput(e.target.value)}
                       placeholder="your@email.com"
                       className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
+                    />
+                  </div>
+                </div>
+
+                {/* 1st Registered Parent / Guardian */}
+                <div className="p-3 bg-neutral-900/60 rounded-xl border border-neutral-800 space-y-2">
+                  <span className="font-bold text-amber-400 block text-[11px] uppercase tracking-wider">
+                    👤 Primary Parent / Guardian 1
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input 
+                      type="text" required placeholder="Parent 1 Name (e.g. Tarek Youssef)" value={parent1Name} onChange={(e) => setParent1Name(e.target.value)}
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-white outline-none focus:border-amber-500 text-xs"
+                    />
+                    <select
+                      value={parent1Relationship} onChange={(e) => setParent1Relationship(e.target.value)}
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-white outline-none focus:border-amber-500 text-xs"
+                    >
+                      <option value="Father">Father</option>
+                      <option value="Mother">Mother</option>
+                      <option value="Guardian">Legal Guardian</option>
+                    </select>
+                    <input 
+                      type="email" required placeholder="Parent 1 Email" value={parent1Email} onChange={(e) => setParent1Email(e.target.value)}
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-white outline-none focus:border-amber-500 text-xs"
+                    />
+                    <input 
+                      type="tel" required placeholder="Parent 1 Phone (WhatsApp)" value={parent1Phone} onChange={(e) => setParent1Phone(e.target.value)}
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-white outline-none focus:border-amber-500 text-xs"
+                    />
+                  </div>
+                </div>
+
+                {/* 2nd Registered Parent / Follow-up Relative */}
+                <div className="p-3 bg-neutral-900/60 rounded-xl border border-neutral-800 space-y-2">
+                  <span className="font-bold text-sky-400 block text-[11px] uppercase tracking-wider">
+                    👥 Secondary Parent / Follow-up Relative 2 (Optional / Backup)
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input 
+                      type="text" placeholder="Relative 2 Name (e.g. Nouran Youssef)" value={parent2Name} onChange={(e) => setParent2Name(e.target.value)}
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-white outline-none focus:border-amber-500 text-xs"
+                    />
+                    <select
+                      value={parent2Relationship} onChange={(e) => setParent2Relationship(e.target.value)}
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-white outline-none focus:border-amber-500 text-xs"
+                    >
+                      <option value="Mother">Mother</option>
+                      <option value="Father">Father</option>
+                      <option value="Uncle">Uncle</option>
+                      <option value="Aunt">Aunt</option>
+                      <option value="Grandparent">Grandparent</option>
+                      <option value="Relative">Other Relative</option>
+                    </select>
+                    <input 
+                      type="email" placeholder="Relative 2 Email" value={parent2Email} onChange={(e) => setParent2Email(e.target.value)}
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-white outline-none focus:border-amber-500 text-xs"
+                    />
+                    <input 
+                      type="tel" placeholder="Relative 2 Phone" value={parent2Phone} onChange={(e) => setParent2Phone(e.target.value)}
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-white outline-none focus:border-amber-500 text-xs"
                     />
                   </div>
                 </div>

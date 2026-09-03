@@ -45,11 +45,12 @@ export interface PackageFinancials {
 
 export interface ParentInfo {
   name: string;
-  relationship: string;
+  relationship: string; // e.g. "Father", "Mother", "Guardian", "Relative"
   email: string;
   phone: string;
   preferredChannel: "EMAIL" | "SMS" | "WHATSAPP";
   verified: boolean;
+  receiveReports?: boolean;
 }
 
 export interface FollowUpRecord {
@@ -63,6 +64,7 @@ export interface FollowUpRecord {
   message: string;
   weaknessTargets?: string[];
   status: "SENT" | "READ_BY_PARENT" | "ACKNOWLEDGED";
+  targetGuardian?: "PRIMARY" | "SECONDARY" | "BOTH";
 }
 
 export interface BillingTransaction {
@@ -89,7 +91,9 @@ export interface StudentProfile {
   attendanceRate: number;
   overallGrade: number;
   weaknesses: string[];
-  parent: ParentInfo;
+  primaryParent: ParentInfo;      // 1st Registered Parent / Guardian
+  secondaryParent?: ParentInfo;   // 2nd Registered Parent / Follow-up Relative
+  parent: ParentInfo;             // Alias / Backwards compatibility
   enrolledClassIds: string[]; // Can be enrolled/tied to MULTIPLE classes/packages
   billingTransactions: BillingTransaction[];
   followUpLogs: FollowUpRecord[];
@@ -120,6 +124,8 @@ export interface PendingRegistration {
   submittedAt: string;
   status: "PENDING" | "APPROVED" | "REJECTED";
   rejectionReason?: string;
+  primaryParent?: ParentInfo;
+  secondaryParent?: ParentInfo;
 }
 
 // ── Official Registered Curriculum Packages & Specifications ─────────────────
@@ -783,13 +789,32 @@ let mockStudents: StudentProfile[] = [
     attendanceRate: 95,
     overallGrade: 88,
     weaknesses: ["Vector Components", "Friction Analysis"],
+    primaryParent: {
+      name: "Tarek Youssef",
+      relationship: "Father",
+      email: "tarek.youssef@parent.com",
+      phone: "+20 100 123 4567",
+      preferredChannel: "WHATSAPP",
+      verified: true,
+      receiveReports: true
+    },
+    secondaryParent: {
+      name: "Nouran Youssef",
+      relationship: "Mother",
+      email: "nouran.youssef@parent.com",
+      phone: "+20 100 987 6543",
+      preferredChannel: "EMAIL",
+      verified: true,
+      receiveReports: true
+    },
     parent: {
       name: "Tarek Youssef",
       relationship: "Father",
       email: "tarek.youssef@parent.com",
       phone: "+20 100 123 4567",
       preferredChannel: "WHATSAPP",
-      verified: true
+      verified: true,
+      receiveReports: true
     },
     enrolledClassIds: ["cls_101", "cls_102"], // Tied to 2 packages simultaneously
     billingTransactions: [
@@ -842,13 +867,32 @@ let mockStudents: StudentProfile[] = [
     attendanceRate: 98,
     overallGrade: 94,
     weaknesses: ["Circular Motion"],
+    primaryParent: {
+      name: "Mona Mahmoud",
+      relationship: "Mother",
+      email: "mona.mahmoud@parent.com",
+      phone: "+20 101 987 6543",
+      preferredChannel: "EMAIL",
+      verified: true,
+      receiveReports: true
+    },
+    secondaryParent: {
+      name: "Mahmoud Ibrahim",
+      relationship: "Father",
+      email: "mahmoud.ibrahim@parent.com",
+      phone: "+20 101 111 2222",
+      preferredChannel: "WHATSAPP",
+      verified: true,
+      receiveReports: true
+    },
     parent: {
       name: "Mona Mahmoud",
       relationship: "Mother",
       email: "mona.mahmoud@parent.com",
       phone: "+20 101 987 6543",
       preferredChannel: "EMAIL",
-      verified: true
+      verified: true,
+      receiveReports: true
     },
     enrolledClassIds: ["cls_101"],
     billingTransactions: [
@@ -877,13 +921,32 @@ let mockStudents: StudentProfile[] = [
     attendanceRate: 82,
     overallGrade: 76,
     weaknesses: ["Tension Forces", "Free Body Diagrams"],
+    primaryParent: {
+      name: "Hassan Ali",
+      relationship: "Father",
+      email: "hassan.ali@parent.com",
+      phone: "+20 102 333 4444",
+      preferredChannel: "SMS",
+      verified: true,
+      receiveReports: true
+    },
+    secondaryParent: {
+      name: "Dina Hassan",
+      relationship: "Mother",
+      email: "dina.hassan@parent.com",
+      phone: "+20 102 555 7777",
+      preferredChannel: "WHATSAPP",
+      verified: true,
+      receiveReports: true
+    },
     parent: {
       name: "Hassan Ali",
       relationship: "Father",
       email: "hassan.ali@parent.com",
       phone: "+20 102 333 4444",
       preferredChannel: "SMS",
-      verified: true
+      verified: true,
+      receiveReports: true
     },
     enrolledClassIds: ["cls_101"],
     billingTransactions: [
@@ -925,13 +988,32 @@ let mockStudents: StudentProfile[] = [
     attendanceRate: 100,
     overallGrade: 98,
     weaknesses: [],
+    primaryParent: {
+      name: "Khaled Karim",
+      relationship: "Father",
+      email: "khaled.karim@parent.com",
+      phone: "+20 105 555 6666",
+      preferredChannel: "EMAIL",
+      verified: true,
+      receiveReports: true
+    },
+    secondaryParent: {
+      name: "Heba Karim",
+      relationship: "Mother",
+      email: "heba.karim@parent.com",
+      phone: "+20 105 888 9999",
+      preferredChannel: "WHATSAPP",
+      verified: true,
+      receiveReports: true
+    },
     parent: {
       name: "Khaled Karim",
       relationship: "Father",
       email: "khaled.karim@parent.com",
       phone: "+20 105 555 6666",
       preferredChannel: "EMAIL",
-      verified: true
+      verified: true,
+      receiveReports: true
     },
     enrolledClassIds: ["cls_102"],
     billingTransactions: [
@@ -960,13 +1042,32 @@ let mockStudents: StudentProfile[] = [
     attendanceRate: 90,
     overallGrade: 85,
     weaknesses: ["Energy Conservation"],
+    primaryParent: {
+      name: "Fatima Fares",
+      relationship: "Mother",
+      email: "fatima.fares@parent.com",
+      phone: "+20 109 777 8888",
+      preferredChannel: "WHATSAPP",
+      verified: true,
+      receiveReports: true
+    },
+    secondaryParent: {
+      name: "Tamer Fares",
+      relationship: "Father",
+      email: "tamer.fares@parent.com",
+      phone: "+20 109 444 3333",
+      preferredChannel: "SMS",
+      verified: true,
+      receiveReports: true
+    },
     parent: {
       name: "Fatima Fares",
       relationship: "Mother",
       email: "fatima.fares@parent.com",
       phone: "+20 109 777 8888",
       preferredChannel: "WHATSAPP",
-      verified: true
+      verified: true,
+      receiveReports: true
     },
     enrolledClassIds: ["cls_102"],
     billingTransactions: [
@@ -1481,7 +1582,14 @@ export const ClassRegistry = {
   },
 
   // --- Student Pending Registration Queue ---
-  submitRegistrationRequest(classId: string, studentName: string, studentEmail: string, prereqConfirmed: boolean) {
+  submitRegistrationRequest(
+    classId: string, 
+    studentName: string, 
+    studentEmail: string, 
+    prereqConfirmed: boolean,
+    primaryParent?: ParentInfo,
+    secondaryParent?: ParentInfo
+  ) {
     const cls = this.getClassById(classId);
     if (!cls) return { success: false, message: "Package not found." };
     if (!prereqConfirmed) return { success: false, message: "You must confirm all prerequisites." };
@@ -1498,7 +1606,9 @@ export const ClassRegistry = {
       studentName,
       studentEmail,
       submittedAt: new Date().toISOString(),
-      status: "PENDING"
+      status: "PENDING",
+      primaryParent,
+      secondaryParent
     });
     return { success: true, message: `Registration request submitted for ${cls.name}. The teacher will review and accept soon.` };
   },

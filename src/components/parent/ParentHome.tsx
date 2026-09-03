@@ -57,10 +57,30 @@ export default function ParentHome({ onChooseProgram }: ParentHomeProps) {
         </div>
       </div>
 
-      {/* Safety Notice */}
-      <div className="flex items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-xs text-neutral-300">
-        <ShieldCheck className="h-5 w-5 text-emerald-400 shrink-0" />
-        <p>Verified Parent Portal: Multi-parameter cognitive evaluations are certified by educational AI diagnostic engines and educator audits.</p>
+      {/* Safety Notice & Dual Guardians Registered Card */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="md:col-span-2 flex items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-xs text-neutral-300">
+          <ShieldCheck className="h-5 w-5 text-emerald-400 shrink-0" />
+          <p>
+            <strong className="text-white block mb-0.5">🔒 Verified Parent &amp; Guardian Sandbox</strong>
+            Multi-parameter cognitive evaluations are certified by educational AI diagnostic engines and educator audits. Accessible only by registered guardians.
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-3 space-y-1.5 text-xs">
+          <div className="flex justify-between items-center text-[10px] uppercase font-bold text-neutral-400">
+            <span>Registered Guardians</span>
+            <span className="text-emerald-400">2 Active</span>
+          </div>
+          <p className="text-white font-bold flex items-center justify-between">
+            <span>1. Tarek Youssef (Father)</span>
+            <span className="text-[10px] font-mono text-neutral-400">WhatsApp</span>
+          </p>
+          <p className="text-white font-bold flex items-center justify-between">
+            <span>2. Nouran Youssef (Mother)</span>
+            <span className="text-[10px] font-mono text-neutral-400">Email</span>
+          </p>
+        </div>
       </div>
 
       {/* KPI Cards */}

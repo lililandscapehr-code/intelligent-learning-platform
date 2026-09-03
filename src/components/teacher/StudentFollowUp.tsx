@@ -45,6 +45,7 @@ export default function StudentFollowUp() {
   const [noteTitle, setNoteTitle] = useState("");
   const [noteMessage, setNoteMessage] = useState("");
   const [noteCategory, setNoteCategory] = useState<FollowUpRecord["category"]>("TEACHER_NOTE");
+  const [noteTargetGuardian, setNoteTargetGuardian] = useState<"PRIMARY" | "SECONDARY" | "BOTH">("BOTH");
 
   const loadData = () => {
     const teacherId = "teacher_1";
@@ -58,7 +59,8 @@ export default function StudentFollowUp() {
 
   const filteredStudents = students.filter(s => 
     s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.parent.name.toLowerCase().includes(searchQuery.toLowerCase())
+    (s.primaryParent?.name || s.parent?.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (s.secondaryParent?.name || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleSwapSubmit = (e: React.FormEvent) => {
@@ -86,6 +88,7 @@ export default function StudentFollowUp() {
       category: noteCategory,
       title: noteTitle,
       message: noteMessage,
+      targetGuardian: noteTargetGuardian,
       status: "SENT"
     });
 
@@ -264,23 +267,74 @@ export default function StudentFollowUp() {
         {/* ── TAB 3: PARENT 360 & FOLLOW-UP LOGS ──────────────── */}
         {activeTab === "parents" && (
           <div className="space-y-6">
-            {/* Parent Card */}
-            <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <span className="text-xs text-neutral-500 font-bold uppercase">Parent / Guardian</span>
-                <p className="text-lg font-bold text-white mt-1">{selectedStudent.parent.name}</p>
-                <p className="text-xs text-neutral-400">{selectedStudent.parent.relationship}</p>
+            {/* Dual Parent & Follow-up Relatives Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Primary Parent */}
+              <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-5 space-y-3">
+                <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                    Primary Parent / Guardian 1
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
+                    <ShieldCheck className="h-3.5 w-3.5" /> {(selectedStudent.primaryParent || selectedStudent.parent).preferredChannel}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-base font-bold text-white">{(selectedStudent.primaryParent || selectedStudent.parent).name}</p>
+                  <p className="text-xs text-neutral-400">Relationship: <strong className="text-neutral-200">{(selectedStudent.primaryParent || selectedStudent.parent).relationship}</strong></p>
+                </div>
+                <div className="space-y-1.5 text-xs text-neutral-300">
+                  <p className="flex items-center gap-2"><Mail className="h-3.5 w-3.5 text-neutral-500" /> {(selectedStudent.primaryParent || selectedStudent.parent).email}</p>
+                  <p className="flex items-center gap-2"><Phone className="h-3.5 w-3.5 text-neutral-500" /> {(selectedStudent.primaryParent || selectedStudent.parent).phone}</p>
+                </div>
+                <div className="flex gap-2 pt-2 border-t border-neutral-800/80 text-[11px]">
+                  <a href={`tel:${(selectedStudent.primaryParent || selectedStudent.parent).phone}`} className="flex-1 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-center font-bold text-white transition">
+                    Call
+                  </a>
+                  <a href={`https://wa.me/${(selectedStudent.primaryParent || selectedStudent.parent).phone.replace(/[^0-9]/g, "")}`} target="_blank" rel="noreferrer" className="flex-1 py-1.5 bg-emerald-600/30 border border-emerald-500/40 hover:bg-emerald-600/50 rounded-lg text-center font-bold text-emerald-300 transition">
+                    WhatsApp
+                  </a>
+                </div>
               </div>
-              <div>
-                <span className="text-xs text-neutral-500 font-bold uppercase">Contact Information</span>
-                <p className="text-xs text-white flex items-center gap-1.5 mt-1"><Mail className="h-3.5 w-3.5 text-neutral-400" /> {selectedStudent.parent.email}</p>
-                <p className="text-xs text-white flex items-center gap-1.5 mt-1"><Phone className="h-3.5 w-3.5 text-neutral-400" /> {selectedStudent.parent.phone}</p>
-              </div>
-              <div>
-                <span className="text-xs text-neutral-500 font-bold uppercase">Preferred Channel</span>
-                <p className="text-xs font-bold text-emerald-400 mt-1 flex items-center gap-1.5">
-                  <ShieldCheck className="h-4 w-4" /> {selectedStudent.parent.preferredChannel} VERIFIED
-                </p>
+
+              {/* Secondary Parent / Follow-up Relative */}
+              <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-5 space-y-3">
+                <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-full border border-sky-500/20">
+                    Secondary Parent / Relative 2
+                  </span>
+                  {selectedStudent.secondaryParent ? (
+                    <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
+                      <ShieldCheck className="h-3.5 w-3.5" /> {selectedStudent.secondaryParent.preferredChannel}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-bold text-neutral-500">Unregistered</span>
+                  )}
+                </div>
+                {selectedStudent.secondaryParent ? (
+                  <>
+                    <div>
+                      <p className="text-base font-bold text-white">{selectedStudent.secondaryParent.name}</p>
+                      <p className="text-xs text-neutral-400">Relationship: <strong className="text-neutral-200">{selectedStudent.secondaryParent.relationship}</strong></p>
+                    </div>
+                    <div className="space-y-1.5 text-xs text-neutral-300">
+                      <p className="flex items-center gap-2"><Mail className="h-3.5 w-3.5 text-neutral-500" /> {selectedStudent.secondaryParent.email}</p>
+                      <p className="flex items-center gap-2"><Phone className="h-3.5 w-3.5 text-neutral-500" /> {selectedStudent.secondaryParent.phone}</p>
+                    </div>
+                    <div className="flex gap-2 pt-2 border-t border-neutral-800/80 text-[11px]">
+                      <a href={`tel:${selectedStudent.secondaryParent.phone}`} className="flex-1 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-center font-bold text-white transition">
+                        Call
+                      </a>
+                      <a href={`https://wa.me/${selectedStudent.secondaryParent.phone.replace(/[^0-9]/g, "")}`} target="_blank" rel="noreferrer" className="flex-1 py-1.5 bg-emerald-600/30 border border-emerald-500/40 hover:bg-emerald-600/50 rounded-lg text-center font-bold text-emerald-300 transition">
+                        WhatsApp
+                      </a>
+                    </div>
+                  </>
+                ) : (
+                  <div className="py-6 text-center text-neutral-500 text-xs">
+                    No secondary relative registered. Student can add a 2nd guardian during registration.
+                  </div>
+                )}
               </div>
             </div>
 
@@ -291,10 +345,10 @@ export default function StudentFollowUp() {
                   <Send className="h-4 w-4 text-amber-500" /> Log Teacher Follow-up / Send Parent Update
                 </h3>
                 <form onSubmit={handleSendParentNote} className="space-y-3 text-xs">
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <input 
                       type="text" required placeholder="Note Title..." value={noteTitle} onChange={(e) => setNoteTitle(e.target.value)}
-                      className="bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
+                      className="bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500 sm:col-span-1"
                     />
                     <select 
                       value={noteCategory} onChange={(e) => setNoteCategory(e.target.value as any)}
@@ -305,13 +359,21 @@ export default function StudentFollowUp() {
                       <option value="ACADEMIC_WARNING">Academic Warning</option>
                       <option value="COMMENDATION">Commendation / Praise</option>
                     </select>
+                    <select 
+                      value={noteTargetGuardian} onChange={(e) => setNoteTargetGuardian(e.target.value as any)}
+                      className="bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-amber-400 font-bold outline-none focus:border-amber-500"
+                    >
+                      <option value="BOTH">👥 Send to Both Guardians</option>
+                      <option value="PRIMARY">👤 Primary Parent Only</option>
+                      <option value="SECONDARY">👤 Secondary Relative Only</option>
+                    </select>
                   </div>
                   <textarea 
                     required rows={3} placeholder="Write evaluation detail or guidance for parent..." value={noteMessage} onChange={(e) => setNoteMessage(e.target.value)}
                     className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
                   />
                   <button type="submit" className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-lg transition">
-                    Save & Dispatch to Parent
+                    Save & Dispatch to Guardians
                   </button>
                 </form>
               </div>
