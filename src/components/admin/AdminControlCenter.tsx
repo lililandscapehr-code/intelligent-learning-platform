@@ -9,7 +9,8 @@ import {
   Cpu, Server, Key, RefreshCw, MessageSquare, Video, Mic,
   Sliders, Eye, EyeOff, Layers, ArrowUp, ArrowDown, Brain,
   Award, Zap, Check, Bell, Send, FileText, BarChart2,
-  TrendingUp, DollarSign, Target, Radio, AlertOctagon, Filter
+  TrendingUp, DollarSign, Target, Radio, AlertOctagon, Filter,
+  Dna, RotateCcw, Copy
 } from "lucide-react";
 import { 
   uploadCurriculumPackage,
@@ -25,8 +26,10 @@ import {
   REGISTERED_CURRICULUM_SPECS,
   CurriculumSpec,
   CurriculumPolicy,
+  CurriculumPolicyProfile,
   CurriculumRemovalReport,
   DEFAULT_CURRICULUM_POLICY,
+  DEFAULT_POLICY_PROFILES,
   TeacherAssignment,
   TeacherPermissions,
   AdminAlarm,
@@ -40,12 +43,13 @@ import {
   DEFAULT_AI_POOL_CONFIG,
   DistilledExemplar 
 } from "../../core/services/ai-provider-types";
+import type { QuestionDNA } from "../carousel/CarouselTypes";
 
 interface AdminControlCenterProps {
   onCurriculumAdded: (curriculum: CurriculumPackage) => void;
 }
 
-type AdminTab = "reports" | "alarms" | "broadcasts" | "notes" | "registry" | "add" | "teachers" | "ai";
+type AdminTab = "reports" | "tanks" | "alarms" | "broadcasts" | "notes" | "registry" | "add" | "teachers" | "ai";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function PolicyBadge({ on, label }: { on: boolean; label: string }) {
@@ -122,8 +126,18 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
 
   // Registry state
   const [specs, setSpecs] = useState<CurriculumSpec[]>(() => Object.values(REGISTERED_CURRICULUM_SPECS));
-  const [editingPolicyFor, setEditingPolicyFor] = useState<string | null>(null);
-  const [editedPolicy, setEditedPolicy] = useState<CurriculumPolicy>(DEFAULT_CURRICULUM_POLICY);
+  const [selectedCurriculumId, setSelectedCurriculumId] = useState<string>("egypt-baccalaureate-second-year-physics-part1");
+  
+  // Multi-Policy State
+  const [showAddPolicyModal, setShowAddPolicyModal] = useState(false);
+  const [newPolicyName, setNewPolicyName] = useState("");
+  const [newPolicyData, setNewPolicyData] = useState<CurriculumPolicy>({ ...DEFAULT_CURRICULUM_POLICY });
+
+  // Question Tank State
+  const [selectedLessonId, setSelectedLessonId] = useState<string>("CAROUSEL-PHYS-EB-MECH-1-1");
+  const [currentTank, setCurrentTank] = useState<QuestionDNA[]>(() => ClassRegistry.getQuestionDNABank("CAROUSEL-PHYS-EB-MECH-1-1"));
+  const [expandedDNAId, setExpandedDNAId] = useState<string | null>(null);
+  const [tankActionMsg, setTankActionMsg] = useState<string | null>(null);
 
   // Remove modal state
   const [removeTarget, setRemoveTarget] = useState<CurriculumSpec | null>(null);
@@ -171,20 +185,19 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
   const [aiSaveMsg, setAISaveMsg] = useState<string | null>(null);
   const [showKeyMap, setShowKeyMap] = useState<Record<string, boolean>>({});
 
-  // ── Executive Suite State ──────────────────────────────────────────────────
+  // Executive Suite State
   const [alarms, setAlarms] = useState<AdminAlarm[]>(() => ClassRegistry.getAdminAlarms());
   const [broadcasts, setBroadcasts] = useState<AdminBroadcast[]>(() => ClassRegistry.getAllBroadcasts());
   const [notes, setNotes] = useState<AdminDirectiveNote[]>(() => ClassRegistry.getAllAdminNotes());
   const [executiveReport, setExecutiveReport] = useState<ExecutiveAuditReport>(() => ClassRegistry.getExecutiveAuditReport());
 
-  // New Broadcast Form State
+  // Forms
   const [bcastTitle, setBcastTitle] = useState("");
   const [bcastMessage, setBcastMessage] = useState("");
   const [bcastTarget, setBcastTarget] = useState<any>("TEACHERS");
   const [bcastPriority, setBcastPriority] = useState<any>("NORMAL");
   const [bcastSuccessMsg, setBcastSuccessMsg] = useState<string | null>(null);
 
-  // New Note Form State
   const [noteTitle, setNoteTitle] = useState("");
   const [noteContent, setNoteContent] = useState("");
   const [noteCategory, setNoteCategory] = useState<any>("Pedagogical Audit");
@@ -201,23 +214,81 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
     setNotes(ClassRegistry.getAllAdminNotes());
     setExecutiveReport(ClassRegistry.getExecutiveAuditReport());
   };
+  const refreshTank = (lessonId: string) => {
+    setCurrentTank([...ClassRegistry.getQuestionDNABank(lessonId)]);
+  };
 
-  // Load AI Pool & Distillation Memory on Mount
   useEffect(() => {
     getAIProviderPoolAction().then(res => {
-      if (res.success && res.data) {
-        setAIPoolConfig(res.data);
-      }
+      if (res.success && res.data) setAIPoolConfig(res.data);
     });
 
     getDistillationMemoryAction().then(res => {
-      if (res.success && res.data) {
-        setDistillationMemory(res.data);
-      }
+      if (res.success && res.data) setDistillationMemory(res.data);
     });
   }, []);
 
-  // ── Handlers ─────────────────────────────────────────────────────────────
+  // ── Question DNA Tank Handlers ────────────────────────────────────────────
+  const handleSelectLessonForTank = (lessonId: string) => {
+    setSelectedLessonId(lessonId);
+    refreshTank(lessonId);
+  };
+
+  const handlePurgeEntireTank = (lessonId: string) => {
+    if (confirm(`Are you sure you want to PURGE ALL Question DNA for lesson "${lessonId}"? This will delete all Case B baseline questions, Pre trials, and C challenges.`)) {
+      ClassRegistry.purgeEntireLessonTank(lessonId);
+      refreshTank(lessonId);
+      setTankActionMsg(`✓ Entire Question Tank purged for lesson ${lessonId}.`);
+      setTimeout(() => setTankActionMsg(null), 4000);
+    }
+  };
+
+  const handleRestoreDefaultTank = (lessonId: string) => {
+    ClassRegistry.restoreDefaultLessonTank(lessonId);
+    refreshTank(lessonId);
+    setTankActionMsg(`✓ Restored factory default Question Tank for ${lessonId}.`);
+    setTimeout(() => setTankActionMsg(null), 4000);
+  };
+
+  const handleDeleteDNAItem = (lessonId: string, bQuestionId: string) => {
+    ClassRegistry.deleteQuestionDNAItem(lessonId, bQuestionId);
+    refreshTank(lessonId);
+  };
+
+  const handleDeletePreTrial = (lessonId: string, bQuestionId: string, trialId: string) => {
+    ClassRegistry.deletePreTrial(lessonId, bQuestionId, trialId);
+    refreshTank(lessonId);
+  };
+
+  const handleDeleteCQuestion = (lessonId: string, bQuestionId: string, cQuestionId: string) => {
+    ClassRegistry.deleteCQuestion(lessonId, bQuestionId, cQuestionId);
+    refreshTank(lessonId);
+  };
+
+  // ── Multi-Policy Profile Handlers ─────────────────────────────────────────
+  const handleSetActivePolicyProfile = (curriculumId: string, profileId: string) => {
+    ClassRegistry.setActivePolicyProfile(curriculumId, profileId);
+    refreshSpecs();
+  };
+
+  const handleAddPolicyProfile = (curriculumId: string) => {
+    if (!newPolicyName) return;
+    ClassRegistry.addPolicyProfileToCurriculum(curriculumId, {
+      ...newPolicyData,
+      name: newPolicyName,
+      isDefault: false
+    });
+    setNewPolicyName("");
+    setShowAddPolicyModal(false);
+    refreshSpecs();
+  };
+
+  const handleDeletePolicyProfile = (curriculumId: string, profileId: string) => {
+    ClassRegistry.deletePolicyProfile(curriculumId, profileId);
+    refreshSpecs();
+  };
+
+  // ── Upload & Lifecycle ────────────────────────────────────────────────────
   const handlePackageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -252,12 +323,6 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
       refreshTeachers();
       refreshExecutiveSuite();
     }
-  };
-
-  const handleSavePolicy = (curriculumId: string) => {
-    ClassRegistry.updateCurriculumPolicy(curriculumId, editedPolicy);
-    setEditingPolicyFor(null);
-    refreshSpecs();
   };
 
   const handleAddCurriculum = () => {
@@ -340,7 +405,7 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
     refreshExecutiveSuite();
   };
 
-  // ── AI Multi-Provider Pool Handlers ───────────────────────────────────────
+  // ── AI Provider Pool Handlers ───────────────────────────────────────────────
   const handleTestSingleProvider = async (provider: AIProviderEntry) => {
     setTestingProviderId(provider.id);
     try {
@@ -445,22 +510,24 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
 
   const tabs: { key: AdminTab; label: string; icon: React.ElementType; badge?: string; badgeColor?: string }[] = [
     { key: "reports", label: "📊 Executive Reports", icon: BarChart2 },
+    { key: "tanks", label: "🧬 Question Tank Manager", icon: Dna, badge: `${currentTank.length} Items` },
     { 
       key: "alarms", 
-      label: "🚨 Live Alarms & Health", 
+      label: "🚨 Live Alarms", 
       icon: AlertOctagon, 
       badge: activeAlarmsCount > 0 ? `${activeAlarmsCount}` : undefined,
       badgeColor: criticalAlarmsCount > 0 ? "bg-red-500 text-white" : "bg-amber-500 text-black"
     },
-    { key: "broadcasts", label: "📢 Broadcast Notifier", icon: Radio },
-    { key: "notes", label: "📝 Directives & Notes", icon: FileText, badge: `${notes.filter(n => n.status !== "RESOLVED").length}` },
-    { key: "registry", label: "📋 Curriculum Registry", icon: BookOpen },
+    { key: "broadcasts", label: "📢 Broadcasts", icon: Radio },
+    { key: "notes", label: "📝 Directives", icon: FileText, badge: `${notes.filter(n => n.status !== "RESOLVED").length}` },
+    { key: "registry", label: "📋 Registry & Multi-Policy", icon: BookOpen },
     { key: "add", label: "➕ Add Curriculum", icon: PlusCircle },
     { key: "teachers", label: "👩‍🏫 Teacher Governance", icon: UserCheck },
     { key: "ai", label: "🤖 AI & Ollama Pool", icon: Cpu },
   ];
 
   const filteredNotes = notes.filter(n => noteFilterStatus === "ALL" || n.status === noteFilterStatus);
+  const selectedSpec = specs.find(s => s.id === selectedCurriculumId) || specs[0];
 
   return (
     <div className="mx-auto max-w-6xl space-y-5">
@@ -468,7 +535,7 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
       <div>
         <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-red-400">Executive Control Suite</p>
         <h2 className="mt-1 text-2xl font-bold text-white">Platform Governance & Intelligence Center</h2>
-        <p className="mt-1 text-sm text-neutral-400">Live system health alarms, broadcast alerts, directive notes, executive audit reports, and multi-AI infrastructure.</p>
+        <p className="mt-1 text-sm text-neutral-400">Question DNA Tank Bank removal & pruning, multi-policy profiles, live alarms, broadcasts, and AI pool infrastructure.</p>
       </div>
 
       {/* Metrics */}
@@ -476,8 +543,8 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
         <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-5">
           <BarChart2 className="h-5 w-5 text-emerald-400" />
           <p className="mt-4 text-xs text-neutral-500">Student Academic Readiness</p>
-          <p className="mt-1 text-xl font-bold text-white">{executiveReport.academics.masteryPercentage}% Mastery</p>
-          <p className="text-[10px] text-emerald-400 mt-1">{executiveReport.academics.readyCount} Ready · {executiveReport.academics.foundationRequiredCount} Need Foundation</p>
+          <p className="mt-1 text-xl font-bold text-white">{executiveReport.academics.masteryPercentage}% Readiness</p>
+          <p className="text-[10px] text-emerald-400 mt-1">{executiveReport.academics.readyCount} Ready · {executiveReport.academics.foundationRequiredCount} Foundation Needed</p>
         </div>
 
         <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-5">
@@ -488,17 +555,17 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
         </div>
 
         <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-5">
-          <AlertOctagon className="h-5 w-5 text-red-400" />
-          <p className="mt-4 text-xs text-neutral-500">Active System Alarms</p>
-          <p className="mt-1 text-xl font-bold text-white">{activeAlarmsCount} Active</p>
-          <p className="text-[10px] text-red-400 mt-1">{criticalAlarmsCount} Critical · {alarms.filter(a => a.resolved).length} Resolved</p>
+          <Dna className="h-5 w-5 text-violet-400" />
+          <p className="mt-4 text-xs text-neutral-500">Question DNA Tank Bank</p>
+          <p className="mt-1 text-xl font-bold text-white">{currentTank.length} Question DNA Items</p>
+          <p className="text-[10px] text-violet-400 mt-1">{currentTank.reduce((a, b) => a + b.preTrials.length, 0)} Pre Trials · {currentTank.reduce((a, b) => a + b.cQuestions.length, 0)} C Challenges</p>
         </div>
 
         <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-5">
-          <Cpu className="h-5 w-5 text-violet-400" />
+          <Cpu className="h-5 w-5 text-amber-400" />
           <p className="mt-4 text-xs text-neutral-500">AI Pool & Offline Distillation</p>
           <p className="mt-1 text-xl font-bold text-white">{aiPoolConfig.providers.filter(p => p.enabled).length} Active Keys</p>
-          <p className="text-[10px] text-violet-400 mt-1">{distillationMemory.length} Gold Exemplars Learned</p>
+          <p className="text-[10px] text-amber-400 mt-1">{distillationMemory.length} Gold Exemplars Learned</p>
         </div>
       </div>
 
@@ -506,7 +573,7 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
       <div className="flex gap-2 border-b border-neutral-800 pb-0 overflow-x-auto">
         {tabs.map(({ key, label, icon: Icon, badge, badgeColor }) => (
           <button key={key} onClick={() => setActiveTab(key)}
-            className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-bold rounded-t-lg border-b-2 transition whitespace-nowrap ${
+            className={`flex items-center gap-2 px-3 py-2.5 text-xs font-bold rounded-t-lg border-b-2 transition whitespace-nowrap ${
               activeTab === key
                 ? "border-amber-500 text-amber-400 bg-amber-500/5"
                 : "border-transparent text-neutral-400 hover:text-white"
@@ -522,11 +589,10 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
         ))}
       </div>
 
-      {/* ── TAB 1: EXECUTIVE FOLLOW-UP REPORTS ─────────────────────────── */}
+      {/* ── TAB 1: EXECUTIVE REPORTS ───────────────────────────────────── */}
       {activeTab === "reports" && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Academic Mastery & Readiness Audit */}
             <div className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-5 space-y-4">
               <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
                 <h3 className="font-bold text-white text-sm flex items-center gap-2">
@@ -554,7 +620,6 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
               </div>
             </div>
 
-            {/* Financial & Volume Pricing Ledger */}
             <div className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-5 space-y-4">
               <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
                 <h3 className="font-bold text-white text-sm flex items-center gap-2">
@@ -585,57 +650,223 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
               </div>
             </div>
           </div>
+        </div>
+      )}
 
-          {/* Teacher Activity & AI Pool Utilization */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-5 space-y-3 text-xs">
-              <h3 className="font-bold text-white text-sm flex items-center gap-2 border-b border-neutral-800 pb-2">
-                <Users className="h-4 w-4 text-amber-400" /> Teacher KPI & Governance Summary
-              </h3>
-              <div className="space-y-2">
-                <div className="flex justify-between p-2.5 bg-neutral-950 rounded-lg text-neutral-300">
-                  <span>Total Managed Teachers</span>
-                  <span className="font-bold text-white">{executiveReport.teachers.totalTeachers}</span>
-                </div>
-                <div className="flex justify-between p-2.5 bg-neutral-950 rounded-lg text-neutral-300">
-                  <span>Authorized for Official Curricula</span>
-                  <span className="font-bold text-amber-400">{executiveReport.teachers.authorizedTeacherCount}</span>
-                </div>
-                <div className="flex justify-between p-2.5 bg-neutral-950 rounded-lg text-neutral-300">
-                  <span>Designated Lead Reviewers (Question Tanks)</span>
-                  <span className="font-bold text-violet-400">{executiveReport.teachers.leadReviewerCount}</span>
-                </div>
-                <div className="flex justify-between p-2.5 bg-neutral-950 rounded-lg text-neutral-300">
-                  <span>Parent Updates & Notes Dispatched</span>
-                  <span className="font-bold text-emerald-400">{executiveReport.teachers.totalParentNotesSent}</span>
-                </div>
+      {/* ── TAB 2: QUESTION DNA TANK BANK REMOVAL & PRUNING MANAGER ─────── */}
+      {activeTab === "tanks" && (
+        <div className="space-y-6">
+          <div className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-6 space-y-5">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-4 flex-wrap gap-3">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <Dna className="h-5 w-5 text-violet-400" />
+                  Question DNA Tank Bank Removal & Pruning Engine
+                </h3>
+                <p className="text-xs text-neutral-400">Purge entire question tanks, delete selective Case B items, or prune specific Case Pre/C variants.</p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleRestoreDefaultTank(selectedLessonId)}
+                  className="px-3.5 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-bold rounded-xl border border-neutral-700 transition flex items-center gap-1.5"
+                >
+                  <RotateCcw className="h-3.5 w-3.5 text-amber-400" /> Reset to Factory Seed
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handlePurgeEntireTank(selectedLessonId)}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl transition shadow-lg flex items-center gap-1.5"
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Purge Entire Tank
+                </button>
               </div>
             </div>
 
-            <div className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-5 space-y-3 text-xs">
-              <h3 className="font-bold text-white text-sm flex items-center gap-2 border-b border-neutral-800 pb-2">
-                <Cpu className="h-4 w-4 text-violet-400" /> AI Engine & Local Distillation Audit
-              </h3>
-              <div className="space-y-2">
-                <div className="flex justify-between p-2.5 bg-neutral-950 rounded-lg text-neutral-300">
-                  <span>Primary Provider Cascade</span>
-                  <span className="font-bold text-white truncate max-w-[200px]">{executiveReport.aiEngine.activeProvider}</span>
-                </div>
-                <div className="flex justify-between p-2.5 bg-neutral-950 rounded-lg text-neutral-300">
-                  <span>Smart Offline Failover to Ollama</span>
-                  <span className="font-bold text-emerald-400">ACTIVE ✓</span>
-                </div>
-                <div className="flex justify-between p-2.5 bg-neutral-950 rounded-lg text-neutral-300">
-                  <span>Distillation Memory Vault Size</span>
-                  <span className="font-bold text-violet-400">{distillationMemory.length} Gold Exemplars</span>
-                </div>
+            {/* Selectors */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <label className="block">
+                <span className="text-neutral-400 font-semibold block mb-1">Target Curriculum</span>
+                <select
+                  value={selectedCurriculumId}
+                  onChange={e => {
+                    const cId = e.target.value;
+                    setSelectedCurriculumId(cId);
+                    const firstLesson = specs.find(s => s.id === cId)?.lessons[0]?.id || "CAROUSEL-PHYS-EB-MECH-1-1";
+                    handleSelectLessonForTank(firstLesson);
+                  }}
+                  className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500 font-semibold"
+                >
+                  {specs.map(s => (
+                    <option key={s.id} value={s.id}>{s.name} ({s.gradeLevel})</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="text-neutral-400 font-semibold block mb-1">Target Lesson Tank</span>
+                <select
+                  value={selectedLessonId}
+                  onChange={e => handleSelectLessonForTank(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500 font-semibold"
+                >
+                  {selectedSpec.lessons.map(l => (
+                    <option key={l.id} value={l.id}>{l.title}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            {tankActionMsg && (
+              <div className="p-3 bg-emerald-950/40 border border-emerald-500/40 rounded-xl text-emerald-300 text-xs font-semibold">
+                {tankActionMsg}
+              </div>
+            )}
+
+            {/* Tank Summary Stats */}
+            <div className="grid grid-cols-3 gap-3 text-xs">
+              <div className="p-3 bg-neutral-950 border border-neutral-800 rounded-xl">
+                <span className="text-neutral-500 text-[10px]">Case B Questions</span>
+                <p className="text-lg font-bold text-amber-400 mt-1">{currentTank.length} Baseline Items</p>
+              </div>
+              <div className="p-3 bg-neutral-950 border border-neutral-800 rounded-xl">
+                <span className="text-neutral-500 text-[10px]">Case Pre Scaffolds</span>
+                <p className="text-lg font-bold text-emerald-400 mt-1">{currentTank.reduce((a, b) => a + b.preTrials.length, 0)} Trials</p>
+              </div>
+              <div className="p-3 bg-neutral-950 border border-neutral-800 rounded-xl">
+                <span className="text-neutral-500 text-[10px]">Case C Challenges</span>
+                <p className="text-lg font-bold text-violet-400 mt-1">{currentTank.reduce((a, b) => a + b.cQuestions.length, 0)} Challenge Questions</p>
               </div>
             </div>
+          </div>
+
+          {/* Question DNA List & Selective Pruning */}
+          <div className="space-y-4">
+            <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+              Active Question DNA Items for {selectedLessonId} ({currentTank.length})
+            </h3>
+
+            {currentTank.length === 0 ? (
+              <div className="p-8 bg-neutral-900/40 border border-neutral-800 rounded-2xl text-center space-y-3">
+                <Dna className="h-8 w-8 text-neutral-600 mx-auto" />
+                <p className="text-sm font-bold text-neutral-400">Question Tank is currently EMPTY for this lesson.</p>
+                <p className="text-xs text-neutral-500">All 3-Case questions have been purged by Admin.</p>
+                <button
+                  type="button"
+                  onClick={() => handleRestoreDefaultTank(selectedLessonId)}
+                  className="px-4 py-2 bg-amber-500 text-black font-bold rounded-xl text-xs hover:bg-amber-400 transition"
+                >
+                  ↺ Restore Default Seed Tank
+                </button>
+              </div>
+            ) : (
+              currentTank.map((dna, index) => {
+                const isExpanded = expandedDNAId === dna.bQuestion.id;
+
+                return (
+                  <div key={dna.bQuestion.id} className="bg-neutral-900/80 border border-neutral-800 rounded-2xl overflow-hidden text-xs">
+                    <div className="p-5 flex items-start justify-between gap-4">
+                      <div className="space-y-1.5 flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-mono font-bold text-amber-400 text-sm">Item #{index + 1} ({dna.bQuestion.id})</span>
+                          <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold">
+                            {dna.preTrials.length} Pre Trials
+                          </span>
+                          <span className="text-[10px] bg-violet-500/20 text-violet-300 border border-violet-500/30 px-2 py-0.5 rounded-full font-bold">
+                            {dna.cQuestions.length} Case C Challenges
+                          </span>
+                        </div>
+                        <p className="text-white font-semibold text-xs">{dna.bQuestion.questionText}</p>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setExpandedDNAId(isExpanded ? null : dna.bQuestion.id)}
+                          className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-bold rounded-lg text-[11px] transition flex items-center gap-1"
+                        >
+                          {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                          {isExpanded ? "Collapse" : "Prune Variants"}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteDNAItem(selectedLessonId, dna.bQuestion.id)}
+                          className="px-3 py-1.5 bg-red-950/60 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/40 rounded-lg text-[11px] font-bold transition flex items-center gap-1"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" /> Delete Item
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Inline Selective Pruner */}
+                    {isExpanded && (
+                      <div className="border-t border-neutral-800 bg-neutral-950/80 p-5 space-y-4">
+                        {/* Case Pre Pruning */}
+                        <div className="space-y-2">
+                          <h4 className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider flex items-center justify-between">
+                            <span>🌱 Case Pre Scaffolded Trials ({dna.preTrials.length})</span>
+                            <span className="text-[10px] text-neutral-500 font-normal">Click 🗑️ to delete specific trial</span>
+                          </h4>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {dna.preTrials.map(pt => (
+                              <div key={pt.id} className="p-3 bg-neutral-900 border border-neutral-800 rounded-xl flex items-start justify-between gap-2">
+                                <div className="space-y-1 min-w-0">
+                                  <span className="font-bold text-emerald-300 text-[10px]">Level {pt.level} · {pt.tierName}</span>
+                                  <p className="text-[11px] text-neutral-300 truncate">{pt.questionText}</p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeletePreTrial(selectedLessonId, dna.bQuestion.id, pt.id)}
+                                  className="text-neutral-500 hover:text-red-400 p-1 shrink-0 transition"
+                                  title="Delete this Pre trial"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Case C Pruning */}
+                        <div className="space-y-2 pt-2 border-t border-neutral-800/60">
+                          <h4 className="text-[11px] font-bold text-violet-400 uppercase tracking-wider flex items-center justify-between">
+                            <span>🚀 Case C Challenge Questions ({dna.cQuestions.length})</span>
+                            <span className="text-[10px] text-neutral-500 font-normal">Click 🗑️ to delete specific challenge</span>
+                          </h4>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {dna.cQuestions.map(c => (
+                              <div key={c.id} className="p-3 bg-neutral-900 border border-neutral-800 rounded-xl flex items-start justify-between gap-2">
+                                <div className="space-y-1 min-w-0">
+                                  <span className="font-bold text-violet-300 text-[10px]">Level {c.level} · {c.tierName}</span>
+                                  <p className="text-[11px] text-neutral-300 truncate">{c.questionText}</p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteCQuestion(selectedLessonId, dna.bQuestion.id, c.id)}
+                                  className="text-neutral-500 hover:text-red-400 p-1 shrink-0 transition"
+                                  title="Delete this C question"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       )}
 
-      {/* ── TAB 2: LIVE ALARMS & HEALTH MONITORING ─────────────────────── */}
+      {/* ── TAB 3: LIVE ALARMS & HEALTH MONITORING ─────────────────────── */}
       {activeTab === "alarms" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
@@ -721,7 +952,7 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
         </div>
       )}
 
-      {/* ── TAB 3: BROADCAST NOTIFIER & ANNOUNCEMENT HUB ──────────────── */}
+      {/* ── TAB 4: BROADCAST NOTIFIER & ANNOUNCEMENT HUB ──────────────── */}
       {activeTab === "broadcasts" && (
         <div className="space-y-6">
           <div className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-6 space-y-4">
@@ -797,7 +1028,6 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
             </form>
           </div>
 
-          {/* Sent History */}
           <div className="space-y-3">
             <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Sent Broadcast Alerts History ({broadcasts.length})</h3>
             <div className="space-y-3">
@@ -829,7 +1059,7 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
         </div>
       )}
 
-      {/* ── TAB 4: DIRECTIVES & ADMIN NOTES LEDGER ─────────────────────── */}
+      {/* ── TAB 5: DIRECTIVES & ADMIN NOTES LEDGER ─────────────────────── */}
       {activeTab === "notes" && (
         <div className="space-y-6">
           <div className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-6 space-y-4">
@@ -924,7 +1154,6 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
             </form>
           </div>
 
-          {/* Directives List */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Administrative Directives Ledger</h3>
@@ -994,9 +1223,9 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
         </div>
       )}
 
-      {/* ── TAB 5: CURRICULUM REGISTRY ─────────────────────────────────── */}
+      {/* ── TAB 6: CURRICULUM REGISTRY & MULTI-POLICY ENGINE ──────────── */}
       {activeTab === "registry" && (
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div className="flex items-center justify-between bg-neutral-900/60 border border-neutral-800 rounded-xl p-4">
             <div className="flex items-center gap-2">
               <Lock className="h-4 w-4 text-red-400" />
@@ -1011,13 +1240,14 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
           </div>
           {uploadStatus && <p className="text-xs p-3 bg-neutral-900 border border-neutral-800 rounded-lg text-neutral-300">{uploadStatus}</p>}
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             {specs.map(spec => {
               const deps = ClassRegistry.getCurriculumDependencies(spec.id);
-              const isEditingThis = editingPolicyFor === spec.id;
+              const policyProfiles = ClassRegistry.getCurriculumPolicyProfiles(spec.id);
+              const activeProfileId = spec.activePolicyId || policyProfiles[0]?.id;
 
               return (
-                <div key={spec.id} className="bg-neutral-900/70 border border-neutral-800 rounded-2xl overflow-hidden">
+                <div key={spec.id} className="bg-neutral-900/70 border border-neutral-800 rounded-2xl overflow-hidden text-xs">
                   <div className="flex items-start gap-4 p-5">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -1027,18 +1257,71 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
                       </div>
                       <p className="text-[11px] text-neutral-500 mt-1">{spec.publisher} · v{spec.version}</p>
 
-                      <div className="flex flex-wrap gap-1.5 mt-2">
-                        <PolicyBadge on={spec.policy?.aiTankEnabled !== false} label="AI Tank" />
-                        <PolicyBadge on={spec.policy?.allowTeacherCustomSlides !== false} label="Custom Slides" />
-                        <PolicyBadge on={spec.policy?.allowTeacherCustomQuestions !== false} label="Custom Questions" />
-                        {spec.policy?.maxAuthorizedTeachers ? (
-                          <span className="text-[10px] bg-amber-500/15 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold">
-                            Max {spec.policy.maxAuthorizedTeachers} Teachers
+                      {/* Multi-Policy Profiles Section */}
+                      <div className="mt-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                            📜 Multi-Policy Profiles ({policyProfiles.length})
                           </span>
-                        ) : null}
+                          <button
+                            type="button"
+                            onClick={() => { setSelectedCurriculumId(spec.id); setShowAddPolicyModal(true); }}
+                            className="text-[10px] text-violet-400 hover:text-violet-300 font-bold flex items-center gap-1"
+                          >
+                            + Add Policy Profile
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                          {policyProfiles.map(profile => {
+                            const isActive = profile.id === activeProfileId;
+
+                            return (
+                              <div
+                                key={profile.id}
+                                className={`p-3 rounded-xl border flex flex-col justify-between space-y-2 transition ${
+                                  isActive
+                                    ? "bg-amber-950/30 border-amber-500/50 shadow-md"
+                                    : "bg-neutral-950 border-neutral-800 opacity-80"
+                                }`}
+                              >
+                                <div className="space-y-1">
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-bold text-white text-xs">{profile.name}</span>
+                                    {isActive && (
+                                      <span className="text-[9px] font-bold bg-amber-500 text-black px-2 py-0.2 rounded-full">
+                                        ACTIVE
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-[10px] text-neutral-400 line-clamp-2">{profile.notes || "Standard policy rules."}</p>
+                                </div>
+
+                                <div className="flex items-center justify-between pt-1 border-t border-neutral-800/60 text-[10px]">
+                                  <div className="flex gap-1">
+                                    <PolicyBadge on={profile.aiTankEnabled} label="AI" />
+                                    <PolicyBadge on={profile.allowTeacherCustomSlides} label="Slides" />
+                                  </div>
+
+                                  {!isActive ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSetActivePolicyProfile(spec.id, profile.id)}
+                                      className="text-amber-400 hover:text-amber-300 font-bold"
+                                    >
+                                      ✓ Apply
+                                    </button>
+                                  ) : (
+                                    <span className="text-emerald-400 font-bold">Applied</span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
 
-                      <div className="flex gap-4 mt-2 text-[11px] text-neutral-400">
+                      <div className="flex gap-4 mt-3 text-[11px] text-neutral-400">
                         <span><span className="text-amber-400 font-bold">{deps.authorizedTeachers.length}</span> authorized teachers</span>
                         <span><span className="text-sky-400 font-bold">{deps.affectedPackages.length}</span> active packages</span>
                         <span><span className="text-neutral-500">{spec.chapters.length}</span> chapters</span>
@@ -1047,37 +1330,13 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
 
                     <div className="flex flex-col gap-2 shrink-0">
                       <button
-                        onClick={() => {
-                          if (isEditingThis) { setEditingPolicyFor(null); }
-                          else { setEditingPolicyFor(spec.id); setEditedPolicy(spec.policy ?? { ...DEFAULT_CURRICULUM_POLICY }); }
-                        }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-amber-500/20 text-neutral-300 hover:text-amber-300 border border-neutral-700 hover:border-amber-500/40 rounded-lg text-[11px] font-bold transition"
-                      >
-                        <Edit3 className="h-3 w-3" /> {isEditingThis ? "Cancel" : "Edit Policy"}
-                      </button>
-                      <button
                         onClick={() => openRemoveModal(spec)}
                         className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-red-500/20 text-neutral-400 hover:text-red-300 border border-neutral-700 hover:border-red-500/40 rounded-lg text-[11px] font-bold transition"
                       >
-                        <Trash2 className="h-3 w-3" /> Remove
+                        <Trash2 className="h-3 w-3" /> Remove Spec
                       </button>
                     </div>
                   </div>
-
-                  {isEditingThis && (
-                    <div className="border-t border-neutral-800 bg-neutral-950/60 p-5 space-y-4">
-                      <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
-                        <Settings className="h-3.5 w-3.5" /> Editing Policy for: {spec.name}
-                      </h4>
-                      <PolicyEditor policy={editedPolicy} onChange={setEditedPolicy} />
-                      <button
-                        onClick={() => handleSavePolicy(spec.id)}
-                        className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-lg text-xs transition"
-                      >
-                        ✓ Save Policy
-                      </button>
-                    </div>
-                  )}
                 </div>
               );
             })}
@@ -1085,7 +1344,7 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
         </div>
       )}
 
-      {/* ── TAB 6: ADD NEW CURRICULUM ──────────────────────────────────── */}
+      {/* ── TAB 7: ADD NEW CURRICULUM ──────────────────────────────────── */}
       {activeTab === "add" && (
         <div className="space-y-5">
           <div className="bg-neutral-900/70 border border-neutral-800 rounded-2xl p-6 space-y-5">
@@ -1138,7 +1397,7 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
 
             <div className="border-t border-neutral-800 pt-4 space-y-3">
               <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
-                <Settings className="h-3.5 w-3.5" /> Curriculum Policies
+                <Settings className="h-3.5 w-3.5" /> Initial Policy Profile
               </h4>
               <PolicyEditor
                 policy={newSpec.policy ?? DEFAULT_CURRICULUM_POLICY}
@@ -1165,7 +1424,7 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
         </div>
       )}
 
-      {/* ── TAB 7: TEACHER GOVERNANCE & PERMISSIONS ────────────────────── */}
+      {/* ── TAB 8: TEACHER GOVERNANCE & PERMISSIONS ────────────────────── */}
       {activeTab === "teachers" && (
         <div className="space-y-5">
           <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
@@ -1297,7 +1556,7 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
         </div>
       )}
 
-      {/* ── TAB 8: AI & OLLAMA MULTI-API POOL SETTINGS ───────────────────── */}
+      {/* ── TAB 9: AI & OLLAMA MULTI-API POOL SETTINGS ───────────────────── */}
       {activeTab === "ai" && (
         <div className="space-y-6">
           <div className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-6 space-y-6">
@@ -1484,6 +1743,58 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
                 {aiSaveMsg}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── ADD POLICY PROFILE MODAL ──────────────────────────────────────── */}
+      {showAddPolicyModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 max-w-lg w-full space-y-5 animate-in fade-in zoom-in-95 text-xs">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <PlusCircle className="h-4 w-4 text-amber-400" /> Create Policy Profile for {selectedCurriculumId}
+              </h3>
+              <button type="button" onClick={() => setShowAddPolicyModal(false)} className="text-neutral-500 hover:text-white">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <label className="block">
+                <span className="text-neutral-400 font-semibold block mb-1">Policy Profile Name *</span>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Strict Examination Policy"
+                  value={newPolicyName}
+                  onChange={e => setNewPolicyName(e.target.value)}
+                  className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
+                />
+              </label>
+
+              <PolicyEditor
+                policy={newPolicyData}
+                onChange={setNewPolicyData}
+              />
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowAddPolicyModal(false)}
+                className="flex-1 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white font-bold rounded-xl transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => handleAddPolicyProfile(selectedCurriculumId)}
+                className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl transition"
+              >
+                Create Policy Profile
+              </button>
+            </div>
           </div>
         </div>
       )}

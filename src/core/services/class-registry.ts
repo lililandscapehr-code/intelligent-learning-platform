@@ -1,3 +1,17 @@
+import type { QuestionDNA } from "../../components/carousel/CarouselTypes";
+import { lesson11QuestionDNA } from "../../curriculum-packages/egypt-baccalaureate-second-year-physics/part1/question-dna/lesson-1-1-question-dna";
+import { lesson12QuestionDNA } from "../../curriculum-packages/egypt-baccalaureate-second-year-physics/part1/question-dna/lesson-1-2-question-dna";
+import { lesson13QuestionDNA } from "../../curriculum-packages/egypt-baccalaureate-second-year-physics/part1/question-dna/lesson-1-3-question-dna";
+import { lesson14QuestionDNA } from "../../curriculum-packages/egypt-baccalaureate-second-year-physics/part1/question-dna/lesson-1-4-question-dna";
+import { lesson15QuestionDNA } from "../../curriculum-packages/egypt-baccalaureate-second-year-physics/part1/question-dna/lesson-1-5-question-dna";
+import { lesson16QuestionDNA } from "../../curriculum-packages/egypt-baccalaureate-second-year-physics/part1/question-dna/lesson-1-6-question-dna";
+import { lesson17QuestionDNA } from "../../curriculum-packages/egypt-baccalaureate-second-year-physics/part1/question-dna/lesson-1-7-question-dna";
+import { lesson18QuestionDNA } from "../../curriculum-packages/egypt-baccalaureate-second-year-physics/part1/question-dna/lesson-1-8-question-dna";
+import { lesson19QuestionDNA } from "../../curriculum-packages/egypt-baccalaureate-second-year-physics/part1/question-dna/lesson-1-9-question-dna";
+import { lesson110QuestionDNA } from "../../curriculum-packages/egypt-baccalaureate-second-year-physics/part1/question-dna/lesson-1-10-question-dna";
+import { lesson111QuestionDNA } from "../../curriculum-packages/egypt-baccalaureate-second-year-physics/part1/question-dna/lesson-1-11-question-dna";
+import { lesson112QuestionDNA } from "../../curriculum-packages/egypt-baccalaureate-second-year-physics/part1/question-dna/lesson-1-12-question-dna";
+
 export type PackageScopeType = 
   | "FULL_PACKAGE"       // Complete curriculum package
   | "SEMESTER"           // Term 1 / Term 2
@@ -119,6 +133,12 @@ export interface CurriculumPolicy {
   notes: string;                        // admin internal notes
 }
 
+export interface CurriculumPolicyProfile extends CurriculumPolicy {
+  id: string;
+  name: string;
+  isDefault?: boolean;
+}
+
 export const DEFAULT_CURRICULUM_POLICY: CurriculumPolicy = {
   maxAuthorizedTeachers: 0,
   teacherMustBeVerified: false,
@@ -128,6 +148,45 @@ export const DEFAULT_CURRICULUM_POLICY: CurriculumPolicy = {
   expiryDate: null,
   notes: ""
 };
+
+export const DEFAULT_POLICY_PROFILES: CurriculumPolicyProfile[] = [
+  {
+    id: "pol_standard",
+    name: "Standard Open Policy",
+    isDefault: true,
+    maxAuthorizedTeachers: 0,
+    teacherMustBeVerified: false,
+    allowTeacherCustomSlides: true,
+    allowTeacherCustomQuestions: true,
+    aiTankEnabled: true,
+    expiryDate: null,
+    notes: "Default open policy for authorized teachers."
+  },
+  {
+    id: "pol_strict_exam",
+    name: "Strict Ministry Exam Policy",
+    isDefault: false,
+    maxAuthorizedTeachers: 3,
+    teacherMustBeVerified: true,
+    allowTeacherCustomSlides: false,
+    allowTeacherCustomQuestions: false,
+    aiTankEnabled: true,
+    expiryDate: null,
+    notes: "Locked down for official examination packages. Custom edits disabled."
+  },
+  {
+    id: "pol_trial_30d",
+    name: "30-Day Evaluation Policy",
+    isDefault: false,
+    maxAuthorizedTeachers: 10,
+    teacherMustBeVerified: false,
+    allowTeacherCustomSlides: true,
+    allowTeacherCustomQuestions: true,
+    aiTankEnabled: true,
+    expiryDate: "2027-06-30",
+    notes: "Temporary promotional policy for trial packages."
+  }
+];
 
 export interface CurriculumSpec {
   id: string;
@@ -140,6 +199,8 @@ export interface CurriculumSpec {
   chapters: string[];
   lessons: Array<{ id: string; title: string }>;
   policy?: CurriculumPolicy;
+  policies?: CurriculumPolicyProfile[];
+  activePolicyId?: string;
   registeredAt?: string;
   archivedAt?: string | null;
 }
@@ -1531,5 +1592,128 @@ export const ClassRegistry = {
         distillationMemoryCount: 42
       }
     };
+  },
+
+  // ── Question DNA Tank Bank Removal & Pruning Methods ─────────────────────
+  getQuestionDNABank(lessonId: string): QuestionDNA[] {
+    return activeQuestionDNABanks[lessonId] || [];
+  },
+
+  purgeEntireLessonTank(lessonId: string): boolean {
+    activeQuestionDNABanks[lessonId] = [];
+    return true;
+  },
+
+  purgeEntireCurriculumTanks(curriculumId: string): boolean {
+    const spec = REGISTERED_CURRICULUM_SPECS[curriculumId];
+    if (!spec) return false;
+    spec.lessons.forEach(l => {
+      activeQuestionDNABanks[l.id] = [];
+    });
+    return true;
+  },
+
+  deleteQuestionDNAItem(lessonId: string, bQuestionId: string): boolean {
+    const bank = activeQuestionDNABanks[lessonId];
+    if (!bank) return false;
+    activeQuestionDNABanks[lessonId] = bank.filter(dna => dna.bQuestion.id !== bQuestionId);
+    return true;
+  },
+
+  deletePreTrial(lessonId: string, bQuestionId: string, trialId: string): boolean {
+    const bank = activeQuestionDNABanks[lessonId];
+    if (!bank) return false;
+    const dna = bank.find(d => d.bQuestion.id === bQuestionId);
+    if (!dna) return false;
+    dna.preTrials = dna.preTrials.filter(t => t.id !== trialId);
+    return true;
+  },
+
+  deleteCQuestion(lessonId: string, bQuestionId: string, cQuestionId: string): boolean {
+    const bank = activeQuestionDNABanks[lessonId];
+    if (!bank) return false;
+    const dna = bank.find(d => d.bQuestion.id === bQuestionId);
+    if (!dna) return false;
+    dna.cQuestions = dna.cQuestions.filter(c => c.id !== cQuestionId);
+    return true;
+  },
+
+  restoreDefaultLessonTank(lessonId: string): boolean {
+    if (DEFAULT_QUESTION_DNA_BANKS[lessonId]) {
+      activeQuestionDNABanks[lessonId] = JSON.parse(JSON.stringify(DEFAULT_QUESTION_DNA_BANKS[lessonId]));
+      return true;
+    }
+    return false;
+  },
+
+  // ── Multi-Policy Profile Management Methods ──────────────────────────────
+  getCurriculumPolicyProfiles(curriculumId: string): CurriculumPolicyProfile[] {
+    const spec = REGISTERED_CURRICULUM_SPECS[curriculumId];
+    if (!spec) return DEFAULT_POLICY_PROFILES;
+    if (!spec.policies || spec.policies.length === 0) {
+      spec.policies = JSON.parse(JSON.stringify(DEFAULT_POLICY_PROFILES));
+      spec.activePolicyId = "pol_standard";
+    }
+    return spec.policies!;
+  },
+
+  addPolicyProfileToCurriculum(curriculumId: string, profile: Omit<CurriculumPolicyProfile, "id">): CurriculumPolicyProfile | null {
+    const spec = REGISTERED_CURRICULUM_SPECS[curriculumId];
+    if (!spec) return null;
+    const profiles = this.getCurriculumPolicyProfiles(curriculumId);
+    const newProfile: CurriculumPolicyProfile = {
+      ...profile,
+      id: `pol_${Date.now()}`
+    };
+    profiles.push(newProfile);
+    spec.policies = profiles;
+    return newProfile;
+  },
+
+  updatePolicyProfile(curriculumId: string, profileId: string, update: Partial<CurriculumPolicyProfile>): boolean {
+    const profiles = this.getCurriculumPolicyProfiles(curriculumId);
+    const profile = profiles.find(p => p.id === profileId);
+    if (!profile) return false;
+    Object.assign(profile, update);
+    return true;
+  },
+
+  deletePolicyProfile(curriculumId: string, profileId: string): boolean {
+    const spec = REGISTERED_CURRICULUM_SPECS[curriculumId];
+    if (!spec || !spec.policies) return false;
+    spec.policies = spec.policies.filter(p => p.id !== profileId);
+    if (spec.activePolicyId === profileId && spec.policies.length > 0) {
+      spec.activePolicyId = spec.policies[0].id;
+    }
+    return true;
+  },
+
+  setActivePolicyProfile(curriculumId: string, profileId: string): boolean {
+    const spec = REGISTERED_CURRICULUM_SPECS[curriculumId];
+    if (!spec) return false;
+    const profiles = this.getCurriculumPolicyProfiles(curriculumId);
+    const target = profiles.find(p => p.id === profileId);
+    if (!target) return false;
+    spec.activePolicyId = profileId;
+    spec.policy = { ...target };
+    return true;
   }
 };
+
+// Seed Question DNA Store
+const DEFAULT_QUESTION_DNA_BANKS: Record<string, QuestionDNA[]> = {
+  "CAROUSEL-PHYS-EB-MECH-1-1": lesson11QuestionDNA,
+  "CAROUSEL-PHYS-EB-MECH-1-2": lesson12QuestionDNA,
+  "CAROUSEL-PHYS-EB-MECH-1-3": lesson13QuestionDNA,
+  "CAROUSEL-PHYS-EB-MECH-1-4": lesson14QuestionDNA,
+  "CAROUSEL-PHYS-EB-MECH-1-5": lesson15QuestionDNA,
+  "CAROUSEL-PHYS-EB-MECH-1-6": lesson16QuestionDNA,
+  "CAROUSEL-PHYS-EB-MECH-1-7": lesson17QuestionDNA,
+  "CAROUSEL-PHYS-EB-MECH-1-8": lesson18QuestionDNA,
+  "CAROUSEL-PHYS-EB-MECH-1-9": lesson19QuestionDNA,
+  "CAROUSEL-PHYS-EB-MECH-1-10": lesson110QuestionDNA,
+  "CAROUSEL-PHYS-EB-MECH-1-11": lesson111QuestionDNA,
+  "CAROUSEL-PHYS-EB-MECH-1-12": lesson112QuestionDNA,
+};
+
+let activeQuestionDNABanks: Record<string, QuestionDNA[]> = JSON.parse(JSON.stringify(DEFAULT_QUESTION_DNA_BANKS));
