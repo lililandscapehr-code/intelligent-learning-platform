@@ -1276,76 +1276,75 @@ export default function EngineSimulator() {
 
           {/* PLATFORM CORE TAB */}
           {activeTab === "platform" && (
-            <div className="space-y-6">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h2 className="text-xl font-bold text-white">Platform Core & MySQL Registries</h2>
-                  <p className="text-sm text-neutral-400 mt-1">Manage database schemas, seed tables, and run schema validations.</p>
+            session.role === "ADMIN" ? (
+              <div className="space-y-6">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="text-xl font-bold text-white">Platform Core & MySQL Registries</h2>
+                    <p className="text-sm text-neutral-400 mt-1">Manage database schemas, seed tables, and run schema validations.</p>
+                  </div>
                 </div>
-              </div>
 
-              <div className="grid md:grid-cols-3 gap-6">
-                {/* DB Config card */}
-                <div className="bg-neutral-950 rounded-xl border border-neutral-800 p-5 space-y-4">
-                  <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider pb-2 border-b border-neutral-800">Connection Health</h3>
-                  
-                  {dbError ? (
-                    <div className="p-3 bg-red-955/20 border border-red-500/30 rounded text-xs text-red-400 font-medium">
-                      {dbError}
-                    </div>
-                  ) : (
-                    <div className="p-3 bg-emerald-950/20 border border-emerald-500/30 rounded text-xs text-emerald-400 font-medium">
-                      Connected to local database.
-                    </div>
-                  )}
+                <div className="grid md:grid-cols-3 gap-6">
+                  {/* DB Config card */}
+                  <div className="bg-neutral-950 rounded-xl border border-neutral-800 p-5 space-y-4">
+                    <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider pb-2 border-b border-neutral-800">Connection Health</h3>
+                    
+                    {dbError ? (
+                      <div className="p-3 bg-red-955/20 border border-red-500/30 rounded text-xs text-red-400 font-medium">
+                        {dbError}
+                      </div>
+                    ) : (
+                      <div className="p-3 bg-emerald-950/20 border border-emerald-500/30 rounded text-xs text-emerald-400 font-medium">
+                        Connected to local database.
+                      </div>
+                    )}
 
-                  {dbConfig && (
-                    <div className="space-y-2 text-xs">
-                      <div className="flex justify-between border-b border-neutral-900 pb-1.5">
-                        <span className="text-neutral-500">Host:</span>
-                        <span className="font-mono text-neutral-300">{dbConfig.host}</span>
+                    {dbConfig && (
+                      <div className="space-y-2 text-xs">
+                        <div className="flex justify-between border-b border-neutral-900 pb-1.5">
+                          <span className="text-neutral-500">Host:</span>
+                          <span className="font-mono text-neutral-300">{dbConfig.host}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-neutral-900 pb-1.5">
+                          <span className="text-neutral-500">Database:</span>
+                          <span className="font-mono text-neutral-300">{dbConfig.database}</span>
+                        </div>
+                        <div className="flex justify-between pb-1.5">
+                          <span className="text-neutral-500">Username:</span>
+                          <span className="font-mono text-neutral-300">{dbConfig.user}</span>
+                        </div>
                       </div>
-                      <div className="flex justify-between border-b border-neutral-900 pb-1.5">
-                        <span className="text-neutral-500">Database:</span>
-                        <span className="font-mono text-neutral-300">{dbConfig.database}</span>
-                      </div>
-                      <div className="flex justify-between pb-1.5">
-                        <span className="text-neutral-500">Username:</span>
-                        <span className="font-mono text-neutral-300">{dbConfig.user}</span>
-                      </div>
-                    </div>
-                  )}
+                    )}
 
-                  <div className="space-y-2 pt-2">
-                    <button 
-                      onClick={handleUploadPackage}
-                      className="w-full py-2 bg-amber-500 hover:bg-amber-600 transition rounded-lg text-xs font-bold text-neutral-950 flex items-center justify-center gap-2"
-                    >
-                      <Lock className="h-3.5 w-3.5" />
-                      Seed {selectedCurriculum.identity.name} to MySQL
-                    </button>
+                    <div className="space-y-2 pt-2">
+                      <button 
+                        onClick={loadPlatformState} 
+                        className="w-full bg-neutral-900 hover:bg-neutral-850 border border-neutral-800 text-white font-medium py-2 rounded-lg text-xs transition"
+                      >
+                        Ping Database Connection
+                      </button>
+                    </div>
                   </div>
 
-                  {uploadStatus && (
-                    <div className={`p-3 rounded text-xs font-medium border ${
-                      uploadStatus.startsWith("FAILED")
-                        ? "bg-red-955/20 border-red-500/30 text-red-400"
-                        : uploadStatus.startsWith("SUCCESS")
-                        ? "bg-emerald-950/20 border-emerald-500/30 text-emerald-400"
-                        : "bg-neutral-900 border-neutral-800 text-neutral-400 animate-pulse"
-                    }`}>
-                      {uploadStatus}
+                  {/* Seed / Setup Card */}
+                  <div className="col-span-2 bg-neutral-950 rounded-xl border border-neutral-800 p-5 space-y-4">
+                    <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider pb-2 border-b border-neutral-800">Database Administration</h3>
+                    <p className="text-xs text-neutral-400">
+                      The core educational platform schema stores students, teachers, parents, sessions, attempt logs, and lesson state persistence.
+                    </p>
+                    <div className="p-4 bg-neutral-900 rounded-lg border border-neutral-800 text-xs font-mono text-neutral-300">
+                      npm run db:setup
                     </div>
-                  )}
-
+                  </div>
                 </div>
 
-                {/* Audit Logs card */}
-                <div className="col-span-2 bg-neutral-950 rounded-xl border border-neutral-800 p-5 space-y-4">
-                  <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider pb-2 border-b border-neutral-800 flex items-center justify-between">
-                    <span className="flex items-center gap-2"><ListFilter className="h-4 w-4 text-amber-500" /> Platform Audit Logs</span>
-                    <button onClick={loadPlatformState} className="text-neutral-500 hover:text-white transition text-[10px] font-bold uppercase">Refresh</button>
-                  </h3>
+                {/* Audit Logs table */}
+                <div className="bg-neutral-950 rounded-xl border border-neutral-800 p-5 space-y-4">
+                  <div className="flex justify-between items-center border-b border-neutral-800 pb-2">
+                    <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">System Audit Logs</h3>
+                    <button onClick={loadPlatformState} className="text-xs text-amber-400 hover:underline">Refresh Logs</button>
+                  </div>
 
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs border-collapse">
@@ -1360,7 +1359,7 @@ export default function EngineSimulator() {
                       <tbody>
                         {auditLogs.length === 0 ? (
                           <tr>
-                            <td colSpan={4} className="py-6 text-center text-neutral-600">No logs found in audit_logs. Run the database setup command locally or from CI.</td>
+                            <td colSpan={4} className="py-6 text-center text-neutral-600">No logs found.</td>
                           </tr>
                         ) : (
                           auditLogs.map((log) => (
@@ -1377,7 +1376,20 @@ export default function EngineSimulator() {
                   </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="p-8 sm:p-12 text-center max-w-lg mx-auto space-y-4 bg-neutral-950 border border-red-500/30 rounded-3xl shadow-2xl">
+                <div className="h-16 w-16 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 flex items-center justify-center mx-auto text-2xl font-black">
+                  <Lock className="h-8 w-8" />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-red-400">Security Access Guard</span>
+                  <h3 className="text-xl font-black text-white">Platform Database Core Restricted</h3>
+                  <p className="text-xs text-neutral-400 leading-relaxed">
+                    Database configuration and audit logs are strictly reserved for <strong>Administrator</strong> accounts.
+                  </p>
+                </div>
+              </div>
+            )
           )}
 
         </section>
