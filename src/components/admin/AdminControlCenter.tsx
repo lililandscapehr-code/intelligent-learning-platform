@@ -13,6 +13,7 @@ import {
   RotateCcw, Copy, Package, Globe, FileEdit, Scale, Dna
 } from "lucide-react";
 import CurriculumAIStudio from "./CurriculumAIStudio";
+import DemoCodeManager from "./DemoCodeManager";
 import { 
   uploadCurriculumPackage,
   getAIProviderPoolAction,
@@ -61,7 +62,7 @@ interface AdminControlCenterProps {
   onCurriculumAdded: (curriculum: CurriculumPackage) => void;
 }
 
-type AdminTab = "reports" | "packages" | "tanks" | "alarms" | "broadcasts" | "notes" | "registry" | "add" | "teachers" | "ai" | "curriculum-studio" | "sovereign-rules" | "homepage-manager";
+type AdminTab = "reports" | "packages" | "tanks" | "alarms" | "broadcasts" | "notes" | "registry" | "add" | "teachers" | "ai" | "curriculum-studio" | "sovereign-rules" | "homepage-manager" | "demo-codes";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function PolicyBadge({ on, label }: { on: boolean; label: string }) {
@@ -892,6 +893,7 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
     { key: "ai", label: "🤖 AI & Ollama Pool", icon: Cpu },
     { key: "curriculum-studio", label: "📄 Curriculum AI Studio", icon: FileEdit },
     { key: "homepage-manager", label: "🏠 Homepage CMS", icon: Globe, badge: "Dynamic" },
+    { key: "demo-codes", label: "🔑 Demo Codes", icon: Key, badge: "Trial Codes" },
   ];
 
   const filteredNotes = notes.filter(n => noteFilterStatus === "ALL" || n.status === noteFilterStatus);
@@ -4070,6 +4072,12 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
           </div>
         </div>
       )}
+
+      {/* ── TAB: DEMO ACCESS CODES & PACKAGE SERVICE POLICIES ────────────── */}
+      {activeTab === "demo-codes" && (
+        <DemoCodeManager />
+      )}
+
     </div>
   );
 }

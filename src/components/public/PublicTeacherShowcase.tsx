@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { ClassRegistry, TeacherAnnouncement, PackageScopeType, HomepageConfig } from "../../core/services/class-registry";
+import { ClassRegistry, TeacherAnnouncement, PackageScopeType, HomepageConfig, DemoAccessCode } from "../../core/services/class-registry";
 import { 
   BookOpen, 
   Users, 
@@ -22,7 +22,11 @@ import {
   LogIn,
   Radio,
   AlertOctagon,
-  Info
+  Info,
+  Key,
+  QrCode,
+  Zap,
+  Globe
 } from "lucide-react";
 
 interface PublicTeacherShowcaseProps {
@@ -56,6 +60,12 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage, onOpenLog
   const [parent2Email, setParent2Email] = useState("nouran.youssef@parent.com");
   const [parent2Phone, setParent2Phone] = useState("+20 100 987 6543");
 
+  // Demo / Trial Access Code
+  const [showDemoModal, setShowDemoModal]     = useState(false);
+  const [demoCodeInput, setDemoCodeInput]     = useState("");
+  const [demoCodeError, setDemoCodeError]     = useState("");
+  const [redeemedDemo, setRedeemedDemo]       = useState<DemoAccessCode | null>(null);
+
   const loadAnnouncements = () => {
     setAnnouncements(ClassRegistry.getPublicPackageAnnouncements());
     setHomepageConfig(ClassRegistry.getHomepageConfig());
@@ -63,7 +73,19 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage, onOpenLog
 
   useEffect(() => {
     loadAnnouncements();
+    // Auto-open demo modal if ?demo=CODE is in the URL
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("demo");
+    if (code) { setDemoCodeInput(code.toUpperCase()); setShowDemoModal(true); }
   }, []);
+
+  const handleRedeemDemoCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    setDemoCodeError("");
+    const result = ClassRegistry.redeemDemoCode(demoCodeInput.trim());
+    if (!result.success) { setDemoCodeError(result.message); return; }
+    setRedeemedDemo(result.demoCode!);
+  };
 
   const isSectionVisible = (sectionId: string) => {
     const s = homepageConfig.sections.find(sec => sec.id === sectionId);
@@ -168,12 +190,126 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage, onOpenLog
             </div>
 
             {onOpenLoginModal && homepageConfig.heroCtaVisible && (
-              <button 
-                onClick={onOpenLoginModal}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs shadow-lg shadow-amber-500/20 transition shrink-0"
-              >
-                <LogIn className="h-4 w-4" /> {homepageConfig.heroCtaText}
-              </button>
+              <div className="flex flex-col sm:flex-row gap-2 shrink-0 w-full sm:w-auto">
+                <button 
+                  onClick={onOpenLoginModal}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs shadow-lg shadow-amber-500/20 transition"
+                >
+                  <LogIn className="h-4 w-4" /> {homepageConfig.heroCtaText}
+                </button>
+                <button
+                  onClick={() => { setShowDemoModal(true); setRedeemedDemo(null); setDemoCodeError(""); }}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-neutral-800 hover:bg-neutral-700 border border-amber-500/30 text-amber-300 font-black text-xs transition"
+                >
+                  <Key className="h-4 w-4" /> Enter Trial Code
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Demo / Trial Access Code Modal ───────────────────────────────── */}
+      {showDemoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-md bg-neutral-950 border border-amber-500/40 rounded-3xl p-6 space-y-5 shadow-2xl">
+            {!redeemedDemo ? (
+              <>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <QrCode className="h-5 w-5 text-amber-400" />
+                      <h2 className="text-lg font-black text-white">Enter Access Code</h2>
+                    </div>
+                    <p className="text-xs text-neutral-400">Have a trial or demo code? Enter it below to unlock your free preview.</p>
+                  </div>
+                  <button onClick={() => setShowDemoModal(false)} className="text-neutral-500 hover:text-white transition">
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleRedeemDemoCode} className="space-y-3">
+                  {demoCodeError && (
+                    <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs">{demoCodeError}</div>
+                  )}
+                  <div>
+                    <input
+                      type="text" required placeholder="e.g. PHYS2026"
+                      value={demoCodeInput}
+                      onChange={e => setDemoCodeInput(e.target.value.toUpperCase())}
+                      className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-amber-400 font-mono font-black text-xl tracking-widest text-center outline-none focus:border-amber-500"
+                      autoFocus
+                    />
+                  </div>
+                  <button type="submit" className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-amber-500 hover:bg-amber-400 text-black font-black rounded-xl transition text-sm">
+                    <Zap className="h-4 w-4" /> Activate Demo Access
+                  </button>
+                </form>
+                <p className="text-center text-[10px] text-neutral-600">Demo codes are shared via social media and promotional campaigns. Contact us to get one.</p>
+              </>
+            ) : (
+              /* Success: show demo package details and what is accessible */
+              <>
+                <div className="flex items-start justify-between">
+                  <h2 className="text-lg font-black text-emerald-400 flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5" /> Demo Access Granted!
+                  </h2>
+                  <button onClick={() => setShowDemoModal(false)} className="text-neutral-500 hover:text-white transition">
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 space-y-2">
+                  <p className="text-xs text-neutral-400">You now have <strong className="text-amber-400">{redeemedDemo.policyLabel}</strong> access to:</p>
+                  <p className="text-white font-bold text-sm">{redeemedDemo.className}</p>
+                  <p className="text-xs text-neutral-500">{redeemedDemo.curriculumPackageName}</p>
+                </div>
+
+                {/* What's included */}
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-2">What you can access in this demo:</p>
+                  <div className="grid grid-cols-2 gap-1.5 text-[10px]">
+                    {[
+                      { label: "Answers", ok: redeemedDemo.policy.showAnswers },
+                      { label: "Marks",   ok: redeemedDemo.policy.showMarks },
+                      { label: "Explanations", ok: redeemedDemo.policy.showExplanations },
+                      { label: "Video Slides", ok: redeemedDemo.policy.allowVideoSlides },
+                      { label: "Questions",    ok: redeemedDemo.policy.allowQuestions },
+                      { label: "Diagnostics",  ok: redeemedDemo.policy.allowDiagnosticSessions },
+                      { label: "Live Sessions",ok: redeemedDemo.policy.allowLiveSessions },
+                      { label: "PDF Reports",  ok: redeemedDemo.policy.allowPdfDownload },
+                    ].map(({ label, ok }) => (
+                      <div key={label} className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border ${ok ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-400" : "bg-neutral-900 border-neutral-800 text-neutral-600"}`}>
+                        {ok ? <CheckCircle className="h-3 w-3 shrink-0" /> : <X className="h-3 w-3 shrink-0" />}
+                        {label}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-neutral-600 mt-2 text-center">
+                    {redeemedDemo.policy.maxLessonsAccessible > 0
+                      ? `Access limited to ${redeemedDemo.policy.maxLessonsAccessible} lesson(s)`
+                      : "All lessons accessible"
+                    }
+                    {" · "}
+                    {redeemedDemo.policy.maxSlidesPerLesson > 0
+                      ? `${redeemedDemo.policy.maxSlidesPerLesson} slides per lesson`
+                      : "All slides accessible"
+                    }
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setShowDemoModal(false);
+                    // Navigate to the package
+                    const ann = announcements.find((a: any) => a.classId === redeemedDemo.classId);
+                    if (ann) onDirectLaunchPackage(ann.curriculumPackageId, ann.classId);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-amber-500 hover:bg-amber-400 text-black font-black rounded-xl transition text-sm"
+                >
+                  <Globe className="h-4 w-4" /> Start Demo Session →
+                </button>
+              </>
             )}
           </div>
         </div>

@@ -632,6 +632,7 @@ export interface ClassRecord {
   isPrivate?: boolean;
   specialNegotiatedPrice?: number;
   archivedAt?: string | null;
+  servicePolicy?: PackageServicePolicy;   // Per-package service access policy (null = full access)
 }
 
 // Initial Mock Data
@@ -1118,6 +1119,115 @@ let mockSessions: LiveSession[] = [
 ];
 
 let mockPendingRegistrations: PendingRegistration[] = [];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ── Package Service Policy System ────────────────────────────────────────────
+// Controls exactly what a student (or demo user) can do inside a package
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface PackageServicePolicy {
+  // ── Content Visibility ────────────────────────────────────────────────────
+  showAnswers: boolean;             // Student can see correct answers after submitting
+  showMarks: boolean;               // Student can see their score / marks per question
+  showExplanations: boolean;        // Show step-by-step explanation after attempt
+  showEvaluationSlides: boolean;    // Show evaluation/solution carousel slides
+  showMisconceptionNotes: boolean;  // Show "watch out for this mistake" cards
+  showRubricPoints: boolean;        // Show rubric grading breakdown
+  // ── Slide Access ──────────────────────────────────────────────────────────
+  allowAllSlides: boolean;          // If false, limit to maxSlidesPerLesson
+  maxSlidesPerLesson: number;       // 0 = unlimited
+  allowVideoSlides: boolean;        // Can watch embedded YouTube / video slides
+  allowImageSlides: boolean;        // Can view image slides
+  // ── Navigation ────────────────────────────────────────────────────────────
+  allowFreeNavigation: boolean;     // Can jump to any lesson freely
+  maxLessonsAccessible: number;     // 0 = all; otherwise limit (demo = 1 or 2)
+  allowReplay: boolean;             // Can redo a lesson / replay video
+  // ── Assessments ───────────────────────────────────────────────────────────
+  allowQuestions: boolean;          // Can attempt questions / MCQ / numeric
+  allowRetries: boolean;            // Can retry wrong answers
+  allowDiagnosticSessions: boolean; // Can run full 3-case adaptive diagnostic
+  // ── Live & Social ─────────────────────────────────────────────────────────
+  allowLiveSessions: boolean;       // Can join live classroom sessions
+  showProgressTracker: boolean;     // Show learning progress and mastery bars
+  // ── Download & Export ─────────────────────────────────────────────────────
+  allowPdfDownload: boolean;        // Can download PDF reports or lesson summaries
+}
+
+export const FULL_ACCESS_POLICY: PackageServicePolicy = {
+  showAnswers: true, showMarks: true, showExplanations: true,
+  showEvaluationSlides: true, showMisconceptionNotes: true, showRubricPoints: true,
+  allowAllSlides: true, maxSlidesPerLesson: 0, allowVideoSlides: true, allowImageSlides: true,
+  allowFreeNavigation: true, maxLessonsAccessible: 0, allowReplay: true,
+  allowQuestions: true, allowRetries: true, allowDiagnosticSessions: true,
+  allowLiveSessions: true, showProgressTracker: true, allowPdfDownload: true
+};
+
+export const DEMO_TRIAL_POLICY: PackageServicePolicy = {
+  showAnswers: true, showMarks: true, showExplanations: true,
+  showEvaluationSlides: false, showMisconceptionNotes: false, showRubricPoints: false,
+  allowAllSlides: false, maxSlidesPerLesson: 4, allowVideoSlides: true, allowImageSlides: true,
+  allowFreeNavigation: false, maxLessonsAccessible: 2, allowReplay: true,
+  allowQuestions: true, allowRetries: false, allowDiagnosticSessions: false,
+  allowLiveSessions: false, showProgressTracker: true, allowPdfDownload: false
+};
+
+export const PREVIEW_POLICY: PackageServicePolicy = {
+  showAnswers: false, showMarks: false, showExplanations: false,
+  showEvaluationSlides: false, showMisconceptionNotes: false, showRubricPoints: false,
+  allowAllSlides: false, maxSlidesPerLesson: 2, allowVideoSlides: false, allowImageSlides: true,
+  allowFreeNavigation: false, maxLessonsAccessible: 1, allowReplay: false,
+  allowQuestions: false, allowRetries: false, allowDiagnosticSessions: false,
+  allowLiveSessions: false, showProgressTracker: false, allowPdfDownload: false
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ── Demo / Trial Access Codes ─────────────────────────────────────────────────
+// Admin creates short codes to share on social media for free trials / demos
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type DemoCodeStatus = "ACTIVE" | "PAUSED" | "EXPIRED" | "REVOKED";
+export type DemoCodeType  = "SOCIAL_TRIAL" | "PROMO" | "DEMO_CLASS" | "INFLUENCER";
+
+export interface DemoAccessCode {
+  id: string;
+  code: string;                      // Short human-readable code e.g. "PHYS2026"
+  label: string;                     // Admin note e.g. "Facebook September Trial"
+  type: DemoCodeType;
+  classId: string;                   // Which package / class this grants access to
+  className: string;
+  curriculumPackageName: string;
+  policy: PackageServicePolicy;      // Exactly what the demo user can access
+  policyLabel: string;               // e.g. "Demo Trial", "Full Preview", "Custom"
+  status: DemoCodeStatus;
+  createdAt: string;
+  expiresAt: string | null;          // null = never expires
+  maxUses: number;                   // 0 = unlimited
+  usedCount: number;
+  shareUrl?: string;                 // Generated shareable link
+  notes?: string;
+}
+
+let mockDemoAccessCodes: DemoAccessCode[] = [
+  {
+    id: "demo_001",
+    code: "PHYS2026",
+    label: "Facebook September Physics Trial",
+    type: "SOCIAL_TRIAL",
+    classId: "cls_101",
+    className: "Year 11 Physics - Section A (Full Term 1)",
+    curriculumPackageName: "Egyptian Baccalaureate 2nd Year Physics - Part 1",
+    policy: { ...DEMO_TRIAL_POLICY },
+    policyLabel: "Demo Trial (2 lessons, answers shown)",
+    status: "ACTIVE",
+    createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
+    expiresAt: new Date(Date.now() + 86400000 * 30).toISOString(),
+    maxUses: 500,
+    usedCount: 47,
+    shareUrl: "https://intelligent-learning-platform-five.vercel.app?demo=PHYS2026",
+    notes: "Shared on Facebook & Instagram stories Sep 2026"
+  }
+];
+
 
 let mockAdminAlarms: AdminAlarm[] = [
   {
@@ -2391,7 +2501,117 @@ export const ClassRegistry = {
 
   removeHomepageSubjectFilter(filterId: string): void {
     homepageConfig.subjectFilters = homepageConfig.subjectFilters.filter(f => f.id !== filterId);
-  }
+  },
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PACKAGE SERVICE POLICY — Per-package content access control
+  // ══════════════════════════════════════════════════════════════════════════
+
+  getPackageServicePolicy(classId: string): PackageServicePolicy {
+    const cls = this.getClassById(classId);
+    return cls?.servicePolicy ?? { ...FULL_ACCESS_POLICY };
+  },
+
+  updatePackageServicePolicy(classId: string, policy: PackageServicePolicy): { success: boolean; message: string } {
+    const cls = this.getClassById(classId);
+    if (!cls) return { success: false, message: "Package not found." };
+    cls.servicePolicy = { ...policy };
+    return { success: true, message: `Service policy updated for "${cls.name}".` };
+  },
+
+  applyPolicyPreset(classId: string, preset: "FULL" | "DEMO_TRIAL" | "PREVIEW"): { success: boolean; message: string } {
+    const presetMap = { FULL: FULL_ACCESS_POLICY, DEMO_TRIAL: DEMO_TRIAL_POLICY, PREVIEW: PREVIEW_POLICY };
+    return this.updatePackageServicePolicy(classId, { ...presetMap[preset] });
+  },
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // DEMO ACCESS CODES — Admin creates trial/social-media access codes
+  // ══════════════════════════════════════════════════════════════════════════
+
+  getAllDemoAccessCodes(): DemoAccessCode[] {
+    return [...mockDemoAccessCodes];
+  },
+
+  getDemoCodeByCode(code: string): DemoAccessCode | null {
+    return mockDemoAccessCodes.find(d => d.code.toUpperCase() === code.toUpperCase()) ?? null;
+  },
+
+  redeemDemoCode(code: string): { success: boolean; message: string; demoCode?: DemoAccessCode } {
+    const entry = this.getDemoCodeByCode(code);
+    if (!entry) return { success: false, message: "Invalid access code. Please check and try again." };
+    if (entry.status !== "ACTIVE") return { success: false, message: `This demo code is currently ${entry.status.toLowerCase()}.` };
+    if (entry.expiresAt && new Date(entry.expiresAt) < new Date()) {
+      entry.status = "EXPIRED";
+      return { success: false, message: "This demo code has expired." };
+    }
+    if (entry.maxUses > 0 && entry.usedCount >= entry.maxUses) {
+      return { success: false, message: "This demo code has reached its maximum usage limit." };
+    }
+    entry.usedCount++;
+    return { success: true, message: `Welcome! Demo access granted to "${entry.className}".`, demoCode: { ...entry } };
+  },
+
+  createDemoAccessCode(params: {
+    code: string;
+    label: string;
+    type: DemoCodeType;
+    classId: string;
+    policyPreset: "FULL" | "DEMO_TRIAL" | "PREVIEW" | "CUSTOM";
+    customPolicy?: PackageServicePolicy;
+    expiresAt: string | null;
+    maxUses: number;
+    notes?: string;
+  }): { success: boolean; message: string; code?: DemoAccessCode } {
+    // Validate code uniqueness
+    const existing = this.getDemoCodeByCode(params.code);
+    if (existing) return { success: false, message: `Code "${params.code}" already exists. Choose a different code.` };
+
+    const cls = this.getClassById(params.classId);
+    if (!cls) return { success: false, message: "Package class not found." };
+
+    const presetMap = { FULL: FULL_ACCESS_POLICY, DEMO_TRIAL: DEMO_TRIAL_POLICY, PREVIEW: PREVIEW_POLICY };
+    const policy = params.policyPreset === "CUSTOM" && params.customPolicy
+      ? { ...params.customPolicy }
+      : { ...presetMap[params.policyPreset as keyof typeof presetMap] };
+
+    const policyLabels = { FULL: "Full Access", DEMO_TRIAL: "Demo Trial", PREVIEW: "Preview Only", CUSTOM: "Custom Policy" };
+
+    const newCode: DemoAccessCode = {
+      id: `demo_${Date.now()}`,
+      code: params.code.toUpperCase(),
+      label: params.label,
+      type: params.type,
+      classId: params.classId,
+      className: cls.name,
+      curriculumPackageName: cls.curriculumPackageName,
+      policy,
+      policyLabel: policyLabels[params.policyPreset],
+      status: "ACTIVE",
+      createdAt: new Date().toISOString(),
+      expiresAt: params.expiresAt,
+      maxUses: params.maxUses,
+      usedCount: 0,
+      shareUrl: `https://intelligent-learning-platform-five.vercel.app?demo=${params.code.toUpperCase()}`,
+      notes: params.notes
+    };
+
+    mockDemoAccessCodes.push(newCode);
+    return { success: true, message: `Demo code "${newCode.code}" created successfully!`, code: newCode };
+  },
+
+  updateDemoCodeStatus(codeId: string, status: DemoCodeStatus): { success: boolean } {
+    const entry = mockDemoAccessCodes.find(d => d.id === codeId);
+    if (!entry) return { success: false };
+    entry.status = status;
+    return { success: true };
+  },
+
+  deleteDemoCode(codeId: string): { success: boolean } {
+    const len = mockDemoAccessCodes.length;
+    mockDemoAccessCodes = mockDemoAccessCodes.filter(d => d.id !== codeId);
+    return { success: mockDemoAccessCodes.length < len };
+  },
+
 };
 
 // Seed Question DNA Store
