@@ -524,6 +524,7 @@ export interface TeacherAssignment {
   teacherEmail: string;
   approvedCurriculumIds: string[];
   curriculumStatuses?: Record<string, TeacherCurriculumStatus>; // curriculumId -> "ACTIVE" | "SUSPENDED"
+  excludedLessonIds?: Record<string, string[]>; // curriculumId -> list of lessonIds soft-hidden by teacher
   permissions: TeacherPermissions;
 }
 
@@ -1912,6 +1913,92 @@ export const ClassRegistry = {
         patch.lessons ? `${patch.lessons.length} lessons` : "",
         patch.notes ? "notes updated" : ""
       ].filter(Boolean).join(", ")}.`
+    };
+  },
+
+  // --- Teacher Soft Lesson Exclusion (Teacher hides a lesson in their class, Admin master remains intact) ---
+  toggleTeacherLessonExclusion(teacherId: string, curriculumId: string, lessonId: string): { isExcluded: boolean; message: string } {
+    const assignment = mockTeacherAssignments.find(a => a.teacherId === teacherId);
+    if (!assignment) return { isExcluded: false, message: "Teacher assignment not found." };
+    if (!assignment.excludedLessonIds) assignment.excludedLessonIds = {};
+    const excludedList = assignment.excludedLessonIds[curriculumId] || [];
+
+    const isCurrentlyExcluded = excludedList.includes(lessonId);
+    if (isCurrentlyExcluded) {
+      assignment.excludedLessonIds[curriculumId] = excludedList.filter(id => id !== lessonId);
+      return { isExcluded: false, message: `Lesson restored to your active teaching track.` };
+    } else {
+      assignment.excludedLessonIds[curriculumId] = [...excludedList, lessonId];
+      return { isExcluded: true, message: `Lesson excluded from your active teaching track. (Admin master copy remains safe)` };
+    }
+  },
+
+  getEffectiveLessonsForTeacher(teacherId: string, curriculumId: string): Array<{ id: string; title: string; isExcluded: boolean }> {
+    const spec = REGISTERED_CURRICULUM_SPECS[curriculumId];
+    if (!spec) return [];
+    const assignment = mockTeacherAssignments.find(a => a.teacherId === teacherId);
+    const excludedList = assignment?.excludedLessonIds?.[curriculumId] || [];
+    return spec.lessons.map(l => ({
+      ...l,
+      isExcluded: excludedList.includes(l.id)
+    }));
+  },
+
+  // --- Admin Master Lesson Management ---
+  adminDeleteLessonFromMaster(curriculumId: string, lessonId: string): { success: boolean; message: string } {
+    const spec = REGISTERED_CURRICULUM_SPECS[curriculumId];
+    if (!spec) return { success: false, message: "Curriculum not found." };
+    const initialCount = spec.lessons.length;
+    spec.lessons = spec.lessons.filter(l => l.id !== lessonId);
+    if (spec.lessons.length === initialCount) return { success: false, message: "Lesson ID not found in master spec." };
+    return { success: true, message: `Lesson permanently removed from Master Registry.` };
+  },
+
+  adminUpdateMasterLesson(curriculumId: string, lessonId: string, newTitle: string): { success: boolean; message: string } {
+    const spec = REGISTERED_CURRICULUM_SPECS[curriculumId];
+    if (!spec) return { success: false, message: "Curriculum not found." };
+    const target = spec.lessons.find(l => l.id === lessonId);
+    if (!target) return { success: false, message: "Lesson ID not found." };
+    target.title = newTitle;
+    return { success: true, message: `Master lesson updated to "${newTitle}".` };
+  },
+
+  // --- Admin Curriculum Cloning & Versioning Engine (Clones for New Academic Year / Version) ---
+  adminCloneCurriculum(
+    sourceCurriculumId: string,
+    newVersionTag: string,
+    newName?: string
+  ): { success: boolean; newCurriculumId: string; message: string } {
+    const source = REGISTERED_CURRICULUM_SPECS[sourceCurriculumId];
+    if (!source) return { success: false, newCurriculumId: "", message: `Source curriculum "${sourceCurriculumId}" not found.` };
+
+    const cleanSlug = (newName || `${source.name} (${newVersionTag})`)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+    
+    const newId = `${cleanSlug}-${Date.now().toString(36).slice(-4)}`;
+
+    const clonedSpec: CurriculumSpec = {
+      id: newId,
+      name: newName || `${source.name} (${newVersionTag})`,
+      publisher: source.publisher,
+      subject: source.subject,
+      gradeLevel: source.gradeLevel,
+      version: newVersionTag,
+      terms: JSON.parse(JSON.stringify(source.terms)),
+      chapters: JSON.parse(JSON.stringify(source.chapters)),
+      lessons: JSON.parse(JSON.stringify(source.lessons)),
+      policy: source.policy ? { ...source.policy } : { ...DEFAULT_CURRICULUM_POLICY },
+      registeredAt: new Date().toISOString()
+    };
+
+    REGISTERED_CURRICULUM_SPECS[newId] = clonedSpec;
+
+    return {
+      success: true,
+      newCurriculumId: newId,
+      message: `Successfully cloned "${source.name}" as new version "${clonedSpec.name}" (ID: ${newId}). All lessons, chapters, and policy profiles duplicated.`
     };
   }
 };

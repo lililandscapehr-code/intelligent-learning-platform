@@ -433,6 +433,26 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
   const [aiSaveMsg, setAISaveMsg] = useState<string | null>(null);
   const [showKeyMap, setShowKeyMap] = useState<Record<string, boolean>>({});
 
+  // Curriculum Cloning State
+  const [showCloneModal, setShowCloneModal] = useState(false);
+  const [cloneTargetSpec, setCloneTargetSpec] = useState<CurriculumSpec | null>(null);
+  const [cloneVersionTag, setCloneVersionTag] = useState("2026/2027 v2.0");
+  const [cloneNewTitle, setCloneNewTitle] = useState("");
+  const [cloneResult, setCloneResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  function handleCloneCurriculum() {
+    if (!cloneTargetSpec || !cloneVersionTag.trim()) return;
+    const res = ClassRegistry.adminCloneCurriculum(cloneTargetSpec.id, cloneVersionTag.trim(), cloneNewTitle.trim() || undefined);
+    setCloneResult(res);
+    if (res.success) {
+      refreshSpecs();
+      setTimeout(() => {
+        setShowCloneModal(false);
+        setCloneResult(null);
+      }, 2200);
+    }
+  }
+
   // Executive Suite State
   const [alarms, setAlarms] = useState<AdminAlarm[]>(() => ClassRegistry.getAdminAlarms());
   const [broadcasts, setBroadcasts] = useState<AdminBroadcast[]>(() => ClassRegistry.getAllBroadcasts());
@@ -2013,6 +2033,17 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
 
                     <div className="flex flex-col gap-2 shrink-0">
                       <button
+                        onClick={() => {
+                          setCloneTargetSpec(spec);
+                          setCloneVersionTag("2026/2027 v2.0");
+                          setCloneNewTitle(`${spec.name} (2026/2027 Edition)`);
+                          setShowCloneModal(true);
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-sky-500/20 text-neutral-300 hover:text-sky-300 border border-neutral-700 hover:border-sky-500/40 rounded-lg text-[11px] font-bold transition"
+                      >
+                        <Copy className="h-3 w-3 text-sky-400" /> Clone for New Year
+                      </button>
+                      <button
                         onClick={() => openRemoveModal(spec)}
                         className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-red-500/20 text-neutral-400 hover:text-red-300 border border-neutral-700 hover:border-red-500/40 rounded-lg text-[11px] font-bold transition"
                       >
@@ -2746,6 +2777,79 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
                 </button>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── CLONE CURRICULUM FOR NEW YEAR MODAL ───────────────────────── */}
+      {showCloneModal && cloneTargetSpec && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 max-w-lg w-full space-y-5 animate-in fade-in zoom-in-95 text-xs">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Copy className="h-4 w-4 text-sky-400" /> Duplicate & Clone for New Academic Year / Version
+              </h3>
+              <button type="button" onClick={() => setShowCloneModal(false)} className="text-neutral-500 hover:text-white">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="p-3 bg-sky-950/30 border border-sky-500/30 rounded-xl space-y-1">
+              <p className="font-bold text-sky-300">Cloning Source Package:</p>
+              <p className="text-neutral-300 font-mono text-[11px]">{cloneTargetSpec.name} (ID: {cloneTargetSpec.id})</p>
+              <p className="text-[10px] text-neutral-400">All chapters ({cloneTargetSpec.chapters.length}), lessons ({cloneTargetSpec.lessons.length}), and policy matrices will be duplicated under a new independent version.</p>
+            </div>
+
+            <div className="space-y-3">
+              <label className="block">
+                <span className="text-neutral-400 font-semibold block mb-1">New Version Tag / Academic Year *</span>
+                <input
+                  type="text"
+                  placeholder="e.g. 2026/2027 v2.0 or Term 1 - 2027 Edition"
+                  value={cloneVersionTag}
+                  onChange={e => setCloneVersionTag(e.target.value)}
+                  className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-sky-500 font-mono"
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-neutral-400 font-semibold block mb-1">New Curriculum Package Name *</span>
+                <input
+                  type="text"
+                  placeholder="e.g. Egyptian Baccalaureate Physics (2026/2027 Edition)"
+                  value={cloneNewTitle}
+                  onChange={e => setCloneNewTitle(e.target.value)}
+                  className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-sky-500 font-bold"
+                />
+              </label>
+            </div>
+
+            {cloneResult && (
+              <div className={`p-3 rounded-xl border text-xs font-semibold flex items-start gap-2 ${
+                cloneResult.success ? "bg-emerald-950/40 border-emerald-500/40 text-emerald-300" : "bg-red-950/40 border-red-500/40 text-red-300"
+              }`}>
+                {cloneResult.success ? <CheckCircle className="h-4 w-4 flex-shrink-0 mt-0.5" /> : <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />}
+                <span>{cloneResult.message}</span>
+              </div>
+            )}
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowCloneModal(false)}
+                className="flex-1 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white font-bold rounded-xl transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleCloneCurriculum}
+                disabled={!cloneVersionTag.trim()}
+                className="flex-1 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl transition disabled:opacity-40"
+              >
+                🚀 Duplicate Curriculum Package
+              </button>
+            </div>
           </div>
         </div>
       )}
