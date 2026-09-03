@@ -2597,15 +2597,19 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
             <div className="space-y-3">
               {/* Quick Presets */}
               <div className="space-y-1">
-                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">Quick Provider Presets:</span>
+                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">One-Click Model Presets (No Conflict):</span>
                 <div className="flex flex-wrap gap-1.5">
                   {[
-                    { name: "Gemini 2.5 Flash", type: "gemini", model: "gemini-2.5-flash", desc: "Free Cloud Tier" },
-                    { name: "ChatGPT (gpt-4o-mini)", type: "openai", model: "gpt-4o-mini", desc: "OpenAI Cloud" },
-                    { name: "ChatGPT (gpt-4o)", type: "openai", model: "gpt-4o", desc: "OpenAI Flagship" },
-                    { name: "DeepSeek Chat", type: "openai", model: "deepseek-chat", apiBaseUrl: "https://api.deepseek.com/v1", desc: "DeepSeek API" },
-                    { name: "Claude (OpenRouter)", type: "openai", model: "anthropic/claude-3.5-sonnet", apiBaseUrl: "https://openrouter.ai/api/v1", desc: "Anthropic via OpenRouter" },
-                    { name: "Ollama (Local Free)", type: "ollama", model: "qwen2.5:3b", endpoint: "http://127.0.0.1:11434", desc: "100% Free Offline" }
+                    { name: "Claude 3.7 Sonnet", type: "openai", model: "anthropic/claude-3.7-sonnet", apiBaseUrl: "https://openrouter.ai/api/v1" },
+                    { name: "Claude 3.5 Sonnet", type: "openai", model: "anthropic/claude-3.5-sonnet", apiBaseUrl: "https://openrouter.ai/api/v1" },
+                    { name: "Claude 3 Opus", type: "openai", model: "anthropic/claude-3-opus", apiBaseUrl: "https://openrouter.ai/api/v1" },
+                    { name: "ChatGPT (gpt-4o)", type: "openai", model: "gpt-4o", apiBaseUrl: "https://api.openai.com/v1" },
+                    { name: "ChatGPT (gpt-4o-mini)", type: "openai", model: "gpt-4o-mini", apiBaseUrl: "https://api.openai.com/v1" },
+                    { name: "Gemini 2.5 Flash", type: "gemini", model: "gemini-2.5-flash" },
+                    { name: "Gemini 2.5 Pro", type: "gemini", model: "gemini-2.5-pro" },
+                    { name: "DeepSeek R1", type: "openai", model: "deepseek-reasoner", apiBaseUrl: "https://api.deepseek.com/v1" },
+                    { name: "DeepSeek Chat", type: "openai", model: "deepseek-chat", apiBaseUrl: "https://api.deepseek.com/v1" },
+                    { name: "Ollama (100% Free Offline)", type: "ollama", model: "qwen2.5:3b", endpoint: "http://127.0.0.1:11434" }
                   ].map(preset => (
                     <button
                       key={preset.name}
