@@ -224,6 +224,84 @@ export const DEFAULT_POLICY_PROFILES: CurriculumPolicyProfile[] = [
   }
 ];
 
+export interface CurriculumLessonsPolicy {
+  canAddLessons: boolean;
+  canModifyLessons: boolean;
+  canDeleteLessons: boolean;
+  allowTeacherSoftExclusions: boolean;
+  requireAdminApprovalForLessonChanges: boolean;
+  sequentialOrderRequired: boolean;
+}
+
+export interface CurriculumPackageRules {
+  allowPrivatePackages: boolean;
+  allowSpecialNegotiatedPrices: boolean;
+  defaultCurrency: string;
+  minimumPrice: number;
+  maximumDiscountPercent: number;
+  defaultValidityDays: number;
+}
+
+export interface CurriculumTeacherRules {
+  allowedTeacherIds: string[];
+  leadReviewerIds: string[];
+  suspendedTeacherIds: string[];
+  allowTeacherCustomSlides: boolean;
+  allowTeacherDirectParentContact: boolean;
+  allowTeacherAITankAccess: boolean;
+}
+
+export interface CurriculumAssessmentRules {
+  passingScorePercent: number;
+  allowQuestionRetries: boolean;
+  shuffleChoices: boolean;
+  enableScaffoldingPreTrials: boolean;
+  enableChallengeCaseC: boolean;
+}
+
+export interface CurriculumRules {
+  lessonsPolicy: CurriculumLessonsPolicy;
+  packageRules: CurriculumPackageRules;
+  teacherRules: CurriculumTeacherRules;
+  domainPolicies: CurriculumDomainPolicies;
+  assessmentRules: CurriculumAssessmentRules;
+}
+
+export const DEFAULT_CURRICULUM_RULES: CurriculumRules = {
+  lessonsPolicy: {
+    canAddLessons: true,
+    canModifyLessons: true,
+    canDeleteLessons: false,
+    allowTeacherSoftExclusions: true,
+    requireAdminApprovalForLessonChanges: true,
+    sequentialOrderRequired: false
+  },
+  packageRules: {
+    allowPrivatePackages: true,
+    allowSpecialNegotiatedPrices: true,
+    defaultCurrency: "EGP",
+    minimumPrice: 200,
+    maximumDiscountPercent: 50,
+    defaultValidityDays: 120
+  },
+  teacherRules: {
+    allowedTeacherIds: ["teacher_1", "teacher_2"],
+    leadReviewerIds: ["teacher_1"],
+    suspendedTeacherIds: [],
+    allowTeacherCustomSlides: true,
+    allowTeacherDirectParentContact: true,
+    allowTeacherAITankAccess: true
+  },
+  domainPolicies: DEFAULT_DOMAIN_POLICIES,
+  assessmentRules: {
+    passingScorePercent: 70,
+    allowQuestionRetries: true,
+    shuffleChoices: true,
+    enableScaffoldingPreTrials: true,
+    enableChallengeCaseC: true
+  }
+};
+
 export interface CurriculumSpec {
   id: string;
   name: string;
@@ -237,6 +315,7 @@ export interface CurriculumSpec {
   policy?: CurriculumPolicy;
   policies?: CurriculumPolicyProfile[];
   activePolicyId?: string;
+  rules?: CurriculumRules;
   registeredAt?: string;
   archivedAt?: string | null;
 }
@@ -1963,6 +2042,51 @@ export const ClassRegistry = {
     return { success: true, message: `Master lesson updated to "${newTitle}".` };
   },
 
+  // --- Sovereign Per-Curriculum Rulebook Engine ---
+  getCurriculumRules(curriculumId: string): CurriculumRules {
+    const spec = REGISTERED_CURRICULUM_SPECS[curriculumId];
+    if (spec?.rules) return spec.rules;
+    const initialRules: CurriculumRules = JSON.parse(JSON.stringify(DEFAULT_CURRICULUM_RULES));
+    if (spec) spec.rules = initialRules;
+    return initialRules;
+  },
+
+  updateCurriculumRules(curriculumId: string, patch: Partial<CurriculumRules>): { success: boolean; message: string } {
+    const spec = REGISTERED_CURRICULUM_SPECS[curriculumId];
+    if (!spec) return { success: false, message: `Curriculum "${curriculumId}" not found.` };
+    const currentRules = spec.rules || JSON.parse(JSON.stringify(DEFAULT_CURRICULUM_RULES));
+
+    if (patch.lessonsPolicy) currentRules.lessonsPolicy = { ...currentRules.lessonsPolicy, ...patch.lessonsPolicy };
+    if (patch.packageRules) currentRules.packageRules = { ...currentRules.packageRules, ...patch.packageRules };
+    if (patch.teacherRules) currentRules.teacherRules = { ...currentRules.teacherRules, ...patch.teacherRules };
+    if (patch.domainPolicies) currentRules.domainPolicies = { ...currentRules.domainPolicies, ...patch.domainPolicies };
+    if (patch.assessmentRules) currentRules.assessmentRules = { ...currentRules.assessmentRules, ...patch.assessmentRules };
+
+    spec.rules = currentRules;
+    return { success: true, message: `Sovereign rules updated for "${spec.name}".` };
+  },
+
+  isTeacherAuthorizedForCurriculum(curriculumId: string, teacherId: string): boolean {
+    const rules = this.getCurriculumRules(curriculumId);
+    if (!rules.teacherRules.allowedTeacherIds.includes(teacherId)) return false;
+    if (rules.teacherRules.suspendedTeacherIds.includes(teacherId)) return false;
+    return true;
+  },
+
+  toggleTeacherCurriculumSuspension(curriculumId: string, teacherId: string): { isSuspended: boolean; message: string } {
+    const rules = this.getCurriculumRules(curriculumId);
+    const suspended = rules.teacherRules.suspendedTeacherIds;
+    const isCurrentlySuspended = suspended.includes(teacherId);
+
+    if (isCurrentlySuspended) {
+      rules.teacherRules.suspendedTeacherIds = suspended.filter(id => id !== teacherId);
+      return { isSuspended: false, message: `Teacher ${teacherId} reinstated for ${curriculumId}.` };
+    } else {
+      rules.teacherRules.suspendedTeacherIds = [...suspended, teacherId];
+      return { isSuspended: true, message: `Teacher ${teacherId} suspended from ${curriculumId}.` };
+    }
+  },
+
   // --- Admin Curriculum Cloning & Versioning Engine (Clones for New Academic Year / Version) ---
   adminCloneCurriculum(
     sourceCurriculumId: string,
@@ -1990,6 +2114,7 @@ export const ClassRegistry = {
       chapters: JSON.parse(JSON.stringify(source.chapters)),
       lessons: JSON.parse(JSON.stringify(source.lessons)),
       policy: source.policy ? { ...source.policy } : { ...DEFAULT_CURRICULUM_POLICY },
+      rules: source.rules ? JSON.parse(JSON.stringify(source.rules)) : JSON.parse(JSON.stringify(DEFAULT_CURRICULUM_RULES)),
       registeredAt: new Date().toISOString()
     };
 
@@ -1998,7 +2123,7 @@ export const ClassRegistry = {
     return {
       success: true,
       newCurriculumId: newId,
-      message: `Successfully cloned "${source.name}" as new version "${clonedSpec.name}" (ID: ${newId}). All lessons, chapters, and policy profiles duplicated.`
+      message: `Successfully cloned "${source.name}" as new version "${clonedSpec.name}" (ID: ${newId}). All lessons, chapters, policies, and sovereign rules duplicated.`
     };
   }
 };

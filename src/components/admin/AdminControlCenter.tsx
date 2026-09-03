@@ -10,7 +10,7 @@ import {
   Sliders, Eye, EyeOff, Layers, ArrowUp, ArrowDown, Brain,
   Award, Zap, Check, Bell, Send, FileText, BarChart2,
   TrendingUp, DollarSign, Target, Radio, AlertOctagon, Filter,
-  Dna, RotateCcw, Copy, Package, Globe, FileEdit
+  RotateCcw, Copy, Package, Globe, FileEdit, Scale, Dna
 } from "lucide-react";
 import CurriculumAIStudio from "./CurriculumAIStudio";
 import { 
@@ -41,7 +41,9 @@ import {
   PackageScopeType,
   CurriculumDomainPolicies,
   DomainActionPolicy,
-  DEFAULT_DOMAIN_POLICIES
+  DEFAULT_DOMAIN_POLICIES,
+  CurriculumRules,
+  DEFAULT_CURRICULUM_RULES
 } from "../../core/services/class-registry";
 import { 
   AIProviderEntry, 
@@ -55,7 +57,7 @@ interface AdminControlCenterProps {
   onCurriculumAdded: (curriculum: CurriculumPackage) => void;
 }
 
-type AdminTab = "reports" | "packages" | "tanks" | "alarms" | "broadcasts" | "notes" | "registry" | "add" | "teachers" | "ai" | "curriculum-studio";
+type AdminTab = "reports" | "packages" | "tanks" | "alarms" | "broadcasts" | "notes" | "registry" | "add" | "teachers" | "ai" | "curriculum-studio" | "sovereign-rules";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function PolicyBadge({ on, label }: { on: boolean; label: string }) {
@@ -453,6 +455,23 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
     }
   }
 
+  // Sovereign Rules Hub State
+  const [selectedRuleCurriculumId, setSelectedRuleCurriculumId] = useState<string>("egypt-baccalaureate-second-year-physics-part1");
+  const [rulebookForm, setRulebookForm] = useState<CurriculumRules>(() => ClassRegistry.getCurriculumRules("egypt-baccalaureate-second-year-physics-part1"));
+  const [rulebookSaveMsg, setRulebookSaveMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (selectedRuleCurriculumId) {
+      setRulebookForm(ClassRegistry.getCurriculumRules(selectedRuleCurriculumId));
+    }
+  }, [selectedRuleCurriculumId]);
+
+  function handleSaveSovereignRules() {
+    const res = ClassRegistry.updateCurriculumRules(selectedRuleCurriculumId, rulebookForm);
+    setRulebookSaveMsg(res.message);
+    setTimeout(() => setRulebookSaveMsg(null), 3500);
+  }
+
   // Executive Suite State
   const [alarms, setAlarms] = useState<AdminAlarm[]>(() => ClassRegistry.getAdminAlarms());
   const [broadcasts, setBroadcasts] = useState<AdminBroadcast[]>(() => ClassRegistry.getAllBroadcasts());
@@ -789,6 +808,7 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
     { key: "broadcasts", label: "📢 Broadcasts", icon: Radio },
     { key: "notes", label: "📝 Directives", icon: FileText, badge: `${notes.filter(n => n.status !== "RESOLVED").length}` },
     { key: "registry", label: "📋 Registry & Multi-Policy", icon: BookOpen },
+    { key: "sovereign-rules", label: "⚖️ Sovereign Rulebook", icon: Scale, badge: "Per-Curriculum" },
     { key: "add", label: "➕ Add Curriculum", icon: PlusCircle },
     { key: "teachers", label: "👩‍🏫 Teacher Governance", icon: UserCheck },
     { key: "ai", label: "🤖 AI & Ollama Pool", icon: Cpu },
@@ -2525,6 +2545,491 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
                 {aiSaveMsg}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 11: SOVEREIGN CURRICULUM RULEBOOK HUB ───────────────────── */}
+      {activeTab === "sovereign-rules" && (
+        <div className="space-y-6">
+          <div className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-6 space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-neutral-800 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold">
+                  <Scale className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    Sovereign Curriculum Rulebook Engine
+                    <span className="text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold">
+                      ISOLATED PER CURRICULUM
+                    </span>
+                  </h3>
+                  <p className="text-xs text-neutral-400">
+                    Each curriculum has its own independent rules for lesson management, commercial packages, teacher permissions, domain policies, and assessments.
+                  </p>
+                </div>
+              </div>
+
+              {/* Target Curriculum Dropdown Selector */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-neutral-400 font-semibold">Target Curriculum:</span>
+                <select
+                  value={selectedRuleCurriculumId}
+                  onChange={e => setSelectedRuleCurriculumId(e.target.value)}
+                  className="bg-neutral-950 border border-amber-500/40 text-amber-300 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:border-amber-400"
+                >
+                  {specs.map(spec => (
+                    <option key={spec.id} value={spec.id}>
+                      {spec.name} ({spec.version})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Curriculum Summary Pill */}
+            {specs.find(s => s.id === selectedRuleCurriculumId) && (
+              <div className="flex flex-wrap items-center justify-between gap-3 bg-neutral-950 p-4 rounded-xl border border-neutral-800 text-xs">
+                <div>
+                  <span className="font-bold text-white text-sm">
+                    {specs.find(s => s.id === selectedRuleCurriculumId)?.name}
+                  </span>
+                  <p className="text-[11px] text-neutral-400 mt-0.5">
+                    Publisher: {specs.find(s => s.id === selectedRuleCurriculumId)?.publisher} · Subject: {specs.find(s => s.id === selectedRuleCurriculumId)?.subject} · {specs.find(s => s.id === selectedRuleCurriculumId)?.gradeLevel}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 font-mono text-[11px]">
+                  <span className="px-2.5 py-1 rounded-lg bg-neutral-800 text-neutral-300 border border-neutral-700">
+                    ID: {selectedRuleCurriculumId}
+                  </span>
+                  <span className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/30 font-bold">
+                    {specs.find(s => s.id === selectedRuleCurriculumId)?.lessons.length || 0} Lessons
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Grid of 5 Sovereign Rules Cards */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {/* CARD 1: Lesson Management Rules */}
+              <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-5 space-y-4">
+                <div className="flex items-center gap-2 text-sky-400 border-b border-neutral-800/80 pb-2">
+                  <BookOpen className="h-4 w-4" />
+                  <h4 className="font-bold text-xs uppercase tracking-wider">1. Lesson Management Rules</h4>
+                </div>
+                <div className="space-y-3 text-xs">
+                  <label className="flex items-center justify-between p-2 rounded-lg bg-neutral-900/60 border border-neutral-800 cursor-pointer">
+                    <span className="text-neutral-300">Allow Adding New Lessons</span>
+                    <input
+                      type="checkbox"
+                      checked={rulebookForm.lessonsPolicy.canAddLessons}
+                      onChange={e => setRulebookForm(f => ({
+                        ...f,
+                        lessonsPolicy: { ...f.lessonsPolicy, canAddLessons: e.target.checked }
+                      }))}
+                      className="rounded border-neutral-700 bg-neutral-900 text-amber-500 focus:ring-0"
+                    />
+                  </label>
+                  <label className="flex items-center justify-between p-2 rounded-lg bg-neutral-900/60 border border-neutral-800 cursor-pointer">
+                    <span className="text-neutral-300">Allow Modifying Master Lesson Titles</span>
+                    <input
+                      type="checkbox"
+                      checked={rulebookForm.lessonsPolicy.canModifyLessons}
+                      onChange={e => setRulebookForm(f => ({
+                        ...f,
+                        lessonsPolicy: { ...f.lessonsPolicy, canModifyLessons: e.target.checked }
+                      }))}
+                      className="rounded border-neutral-700 bg-neutral-900 text-amber-500 focus:ring-0"
+                    />
+                  </label>
+                  <label className="flex items-center justify-between p-2 rounded-lg bg-neutral-900/60 border border-neutral-800 cursor-pointer">
+                    <span className="text-neutral-300">Allow Deleting Master Lessons</span>
+                    <input
+                      type="checkbox"
+                      checked={rulebookForm.lessonsPolicy.canDeleteLessons}
+                      onChange={e => setRulebookForm(f => ({
+                        ...f,
+                        lessonsPolicy: { ...f.lessonsPolicy, canDeleteLessons: e.target.checked }
+                      }))}
+                      className="rounded border-neutral-700 bg-neutral-900 text-amber-500 focus:ring-0"
+                    />
+                  </label>
+                  <label className="flex items-center justify-between p-2 rounded-lg bg-neutral-900/60 border border-neutral-800 cursor-pointer">
+                    <span className="text-neutral-300">Allow Teacher Soft-Exclusions (Class Level)</span>
+                    <input
+                      type="checkbox"
+                      checked={rulebookForm.lessonsPolicy.allowTeacherSoftExclusions}
+                      onChange={e => setRulebookForm(f => ({
+                        ...f,
+                        lessonsPolicy: { ...f.lessonsPolicy, allowTeacherSoftExclusions: e.target.checked }
+                      }))}
+                      className="rounded border-neutral-700 bg-neutral-900 text-amber-500 focus:ring-0"
+                    />
+                  </label>
+                  <label className="flex items-center justify-between p-2 rounded-lg bg-neutral-900/60 border border-neutral-800 cursor-pointer">
+                    <span className="text-neutral-300">Enforce Strict Sequential Order for Students</span>
+                    <input
+                      type="checkbox"
+                      checked={rulebookForm.lessonsPolicy.sequentialOrderRequired}
+                      onChange={e => setRulebookForm(f => ({
+                        ...f,
+                        lessonsPolicy: { ...f.lessonsPolicy, sequentialOrderRequired: e.target.checked }
+                      }))}
+                      className="rounded border-neutral-700 bg-neutral-900 text-amber-500 focus:ring-0"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* CARD 2: Commercial Package & Pricing Rules */}
+              <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-5 space-y-4">
+                <div className="flex items-center gap-2 text-emerald-400 border-b border-neutral-800/80 pb-2">
+                  <Package className="h-4 w-4" />
+                  <h4 className="font-bold text-xs uppercase tracking-wider">2. Commercial Package & Pricing Rules</h4>
+                </div>
+                <div className="space-y-3 text-xs">
+                  <label className="flex items-center justify-between p-2 rounded-lg bg-neutral-900/60 border border-neutral-800 cursor-pointer">
+                    <span className="text-neutral-300">Allow Private Packages (Invite-Only)</span>
+                    <input
+                      type="checkbox"
+                      checked={rulebookForm.packageRules.allowPrivatePackages}
+                      onChange={e => setRulebookForm(f => ({
+                        ...f,
+                        packageRules: { ...f.packageRules, allowPrivatePackages: e.target.checked }
+                      }))}
+                      className="rounded border-neutral-700 bg-neutral-900 text-emerald-500 focus:ring-0"
+                    />
+                  </label>
+                  <label className="flex items-center justify-between p-2 rounded-lg bg-neutral-900/60 border border-neutral-800 cursor-pointer">
+                    <span className="text-neutral-300">Allow Special Negotiated Prices</span>
+                    <input
+                      type="checkbox"
+                      checked={rulebookForm.packageRules.allowSpecialNegotiatedPrices}
+                      onChange={e => setRulebookForm(f => ({
+                        ...f,
+                        packageRules: { ...f.packageRules, allowSpecialNegotiatedPrices: e.target.checked }
+                      }))}
+                      className="rounded border-neutral-700 bg-neutral-900 text-emerald-500 focus:ring-0"
+                    />
+                  </label>
+                  <div className="grid grid-cols-2 gap-3 pt-1">
+                    <div>
+                      <span className="text-neutral-400 block mb-1 font-semibold">Currency</span>
+                      <input
+                        type="text"
+                        value={rulebookForm.packageRules.defaultCurrency}
+                        onChange={e => setRulebookForm(f => ({
+                          ...f,
+                          packageRules: { ...f.packageRules, defaultCurrency: e.target.value }
+                        }))}
+                        className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-1.5 text-white font-mono"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-neutral-400 block mb-1 font-semibold">Min Price</span>
+                      <input
+                        type="number"
+                        value={rulebookForm.packageRules.minimumPrice}
+                        onChange={e => setRulebookForm(f => ({
+                          ...f,
+                          packageRules: { ...f.packageRules, minimumPrice: Number(e.target.value) }
+                        }))}
+                        className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-1.5 text-white font-mono"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-neutral-400 block mb-1 font-semibold">Max Discount %</span>
+                      <input
+                        type="number"
+                        value={rulebookForm.packageRules.maximumDiscountPercent}
+                        onChange={e => setRulebookForm(f => ({
+                          ...f,
+                          packageRules: { ...f.packageRules, maximumDiscountPercent: Number(e.target.value) }
+                        }))}
+                        className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-1.5 text-white font-mono"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-neutral-400 block mb-1 font-semibold">Validity (Days)</span>
+                      <input
+                        type="number"
+                        value={rulebookForm.packageRules.defaultValidityDays}
+                        onChange={e => setRulebookForm(f => ({
+                          ...f,
+                          packageRules: { ...f.packageRules, defaultValidityDays: Number(e.target.value) }
+                        }))}
+                        className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-1.5 text-white font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* CARD 3: Teacher Governance for this Curriculum */}
+              <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-5 space-y-4">
+                <div className="flex items-center gap-2 text-violet-400 border-b border-neutral-800/80 pb-2">
+                  <UserCheck className="h-4 w-4" />
+                  <h4 className="font-bold text-xs uppercase tracking-wider">3. Teacher Governance & Access</h4>
+                </div>
+                <div className="space-y-3 text-xs">
+                  <div>
+                    <span className="text-neutral-400 block mb-2 font-semibold">Authorized Teachers for this Curriculum:</span>
+                    <div className="space-y-2">
+                      {teacherAssignments.map(ta => {
+                        const isAllowed = rulebookForm.teacherRules.allowedTeacherIds.includes(ta.teacherId);
+                        const isSuspended = rulebookForm.teacherRules.suspendedTeacherIds.includes(ta.teacherId);
+
+                        return (
+                          <div key={ta.teacherId} className="flex items-center justify-between p-2 rounded-lg bg-neutral-900/60 border border-neutral-800">
+                            <div>
+                              <p className="font-bold text-white">{ta.teacherName}</p>
+                              <p className="text-[10px] text-neutral-400">{ta.teacherEmail} · ID: {ta.teacherId}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setRulebookForm(f => {
+                                    const current = f.teacherRules.allowedTeacherIds;
+                                    const next = current.includes(ta.teacherId)
+                                      ? current.filter(id => id !== ta.teacherId)
+                                      : [...current, ta.teacherId];
+                                    return { ...f, teacherRules: { ...f.teacherRules, allowedTeacherIds: next } };
+                                  });
+                                }}
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold border transition ${
+                                  isAllowed
+                                    ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+                                    : "bg-neutral-800 text-neutral-500 border-neutral-700"
+                                }`}
+                              >
+                                {isAllowed ? "✓ Authorized" : "+ Authorize"}
+                              </button>
+                              {isAllowed && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setRulebookForm(f => {
+                                      const current = f.teacherRules.suspendedTeacherIds;
+                                      const next = current.includes(ta.teacherId)
+                                        ? current.filter(id => id !== ta.teacherId)
+                                        : [...current, ta.teacherId];
+                                      return { ...f, teacherRules: { ...f.teacherRules, suspendedTeacherIds: next } };
+                                    });
+                                  }}
+                                  className={`px-2 py-0.5 rounded text-[10px] font-bold border transition ${
+                                    isSuspended
+                                      ? "bg-red-500/20 text-red-300 border-red-500/40"
+                                      : "bg-neutral-800 text-neutral-400 border-neutral-700 hover:text-white"
+                                  }`}
+                                >
+                                  {isSuspended ? "⚠️ Suspended" : "Active"}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="border-t border-neutral-800/80 pt-3 space-y-2">
+                    <label className="flex items-center justify-between p-2 rounded-lg bg-neutral-900/60 border border-neutral-800 cursor-pointer">
+                      <span className="text-neutral-300">Allow Teachers to Author Custom Slides</span>
+                      <input
+                        type="checkbox"
+                        checked={rulebookForm.teacherRules.allowTeacherCustomSlides}
+                        onChange={e => setRulebookForm(f => ({
+                          ...f,
+                          teacherRules: { ...f.teacherRules, allowTeacherCustomSlides: e.target.checked }
+                        }))}
+                        className="rounded border-neutral-700 bg-neutral-900 text-violet-500 focus:ring-0"
+                      />
+                    </label>
+                    <label className="flex items-center justify-between p-2 rounded-lg bg-neutral-900/60 border border-neutral-800 cursor-pointer">
+                      <span className="text-neutral-300">Allow Direct Parent Communication</span>
+                      <input
+                        type="checkbox"
+                        checked={rulebookForm.teacherRules.allowTeacherDirectParentContact}
+                        onChange={e => setRulebookForm(f => ({
+                          ...f,
+                          teacherRules: { ...f.teacherRules, allowTeacherDirectParentContact: e.target.checked }
+                        }))}
+                        className="rounded border-neutral-700 bg-neutral-900 text-violet-500 focus:ring-0"
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* CARD 4: Assessment & 3-Case Diagnostic Rules */}
+              <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-5 space-y-4">
+                <div className="flex items-center gap-2 text-amber-400 border-b border-neutral-800/80 pb-2">
+                  <Target className="h-4 w-4" />
+                  <h4 className="font-bold text-xs uppercase tracking-wider">4. Assessment & 3-Case Diagnostic Rules</h4>
+                </div>
+                <div className="space-y-3 text-xs">
+                  <div>
+                    <span className="text-neutral-400 block mb-1 font-semibold">Minimum Passing Score Threshold (%):</span>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="range"
+                        min="50"
+                        max="100"
+                        step="5"
+                        value={rulebookForm.assessmentRules.passingScorePercent}
+                        onChange={e => setRulebookForm(f => ({
+                          ...f,
+                          assessmentRules: { ...f.assessmentRules, passingScorePercent: Number(e.target.value) }
+                        }))}
+                        className="flex-1 accent-amber-500"
+                      />
+                      <span className="font-bold font-mono text-amber-400 text-sm w-12 text-right">
+                        {rulebookForm.assessmentRules.passingScorePercent}%
+                      </span>
+                    </div>
+                  </div>
+
+                  <label className="flex items-center justify-between p-2 rounded-lg bg-neutral-900/60 border border-neutral-800 cursor-pointer">
+                    <span className="text-neutral-300">Enable Adaptive Case Pre Scaffolding Trials</span>
+                    <input
+                      type="checkbox"
+                      checked={rulebookForm.assessmentRules.enableScaffoldingPreTrials}
+                      onChange={e => setRulebookForm(f => ({
+                        ...f,
+                        assessmentRules: { ...f.assessmentRules, enableScaffoldingPreTrials: e.target.checked }
+                      }))}
+                      className="rounded border-neutral-700 bg-neutral-900 text-amber-500 focus:ring-0"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between p-2 rounded-lg bg-neutral-900/60 border border-neutral-800 cursor-pointer">
+                    <span className="text-neutral-300">Enable High-Level Case C Challenge Questions</span>
+                    <input
+                      type="checkbox"
+                      checked={rulebookForm.assessmentRules.enableChallengeCaseC}
+                      onChange={e => setRulebookForm(f => ({
+                        ...f,
+                        assessmentRules: { ...f.assessmentRules, enableChallengeCaseC: e.target.checked }
+                      }))}
+                      className="rounded border-neutral-700 bg-neutral-900 text-amber-500 focus:ring-0"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between p-2 rounded-lg bg-neutral-900/60 border border-neutral-800 cursor-pointer">
+                    <span className="text-neutral-300">Shuffle Answer Choices for Students</span>
+                    <input
+                      type="checkbox"
+                      checked={rulebookForm.assessmentRules.shuffleChoices}
+                      onChange={e => setRulebookForm(f => ({
+                        ...f,
+                        assessmentRules: { ...f.assessmentRules, shuffleChoices: e.target.checked }
+                      }))}
+                      className="rounded border-neutral-700 bg-neutral-900 text-amber-500 focus:ring-0"
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* CARD 5: Domain Action Policies Matrix */}
+            <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-5 space-y-4">
+              <div className="flex items-center justify-between border-b border-neutral-800/80 pb-2">
+                <div className="flex items-center gap-2 text-red-400">
+                  <ShieldCheck className="h-4 w-4" />
+                  <h4 className="font-bold text-xs uppercase tracking-wider">5. Granular Domain Action Permissions Matrix</h4>
+                </div>
+                <span className="text-[10px] text-neutral-400 font-mono">Governs Teacher AI Desk & Manual Authoring</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                {(["questionTank", "syllabus", "packages", "carouselContent"] as const).map(domainKey => {
+                  const policy = rulebookForm.domainPolicies[domainKey];
+                  const labels: Record<string, string> = {
+                    questionTank: "🧬 Question DNA Tank",
+                    syllabus: "📖 Official Syllabus",
+                    packages: "📦 Commercial Packages",
+                    carouselContent: "🎠 Carousel Content"
+                  };
+
+                  return (
+                    <div key={domainKey} className="bg-neutral-900/80 border border-neutral-800 rounded-xl p-3 space-y-2">
+                      <span className="font-bold text-white block text-[11px]">{labels[domainKey]}</span>
+                      <div className="space-y-1.5">
+                        <label className="flex items-center justify-between text-[11px] text-neutral-400 cursor-pointer">
+                          <span>+ Add</span>
+                          <input
+                            type="checkbox"
+                            checked={policy.canAdd}
+                            onChange={e => setRulebookForm(f => ({
+                              ...f,
+                              domainPolicies: {
+                                ...f.domainPolicies,
+                                [domainKey]: { ...f.domainPolicies[domainKey], canAdd: e.target.checked }
+                              }
+                            }))}
+                            className="rounded border-neutral-700 bg-neutral-900 text-emerald-500 focus:ring-0"
+                          />
+                        </label>
+                        <label className="flex items-center justify-between text-[11px] text-neutral-400 cursor-pointer">
+                          <span>✎ Modify</span>
+                          <input
+                            type="checkbox"
+                            checked={policy.canModify}
+                            onChange={e => setRulebookForm(f => ({
+                              ...f,
+                              domainPolicies: {
+                                ...f.domainPolicies,
+                                [domainKey]: { ...f.domainPolicies[domainKey], canModify: e.target.checked }
+                              }
+                            }))}
+                            className="rounded border-neutral-700 bg-neutral-900 text-sky-500 focus:ring-0"
+                          />
+                        </label>
+                        <label className="flex items-center justify-between text-[11px] text-neutral-400 cursor-pointer">
+                          <span>✕ Remove</span>
+                          <input
+                            type="checkbox"
+                            checked={policy.canRemove}
+                            onChange={e => setRulebookForm(f => ({
+                              ...f,
+                              domainPolicies: {
+                                ...f.domainPolicies,
+                                [domainKey]: { ...f.domainPolicies[domainKey], canRemove: e.target.checked }
+                              }
+                            }))}
+                            className="rounded border-neutral-700 bg-neutral-900 text-red-500 focus:ring-0"
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Save Status Banner */}
+            {rulebookSaveMsg && (
+              <div className="p-3 bg-emerald-950/40 border border-emerald-500/40 rounded-xl text-emerald-300 text-xs font-semibold flex items-center gap-2">
+                <CheckCircle className="h-4 w-4" />
+                {rulebookSaveMsg}
+              </div>
+            )}
+
+            {/* Save Sovereign Rules Button */}
+            <div className="flex items-center justify-between pt-2 border-t border-neutral-800">
+              <span className="text-[11px] text-neutral-400">
+                Rulebook changes apply immediately to active cohorts for this curriculum without affecting any other curricula.
+              </span>
+              <button
+                type="button"
+                onClick={handleSaveSovereignRules}
+                className="px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-extrabold rounded-xl text-xs transition shadow-lg flex items-center gap-2"
+              >
+                <Scale className="h-4 w-4" />
+                💾 Save Sovereign Rulebook for this Curriculum
+              </button>
+            </div>
           </div>
         </div>
       )}
