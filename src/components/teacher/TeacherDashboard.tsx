@@ -8,6 +8,7 @@ import TeacherDNAReview from "./TeacherDNAReview";
 import StudentFollowUp from "./StudentFollowUp";
 import LiveSessionsManager from "./LiveSessionsManager";
 import ClassManager from "./ClassManager";
+import VirtualWhiteboardStudio from "./VirtualWhiteboardStudio";
 import {
   AlertTriangle,
   ArrowRight,
@@ -32,7 +33,8 @@ import {
   Key,
   Lock,
   Eye,
-  EyeOff
+  EyeOff,
+  PenTool
 } from "lucide-react";
 
 interface StudentRecord {
@@ -91,6 +93,7 @@ const NAV_ITEMS = [
   { id: "classes", label: "Classes", icon: Users },
   { id: "students", label: "Students", icon: UserRound },
   { id: "preparation", label: "Lesson Prep", icon: BookOpen },
+  { id: "whiteboard", label: "Virtual Board & REC", icon: PenTool },
   { id: "assignments", label: "Assignments", icon: ClipboardList },
   { id: "sessions", label: "Sessions", icon: CalendarClock },
   { id: "reviews", label: "Question Banks", icon: FileCheck2 },
@@ -313,6 +316,21 @@ export default function TeacherDashboard({ onOpenAuthoring }: { onOpenAuthoring:
             >
               <Key className="h-3.5 w-3.5 text-amber-400" />
               <span>Change Password</span>
+            </button>
+
+            {/* Quick Virtual Board button */}
+            <button
+              type="button"
+              onClick={() => setView("whiteboard")}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition shadow ${
+                view === "whiteboard"
+                  ? "bg-amber-500 text-neutral-950 hover:bg-amber-400"
+                  : "bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30"
+              }`}
+              title="Open Virtual Whiteboard with Stylus Pen & Screen Recorder"
+            >
+              <PenTool className="h-3.5 w-3.5" />
+              <span>Virtual Board &amp; REC</span>
             </button>
 
             {/* Collapsible AI Desk toggle button */}
@@ -652,6 +670,13 @@ export default function TeacherDashboard({ onOpenAuthoring }: { onOpenAuthoring:
               >
                 <BookOpen className="h-4 w-4" /> Open Authoring Studio
               </button>
+            </section>
+          )}
+
+          {/* Virtual Whiteboard & Studio Recorder View */}
+          {view === "whiteboard" && (
+            <section className="space-y-4">
+              <VirtualWhiteboardStudio />
             </section>
           )}
         </div>

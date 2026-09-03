@@ -29,7 +29,8 @@ import {
   Video,
   UploadCloud,
   ShoppingBag,
-  FileSearch
+  FileSearch,
+  PenTool
 } from "lucide-react";
 import { curriculum0580 } from "../curriculum-packages/0580";
 import { curriculumDrama201 } from "../curriculum-packages/drama-201";
@@ -57,6 +58,7 @@ import {
 import EducationalCarousel from "../components/carousel/EducationalCarousel";
 import TeacherAuthoringStudio from "../components/teacher/TeacherAuthoringStudio";
 import TeacherDashboard from "../components/teacher/TeacherDashboard";
+import VirtualWhiteboardStudio from "../components/teacher/VirtualWhiteboardStudio";
 import ServiceCatalog from "../components/services/ServiceCatalog";
 import StudentHome from "../components/student/StudentHome";
 import ParentHome from "../components/parent/ParentHome";
@@ -189,7 +191,7 @@ export default function EngineSimulator() {
     }
   }, [session, activeTeacherId, allowedCurriculums, selectedCurriculumId]);
 
-  const [activeTab, setActiveTab] = useState<"curriculum" | "readiness" | "carousel" | "authoring" | "teacher" | "student" | "student-diagnostic" | "parent" | "admin" | "services" | "diagnostic" | "state" | "platform" | "source-analysis" | "public-showcase" | "live-sessions">("public-showcase");
+  const [activeTab, setActiveTab] = useState<"curriculum" | "readiness" | "carousel" | "authoring" | "teacher" | "student" | "student-diagnostic" | "parent" | "admin" | "services" | "diagnostic" | "state" | "platform" | "source-analysis" | "public-showcase" | "live-sessions" | "whiteboard">("public-showcase");
   const [activeCaseKey, setActiveCaseKey] = useState<string>("A");
 
   // --- Platform Connection States ---
@@ -394,6 +396,7 @@ export default function EngineSimulator() {
     { key: "student-diagnostic", icon: ClipboardCheck, label: "Readiness & 3-Case Diagnostics", roles: ["STUDENT"] },
     { key: "curriculum", icon: BookOpen, label: "Curriculum Syllabus", roles: ["STUDENT", "TEACHER", "ADMIN"] },
     { key: "teacher", icon: Users, label: "Teacher Dashboard", roles: ["TEACHER", "ADMIN"] },
+    { key: "whiteboard", icon: PenTool, label: "Virtual Board & REC", roles: ["TEACHER", "ADMIN"] },
     { key: "authoring", icon: Sparkles, label: "Teacher Authoring Studio", roles: ["TEACHER", "ADMIN"] },
     { key: "source-analysis", icon: FileSearch, label: "Source Analysis", roles: ["TEACHER", "ADMIN"] },
     { key: "services", icon: ShoppingBag, label: "Services & Enrollment", roles: ["TEACHER", "ADMIN", "PARENT"] },
@@ -939,6 +942,12 @@ export default function EngineSimulator() {
           {activeTab === "authoring" && <TeacherAuthoringStudio curriculumId={selectedCurriculumId} />}
 
           {activeTab === "teacher" && <TeacherDashboard onOpenAuthoring={() => setActiveTab("authoring")} />}
+
+          {activeTab === "whiteboard" && ["TEACHER", "ADMIN"].includes(session.role) && (
+            <div className="p-4 sm:p-6">
+              <VirtualWhiteboardStudio />
+            </div>
+          )}
 
           {activeTab === "services" && <ServiceCatalog curriculumName={selectedCurriculum.identity.name} />}
 
