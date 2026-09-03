@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { fetchTeacherDashboard, getSession, login } from "../../app/actions";
+import { fetchTeacherDashboard, getSession, login, changeTeacherPasswordAction } from "../../app/actions";
 import TeacherAIDesk from "./TeacherAIDesk";
 import DiagnosticReport from "./DiagnosticReport";
 import TeacherDNAReview from "./TeacherDNAReview";
@@ -28,7 +28,11 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
-  X
+  X,
+  Key,
+  Lock,
+  Eye,
+  EyeOff
 } from "lucide-react";
 
 interface StudentRecord {
@@ -122,6 +126,47 @@ export default function TeacherDashboard({ onOpenAuthoring }: { onOpenAuthoring:
     : studentData.filter((student) => student.className === selectedClass && student.name.toLowerCase().includes(searchTerm.toLowerCase()));
     
   const supportCount = studentData.filter((student) => student.status === "NEEDS_SUPPORT").length;
+
+  // Password change state
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [newPasswordInput, setNewPasswordInput] = useState("");
+  const [confirmPasswordInput, setConfirmPasswordInput] = useState("");
+  const [passwordChangeMsg, setPasswordChangeMsg] = useState("");
+  const [passwordChangeError, setPasswordChangeError] = useState("");
+  const [passwordBusy, setPasswordBusy] = useState(false);
+  const [showNewPass, setShowNewPass] = useState(false);
+
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setPasswordChangeError("");
+    setPasswordChangeMsg("");
+
+    if (newPasswordInput.length < 4) {
+      setPasswordChangeError("Password must be at least 4 characters.");
+      return;
+    }
+
+    if (newPasswordInput !== confirmPasswordInput) {
+      setPasswordChangeError("Passwords do not match.");
+      return;
+    }
+
+    setPasswordBusy(true);
+    const res = await changeTeacherPasswordAction(newPasswordInput);
+    setPasswordBusy(false);
+
+    if (res.success) {
+      setPasswordChangeMsg("Password updated successfully! Admin can see your updated credentials.");
+      setTimeout(() => {
+        setShowPasswordModal(false);
+        setPasswordChangeMsg("");
+        setNewPasswordInput("");
+        setConfirmPasswordInput("");
+      }, 2500);
+    } else {
+      setPasswordChangeError(res.errors[0] || "Failed to update password.");
+    }
+  }
 
   useEffect(() => {
     let active = true;
@@ -255,6 +300,21 @@ export default function TeacherDashboard({ onOpenAuthoring }: { onOpenAuthoring:
           </div>
           
           <div className="flex items-center gap-2">
+            {/* Change Password button */}
+            <button
+              type="button"
+              onClick={() => {
+                setShowPasswordModal(true);
+                setPasswordChangeError("");
+                setPasswordChangeMsg("");
+              }}
+              className="flex items-center gap-1.5 rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-xs font-bold text-neutral-300 hover:bg-neutral-800 hover:text-white transition"
+              title="Change your teacher account password"
+            >
+              <Key className="h-3.5 w-3.5 text-amber-400" />
+              <span>Change Password</span>
+            </button>
+
             {/* Collapsible AI Desk toggle button */}
             <button
               onClick={() => setAiDeskExpanded(!aiDeskExpanded)}
@@ -623,6 +683,93 @@ export default function TeacherDashboard({ onOpenAuthoring }: { onOpenAuthoring:
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* ── TEACHER CHANGE PASSWORD MODAL ───────────────────────── */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 max-w-md w-full space-y-4 animate-in fade-in zoom-in-95 text-xs shadow-2xl">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Key className="h-4 w-4 text-amber-400" /> Change Account Password
+              </h3>
+              <button type="button" onClick={() => setShowPasswordModal(false)} className="text-neutral-500 hover:text-white">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {passwordChangeMsg && (
+              <div className="p-3 bg-emerald-950/40 border border-emerald-500/40 rounded-xl text-emerald-300 font-semibold flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4" /> {passwordChangeMsg}
+              </div>
+            )}
+
+            {passwordChangeError && (
+              <div className="p-3 bg-red-950/40 border border-red-500/40 rounded-xl text-red-300 font-semibold flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" /> {passwordChangeError}
+              </div>
+            )}
+
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <div>
+                <label className="block text-neutral-400 font-semibold mb-1">New Password *</label>
+                <div className="relative">
+                  <input
+                    type={showNewPass ? "text" : "password"}
+                    required
+                    placeholder="Enter at least 4 characters"
+                    value={newPasswordInput}
+                    onChange={e => setNewPasswordInput(e.target.value)}
+                    className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 pr-10 text-white font-mono outline-none focus:border-amber-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPass(!showNewPass)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
+                  >
+                    {showNewPass ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-neutral-400 font-semibold mb-1">Confirm New Password *</label>
+                <input
+                  type={showNewPass ? "text" : "password"}
+                  required
+                  placeholder="Repeat new password"
+                  value={confirmPasswordInput}
+                  onChange={e => setConfirmPasswordInput(e.target.value)}
+                  className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white font-mono outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div className="p-2.5 rounded-lg bg-neutral-900 border border-neutral-800 text-[11px] text-neutral-400 space-y-1">
+                <p className="flex items-center gap-1.5 text-amber-400 font-semibold">
+                  <Lock className="h-3 w-3" /> Security Policy
+                </p>
+                <p>Your password will be updated immediately. The platform Admin has full visibility into active credentials to ensure account recovery.</p>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-neutral-800">
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordModal(false)}
+                  className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white font-bold rounded-xl transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={passwordBusy}
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl transition disabled:opacity-50"
+                >
+                  {passwordBusy ? "Updating..." : "Update Password"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

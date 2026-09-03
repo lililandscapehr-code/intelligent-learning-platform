@@ -43,7 +43,11 @@ import {
   DomainActionPolicy,
   DEFAULT_DOMAIN_POLICIES,
   CurriculumRules,
-  DEFAULT_CURRICULUM_RULES
+  DEFAULT_CURRICULUM_RULES,
+  HomepageConfig,
+  HomepageSubjectFilter,
+  HomepageSectionConfig,
+  DEFAULT_HOMEPAGE_CONFIG
 } from "../../core/services/class-registry";
 import { 
   AIProviderEntry, 
@@ -57,7 +61,7 @@ interface AdminControlCenterProps {
   onCurriculumAdded: (curriculum: CurriculumPackage) => void;
 }
 
-type AdminTab = "reports" | "packages" | "tanks" | "alarms" | "broadcasts" | "notes" | "registry" | "add" | "teachers" | "ai" | "curriculum-studio" | "sovereign-rules";
+type AdminTab = "reports" | "packages" | "tanks" | "alarms" | "broadcasts" | "notes" | "registry" | "add" | "teachers" | "ai" | "curriculum-studio" | "sovereign-rules" | "homepage-manager";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function PolicyBadge({ on, label }: { on: boolean; label: string }) {
@@ -472,6 +476,80 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
     setTimeout(() => setRulebookSaveMsg(null), 3500);
   }
 
+  // Teacher Account Provisioning & Password Visibility State
+  const [showAddTeacherModal, setShowAddTeacherModal] = useState(false);
+  const [newTeacherName, setNewTeacherName] = useState("");
+  const [newTeacherEmail, setNewTeacherEmail] = useState("");
+  const [newTeacherPassword, setNewTeacherPassword] = useState("teacher123");
+  const [newTeacherCurriculums, setNewTeacherCurriculums] = useState<string[]>(["egypt-baccalaureate-second-year-physics-part1"]);
+  const [newTeacherPermissions, setNewTeacherPermissions] = useState<TeacherPermissions>({
+    canAddCarousels: true,
+    canContactParents: true,
+    canRecordDemos: true,
+    canHostLiveSessions: true,
+    canReviewCurriculumTanks: false
+  });
+  const [teacherCreateMsg, setTeacherCreateMsg] = useState<{ success: boolean; message: string } | null>(null);
+  const [showTeacherPasswords, setShowTeacherPasswords] = useState<Record<string, boolean>>({});
+  const [resetPassTeacherId, setResetPassTeacherId] = useState<string | null>(null);
+  const [resetPassValue, setResetPassValue] = useState("");
+  const [resetPassMsg, setResetPassMsg] = useState<string | null>(null);
+
+  // Homepage CMS State
+  const [homepageForm, setHomepageForm] = useState<HomepageConfig>(() => ClassRegistry.getHomepageConfig());
+  const [homepageSaveMsg, setHomepageSaveMsg] = useState<string | null>(null);
+  const [newFilterLabel, setNewFilterLabel] = useState("");
+  const [newFilterKey, setNewFilterKey] = useState("");
+
+  function handleCreateTeacher(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newTeacherName.trim() || !newTeacherEmail.trim()) return;
+
+    const res = ClassRegistry.adminCreateTeacher({
+      name: newTeacherName,
+      email: newTeacherEmail,
+      password: newTeacherPassword,
+      curriculumIds: newTeacherCurriculums,
+      permissions: newTeacherPermissions
+    });
+
+    setTeacherCreateMsg(res);
+    if (res.success) {
+      refreshTeachers();
+      setTimeout(() => {
+        setShowAddTeacherModal(false);
+        setTeacherCreateMsg(null);
+        setNewTeacherName("");
+        setNewTeacherEmail("");
+        setNewTeacherPassword("teacher123");
+      }, 2000);
+    }
+  }
+
+  function handleResetPassword(teacherId: string) {
+    const res = ClassRegistry.adminResetTeacherPassword(teacherId, resetPassValue.trim() || undefined);
+    setResetPassMsg(res.message);
+    refreshTeachers();
+    setTimeout(() => {
+      setResetPassTeacherId(null);
+      setResetPassMsg(null);
+      setResetPassValue("");
+    }, 2500);
+  }
+
+  function handleDeleteTeacher(teacherId: string) {
+    if (confirm("Are you sure you want to remove this teacher account and revoke all their package accesses?")) {
+      ClassRegistry.adminDeleteTeacher(teacherId);
+      refreshTeachers();
+    }
+  }
+
+  function handleSaveHomepageCMS() {
+    const res = ClassRegistry.updateHomepageConfig(homepageForm);
+    setHomepageSaveMsg(res.message);
+    setTimeout(() => setHomepageSaveMsg(null), 3000);
+  }
+
   // Executive Suite State
   const [alarms, setAlarms] = useState<AdminAlarm[]>(() => ClassRegistry.getAdminAlarms());
   const [broadcasts, setBroadcasts] = useState<AdminBroadcast[]>(() => ClassRegistry.getAllBroadcasts());
@@ -813,6 +891,7 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
     { key: "teachers", label: "👩‍🏫 Teacher Governance", icon: UserCheck },
     { key: "ai", label: "🤖 AI & Ollama Pool", icon: Cpu },
     { key: "curriculum-studio", label: "📄 Curriculum AI Studio", icon: FileEdit },
+    { key: "homepage-manager", label: "🏠 Homepage CMS", icon: Globe, badge: "Dynamic" },
   ];
 
   const filteredNotes = notes.filter(n => noteFilterStatus === "ALL" || n.status === noteFilterStatus);
@@ -2161,17 +2240,31 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
       {/* ── TAB 8: TEACHER GOVERNANCE & PERMISSIONS ────────────────────── */}
       {activeTab === "teachers" && (
         <div className="space-y-5">
-          <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-800 pb-3">
             <div>
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <UserCheck className="h-5 w-5 text-amber-500" />
                 Teacher Capability & Permissions Governance
               </h3>
-              <p className="text-xs text-neutral-400">Admin decides: whom can add custom carousels, whom can contact parents, and whom is a Lead Curriculum Reviewer.</p>
+              <p className="text-xs text-neutral-400">Admin decides: provision new teachers, set initial credentials, assign curricula, and inspect passwords anytime.</p>
             </div>
-            <span className="text-[11px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-full font-bold">
-              PER-TEACHER CONTROLS
-            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setNewTeacherName("");
+                  setNewTeacherEmail("");
+                  setNewTeacherPassword(`teach_${Math.random().toString(36).slice(2, 7)}`);
+                  setShowAddTeacherModal(true);
+                }}
+                className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold rounded-xl text-xs transition shadow-lg flex items-center gap-2"
+              >
+                <PlusCircle className="h-4 w-4" /> Provision New Teacher Account
+              </button>
+              <span className="text-[11px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-full font-bold">
+                {teacherAssignments.length} TEACHERS ACTIVE
+              </span>
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -2191,6 +2284,65 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
                     <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-3 py-1 rounded-xl border border-amber-500/20">
                       {assignment.approvedCurriculumIds.length} / {specs.length} Curricula
                     </span>
+                  </div>
+                </div>
+
+                {/* ── Admin Credential & Password Visibility Panel ── */}
+                <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <Key className="h-3.5 w-3.5" /> Login Credentials & Password Management
+                    </span>
+                    <span className="text-[10px] text-neutral-400">
+                      Visible & Fully Managed by Admin
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                    <div className="p-3 bg-neutral-900 rounded-xl border border-neutral-800">
+                      <span className="text-neutral-500 block text-[10px]">Login Username / Email</span>
+                      <strong className="text-white font-mono text-xs block truncate mt-0.5">
+                        {assignment.teacherEmail}
+                      </strong>
+                    </div>
+
+                    <div className="p-3 bg-neutral-900 rounded-xl border border-neutral-800 flex items-center justify-between">
+                      <div>
+                        <span className="text-neutral-500 block text-[10px]">Current Active Password</span>
+                        <strong className="text-amber-400 font-mono text-xs block mt-0.5">
+                          {showTeacherPasswords[assignment.teacherId]
+                            ? (assignment.password || assignment.initialPassword || "teacher123")
+                            : "••••••••••••"}
+                        </strong>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowTeacherPasswords(p => ({ ...p, [assignment.teacherId]: !p[assignment.teacherId] }))}
+                        className="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white transition ml-2"
+                        title={showTeacherPasswords[assignment.teacherId] ? "Hide Password" : "Show Password"}
+                      >
+                        {showTeacherPasswords[assignment.teacherId] ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                      </button>
+                    </div>
+
+                    <div className="p-3 bg-neutral-900 rounded-xl border border-neutral-800 flex items-center justify-between">
+                      <div>
+                        <span className="text-neutral-500 block text-[10px]">Security Status</span>
+                        <p className="text-[11px] text-neutral-300 mt-0.5">
+                          {assignment.lastPasswordChangedAt ? `Changed: ${new Date(assignment.lastPasswordChangedAt).toLocaleDateString()}` : "Initial Provisioned"}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setResetPassTeacherId(assignment.teacherId);
+                          setResetPassValue(`teach_${Math.random().toString(36).slice(2, 7)}`);
+                        }}
+                        className="px-2.5 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500 hover:text-black text-amber-300 border border-amber-500/30 text-[10px] font-bold transition"
+                      >
+                        🔑 Reset
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -2344,6 +2496,16 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
                       );
                     })}
                   </div>
+                </div>
+
+                <div className="flex justify-end pt-2 border-t border-neutral-800/80">
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteTeacher(assignment.teacherId)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold text-red-400 bg-red-950/30 border border-red-500/30 hover:bg-red-900/50 transition flex items-center gap-1.5"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" /> Delete Teacher Account
+                  </button>
                 </div>
               </div>
             ))}
@@ -3028,6 +3190,552 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
               >
                 <Scale className="h-4 w-4" />
                 💾 Save Sovereign Rulebook for this Curriculum
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 12: DYNAMIC HOMEPAGE CMS MANAGER ───────────────────── */}
+      {activeTab === "homepage-manager" && (
+        <div className="space-y-6">
+          <div className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-6 space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-neutral-800 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold">
+                  <Globe className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    Dynamic Homepage CMS & Visibility Governance
+                    <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold">
+                      LIVE PUBLIC CMS
+                    </span>
+                  </h3>
+                  <p className="text-xs text-neutral-400">
+                    Control all public homepage content: hero banners, subject filters, announcements, section show/hide states, and footer.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleSaveHomepageCMS}
+                className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-extrabold rounded-xl text-xs transition shadow-lg flex items-center gap-2"
+              >
+                <Check className="h-4 w-4" /> Save Homepage Configuration
+              </button>
+            </div>
+
+            {/* Save Status Banner */}
+            {homepageSaveMsg && (
+              <div className="p-3 bg-emerald-950/40 border border-emerald-500/40 rounded-xl text-emerald-300 text-xs font-semibold flex items-center gap-2">
+                <CheckCircle className="h-4 w-4" />
+                {homepageSaveMsg}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {/* CARD 1: Hero Banner Editor */}
+              <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-5 space-y-4">
+                <div className="flex items-center justify-between border-b border-neutral-800/80 pb-2">
+                  <div className="flex items-center gap-2 text-amber-400">
+                    <Sparkles className="h-4 w-4" />
+                    <h4 className="font-bold text-xs uppercase tracking-wider">1. Hero Banner Content</h4>
+                  </div>
+                  <span className="text-[10px] text-neutral-400">Top Public Showcase Header</span>
+                </div>
+                <div className="space-y-3 text-xs">
+                  <div>
+                    <label className="text-neutral-400 block mb-1 font-semibold">Badge Pill Text</label>
+                    <input
+                      type="text"
+                      value={homepageForm.heroBadgeText}
+                      onChange={e => setHomepageForm(f => ({ ...f, heroBadgeText: e.target.value }))}
+                      className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-neutral-400 block mb-1 font-semibold">Hero Main Title</label>
+                    <input
+                      type="text"
+                      value={homepageForm.heroTitle}
+                      onChange={e => setHomepageForm(f => ({ ...f, heroTitle: e.target.value }))}
+                      className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white font-bold outline-none focus:border-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-neutral-400 block mb-1 font-semibold">Hero Subtitle / Description</label>
+                    <textarea
+                      rows={3}
+                      value={homepageForm.heroSubtitle}
+                      onChange={e => setHomepageForm(f => ({ ...f, heroSubtitle: e.target.value }))}
+                      className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 pt-1">
+                    <div>
+                      <label className="text-neutral-400 block mb-1 font-semibold">CTA Button Label</label>
+                      <input
+                        type="text"
+                        value={homepageForm.heroCtaText}
+                        onChange={e => setHomepageForm(f => ({ ...f, heroCtaText: e.target.value }))}
+                        className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
+                      />
+                    </div>
+                    <div className="flex items-center pt-5">
+                      <label className="flex items-center gap-2 text-neutral-300 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={homepageForm.heroCtaVisible}
+                          onChange={e => setHomepageForm(f => ({ ...f, heroCtaVisible: e.target.checked }))}
+                          className="rounded border-neutral-700 bg-neutral-900 text-amber-500"
+                        />
+                        <span>Show CTA Button</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* CARD 2: Section Show / Hide Governance */}
+              <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-5 space-y-4">
+                <div className="flex items-center justify-between border-b border-neutral-800/80 pb-2">
+                  <div className="flex items-center gap-2 text-sky-400">
+                    <Layers className="h-4 w-4" />
+                    <h4 className="font-bold text-xs uppercase tracking-wider">2. Homepage Sections Visibility</h4>
+                  </div>
+                  <span className="text-[10px] text-neutral-400">Show / Hide Toggles</span>
+                </div>
+                <div className="space-y-2.5 text-xs">
+                  {homepageForm.sections.map((section) => (
+                    <div
+                      key={section.id}
+                      className="flex items-center justify-between p-3 rounded-xl bg-neutral-900/70 border border-neutral-800"
+                    >
+                      <div>
+                        <p className="font-bold text-white">{section.label}</p>
+                        <p className="text-[10px] text-neutral-400 font-mono">Section ID: {section.id}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setHomepageForm(f => ({
+                            ...f,
+                            sections: f.sections.map(s => s.id === section.id ? { ...s, visible: !s.visible } : s)
+                          }));
+                        }}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold border transition ${
+                          section.visible
+                            ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+                            : "bg-neutral-800 text-neutral-500 border-neutral-700"
+                        }`}
+                      >
+                        {section.visible ? "👁️ Visible" : "✕ Hidden"}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* CARD 3: Subject Filter Tabs Manager */}
+              <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-5 space-y-4">
+                <div className="flex items-center justify-between border-b border-neutral-800/80 pb-2">
+                  <div className="flex items-center gap-2 text-violet-400">
+                    <Filter className="h-4 w-4" />
+                    <h4 className="font-bold text-xs uppercase tracking-wider">3. Subject Filter Tabs</h4>
+                  </div>
+                  <span className="text-[10px] text-neutral-400">Filter Bar Pills</span>
+                </div>
+                <div className="space-y-3 text-xs">
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    {homepageForm.subjectFilters.map(filter => (
+                      <div
+                        key={filter.id}
+                        className="flex items-center justify-between p-2.5 rounded-lg bg-neutral-900 border border-neutral-800"
+                      >
+                        <div>
+                          <p className="font-bold text-white">{filter.label}</p>
+                          <p className="text-[10px] text-neutral-400 font-mono">Match: {filter.matchKey}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setHomepageForm(f => ({
+                                ...f,
+                                subjectFilters: f.subjectFilters.map(sf => sf.id === filter.id ? { ...sf, visible: !sf.visible } : sf)
+                              }));
+                            }}
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold border transition ${
+                              filter.visible
+                                ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+                                : "bg-neutral-800 text-neutral-500 border-neutral-700"
+                            }`}
+                          >
+                            {filter.visible ? "Active" : "Hidden"}
+                          </button>
+                          {filter.id !== "ALL" && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setHomepageForm(f => ({
+                                  ...f,
+                                  subjectFilters: f.subjectFilters.filter(sf => sf.id !== filter.id)
+                                }));
+                              }}
+                              className="p-1 rounded text-neutral-500 hover:text-red-400 transition"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Add New Filter Form */}
+                  <div className="border-t border-neutral-800/80 pt-3 space-y-2">
+                    <span className="text-[11px] font-semibold text-neutral-300 block">+ Add Custom Subject Filter:</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="Label e.g. Drama Arts"
+                        value={newFilterLabel}
+                        onChange={e => setNewFilterLabel(e.target.value)}
+                        className="bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-white text-xs outline-none focus:border-amber-500"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Match Key e.g. drama"
+                        value={newFilterKey}
+                        onChange={e => setNewFilterKey(e.target.value)}
+                        className="bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-white text-xs outline-none focus:border-amber-500"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!newFilterLabel.trim() || !newFilterKey.trim()) return;
+                        const newId = newFilterKey.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+                        setHomepageForm(f => ({
+                          ...f,
+                          subjectFilters: [
+                            ...f.subjectFilters,
+                            { id: newId, label: newFilterLabel.trim(), matchKey: newFilterKey.trim(), visible: true }
+                          ]
+                        }));
+                        setNewFilterLabel("");
+                        setNewFilterKey("");
+                      }}
+                      className="w-full py-1.5 bg-neutral-800 hover:bg-neutral-700 text-white font-bold rounded-lg text-xs transition"
+                    >
+                      + Add Filter Tab
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* CARD 4: Global Announcement Banner */}
+              <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-5 space-y-4">
+                <div className="flex items-center justify-between border-b border-neutral-800/80 pb-2">
+                  <div className="flex items-center gap-2 text-emerald-400">
+                    <Radio className="h-4 w-4" />
+                    <h4 className="font-bold text-xs uppercase tracking-wider">4. Global Announcement Banner</h4>
+                  </div>
+                  <label className="flex items-center gap-1.5 text-neutral-300 text-xs cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={homepageForm.announcementBanner.enabled}
+                      onChange={e => setHomepageForm(f => ({
+                        ...f,
+                        announcementBanner: { ...f.announcementBanner, enabled: e.target.checked }
+                      }))}
+                      className="rounded border-neutral-700 bg-neutral-900 text-emerald-500"
+                    />
+                    <span>Enabled</span>
+                  </label>
+                </div>
+                <div className="space-y-3 text-xs">
+                  <div>
+                    <label className="text-neutral-400 block mb-1 font-semibold">Banner Message</label>
+                    <textarea
+                      rows={3}
+                      value={homepageForm.announcementBanner.message}
+                      onChange={e => setHomepageForm(f => ({
+                        ...f,
+                        announcementBanner: { ...f.announcementBanner, message: e.target.value }
+                      }))}
+                      placeholder="Type announcement message shown across homepage..."
+                      className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-neutral-400 block mb-1 font-semibold">Banner Style / Type</label>
+                    <div className="grid grid-cols-4 gap-2">
+                      {(["info", "warning", "success", "promo"] as const).map(bType => (
+                        <button
+                          key={bType}
+                          type="button"
+                          onClick={() => setHomepageForm(f => ({
+                            ...f,
+                            announcementBanner: { ...f.announcementBanner, type: bType }
+                          }))}
+                          className={`py-1.5 rounded-lg font-bold text-[11px] uppercase border transition ${
+                            homepageForm.announcementBanner.type === bType
+                              ? bType === "promo" ? "bg-amber-500 text-black border-amber-400" :
+                                bType === "success" ? "bg-emerald-600 text-white border-emerald-500" :
+                                bType === "warning" ? "bg-orange-600 text-white border-orange-500" :
+                                "bg-sky-600 text-white border-sky-500"
+                              : "bg-neutral-900 text-neutral-400 border-neutral-800"
+                          }`}
+                        >
+                          {bType}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Footer Settings */}
+                  <div className="border-t border-neutral-800/80 pt-3 space-y-2">
+                    <label className="text-neutral-400 block font-semibold">Footer Text</label>
+                    <input
+                      type="text"
+                      value={homepageForm.footerText}
+                      onChange={e => setHomepageForm(f => ({ ...f, footerText: e.target.value }))}
+                      className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-1.5 text-white outline-none focus:border-amber-500 text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Save Button */}
+            <div className="flex justify-end pt-3 border-t border-neutral-800">
+              <button
+                type="button"
+                onClick={handleSaveHomepageCMS}
+                className="px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-extrabold rounded-xl text-xs transition shadow-lg flex items-center gap-2"
+              >
+                <Check className="h-4 w-4" /> Save Homepage Configuration
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── PROVISION NEW TEACHER ACCOUNT MODAL ───────────────────────── */}
+      {showAddTeacherModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 max-w-xl w-full max-h-[90vh] overflow-y-auto space-y-5 animate-in fade-in zoom-in-95 text-xs shadow-2xl">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <UserCheck className="h-4 w-4 text-emerald-400" /> Provision New Teacher & Curriculums
+              </h3>
+              <button type="button" onClick={() => setShowAddTeacherModal(false)} className="text-neutral-500 hover:text-white">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {teacherCreateMsg && (
+              <div className={`p-3 rounded-lg border font-semibold flex items-center gap-2 ${
+                teacherCreateMsg.success ? "bg-emerald-950/40 border-emerald-500/40 text-emerald-300" : "bg-red-950/40 border-red-500/40 text-red-300"
+              }`}>
+                {teacherCreateMsg.success ? <CheckCircle className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
+                {teacherCreateMsg.message}
+              </div>
+            )}
+
+            <form onSubmit={handleCreateTeacher} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-neutral-400 font-semibold mb-1">Teacher Full Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Dr. Ahmed Mansoor"
+                    value={newTeacherName}
+                    onChange={e => setNewTeacherName(e.target.value)}
+                    className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-neutral-400 font-semibold mb-1">Login Email / Username *</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="e.g. ahmed.mansoor@school.edu.eg"
+                    value={newTeacherEmail}
+                    onChange={e => setNewTeacherEmail(e.target.value)}
+                    className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white outline-none focus:border-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-neutral-400 font-semibold mb-1">Initial Password</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    required
+                    value={newTeacherPassword}
+                    onChange={e => setNewTeacherPassword(e.target.value)}
+                    className="flex-1 bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white font-mono outline-none focus:border-amber-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setNewTeacherPassword(`teach_${Math.random().toString(36).slice(2, 7)}`)}
+                    className="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-bold rounded-lg transition"
+                  >
+                    🎲 Random
+                  </button>
+                </div>
+                <p className="text-[10px] text-neutral-500 mt-1">Teacher can change this password anytime from their dashboard, and you will still be able to inspect it.</p>
+              </div>
+
+              {/* Curriculum Assignment Checkboxes */}
+              <div className="space-y-2">
+                <label className="block text-neutral-400 font-semibold">Assign Initial Authorized Curricula *</label>
+                <div className="space-y-1.5 max-h-36 overflow-y-auto p-2 bg-neutral-900 rounded-xl border border-neutral-800">
+                  {specs.map(spec => (
+                    <label key={spec.id} className="flex items-center gap-2 text-neutral-300 cursor-pointer p-1 rounded hover:bg-neutral-800/50">
+                      <input
+                        type="checkbox"
+                        checked={newTeacherCurriculums.includes(spec.id)}
+                        onChange={e => {
+                          if (e.target.checked) {
+                            setNewTeacherCurriculums(c => [...c, spec.id]);
+                          } else {
+                            setNewTeacherCurriculums(c => c.filter(id => id !== spec.id));
+                          }
+                        }}
+                        className="rounded border-neutral-700 bg-neutral-900 text-emerald-500"
+                      />
+                      <span className="font-semibold text-xs">{spec.name}</span>
+                      <span className="text-[10px] text-neutral-500">({spec.version})</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Permissions Checkboxes */}
+              <div className="space-y-2">
+                <label className="block text-neutral-400 font-semibold">Teacher Action Permissions</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="flex items-center gap-2 text-neutral-300 cursor-pointer p-2 rounded-lg bg-neutral-900 border border-neutral-800">
+                    <input
+                      type="checkbox"
+                      checked={newTeacherPermissions.canAddCarousels}
+                      onChange={e => setNewTeacherPermissions(p => ({ ...p, canAddCarousels: e.target.checked }))}
+                      className="rounded border-neutral-700 bg-neutral-900 text-amber-500"
+                    />
+                    <span>Add Custom Carousels</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-neutral-300 cursor-pointer p-2 rounded-lg bg-neutral-900 border border-neutral-800">
+                    <input
+                      type="checkbox"
+                      checked={newTeacherPermissions.canContactParents}
+                      onChange={e => setNewTeacherPermissions(p => ({ ...p, canContactParents: e.target.checked }))}
+                      className="rounded border-neutral-700 bg-neutral-900 text-emerald-500"
+                    />
+                    <span>Contact Parents</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-neutral-300 cursor-pointer p-2 rounded-lg bg-neutral-900 border border-neutral-800">
+                    <input
+                      type="checkbox"
+                      checked={newTeacherPermissions.canHostLiveSessions}
+                      onChange={e => setNewTeacherPermissions(p => ({ ...p, canHostLiveSessions: e.target.checked }))}
+                      className="rounded border-neutral-700 bg-neutral-900 text-sky-500"
+                    />
+                    <span>Host Live Sessions</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-neutral-300 cursor-pointer p-2 rounded-lg bg-neutral-900 border border-neutral-800">
+                    <input
+                      type="checkbox"
+                      checked={newTeacherPermissions.canReviewCurriculumTanks}
+                      onChange={e => setNewTeacherPermissions(p => ({ ...p, canReviewCurriculumTanks: e.target.checked }))}
+                      className="rounded border-neutral-700 bg-neutral-900 text-violet-500"
+                    />
+                    <span>Lead Reviewer</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-neutral-800">
+                <button
+                  type="button"
+                  onClick={() => setShowAddTeacherModal(false)}
+                  className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white font-bold rounded-xl transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={newTeacherCurriculums.length === 0}
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition disabled:opacity-50"
+                >
+                  ✓ Create Teacher Account
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── RESET TEACHER PASSWORD MODAL ──────────────────────────────── */}
+      {resetPassTeacherId && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-6 max-w-md w-full space-y-4 animate-in fade-in zoom-in-95 text-xs shadow-2xl">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Key className="h-4 w-4 text-amber-400" /> Reset Teacher Password
+              </h3>
+              <button type="button" onClick={() => setResetPassTeacherId(null)} className="text-neutral-500 hover:text-white">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {resetPassMsg && (
+              <div className="p-3 bg-emerald-950/40 border border-emerald-500/40 rounded-xl text-emerald-300 font-semibold flex items-center gap-2">
+                <CheckCircle className="h-4 w-4" /> {resetPassMsg}
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <p className="text-neutral-300">
+                Set a new password for teacher <strong className="text-white">{teacherAssignments.find(t => t.teacherId === resetPassTeacherId)?.teacherName}</strong>:
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={resetPassValue}
+                  onChange={e => setResetPassValue(e.target.value)}
+                  className="flex-1 bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white font-mono outline-none focus:border-amber-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setResetPassValue(`teach_${Math.random().toString(36).slice(2, 7)}`)}
+                  className="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-bold rounded-lg transition"
+                >
+                  🎲 Random
+                </button>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-neutral-800">
+              <button
+                type="button"
+                onClick={() => setResetPassTeacherId(null)}
+                className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white font-bold rounded-xl transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => resetPassTeacherId && handleResetPassword(resetPassTeacherId)}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl transition"
+              >
+                ✓ Apply New Password
               </button>
             </div>
           </div>

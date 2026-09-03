@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { ClassRegistry, TeacherAnnouncement, PackageScopeType } from "../../core/services/class-registry";
+import { ClassRegistry, TeacherAnnouncement, PackageScopeType, HomepageConfig } from "../../core/services/class-registry";
 import { 
   BookOpen, 
   Users, 
@@ -19,7 +19,10 @@ import {
   PlayCircle,
   X,
   UserPlus,
-  LogIn
+  LogIn,
+  Radio,
+  AlertOctagon,
+  Info
 } from "lucide-react";
 
 interface PublicTeacherShowcaseProps {
@@ -31,6 +34,7 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage, onOpenLog
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [subjectFilter, setSubjectFilter] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
+  const [homepageConfig, setHomepageConfig] = useState<HomepageConfig>(() => ClassRegistry.getHomepageConfig());
   
   // Registration Modal State
   const [selectedPackage, setSelectedPackage] = useState<any | null>(null);
@@ -43,11 +47,17 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage, onOpenLog
 
   const loadAnnouncements = () => {
     setAnnouncements(ClassRegistry.getPublicPackageAnnouncements());
+    setHomepageConfig(ClassRegistry.getHomepageConfig());
   };
 
   useEffect(() => {
     loadAnnouncements();
   }, []);
+
+  const isSectionVisible = (sectionId: string) => {
+    const s = homepageConfig.sections.find(sec => sec.id === sectionId);
+    return s ? s.visible : true;
+  };
 
   const filteredAnnouncements = announcements.filter((pkg) => {
     const matchesSubject = subjectFilter === "ALL" || pkg.curriculumPackageId.includes(subjectFilter);
@@ -94,69 +104,87 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage, onOpenLog
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 sm:space-y-8 animate-in fade-in zoom-in-95 duration-200">
-      {/* ── Homepage Header Banner ────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-amber-500/30 bg-gradient-to-r from-amber-950/50 via-neutral-950 to-neutral-900 p-5 sm:p-8 shadow-2xl space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="space-y-2 max-w-3xl">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-amber-400">
-              <Sparkles className="h-3.5 w-3.5" /> Public Educational Information & Announcement Portal
-            </span>
-            <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
-              Teacher Announced Classes & Package Catalog
-            </h1>
-            <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed">
-              Search available packages by teacher name, subject, or grade level. Inspect package requirements, volume pricing, and register or log directly into your authorized package workspace.
-            </p>
+      {/* ── Global Announcement Banner (Admin Governed) ──────── */}
+      {homepageConfig.announcementBanner.enabled && isSectionVisible("announcement_banner") && (
+        <div className={`p-4 rounded-2xl border flex items-center justify-between gap-3 shadow-lg ${
+          homepageConfig.announcementBanner.type === "promo" ? "bg-gradient-to-r from-amber-950/80 to-neutral-900 border-amber-500/50 text-amber-200" :
+          homepageConfig.announcementBanner.type === "success" ? "bg-gradient-to-r from-emerald-950/80 to-neutral-900 border-emerald-500/50 text-emerald-200" :
+          homepageConfig.announcementBanner.type === "warning" ? "bg-gradient-to-r from-orange-950/80 to-neutral-900 border-orange-500/50 text-orange-200" :
+          "bg-gradient-to-r from-sky-950/80 to-neutral-900 border-sky-500/50 text-sky-200"
+        }`}>
+          <div className="flex items-center gap-3">
+            <Radio className="h-5 w-5 shrink-0 text-amber-400 animate-pulse" />
+            <p className="text-xs sm:text-sm font-semibold">{homepageConfig.announcementBanner.message}</p>
+          </div>
+          <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-black/40 border border-white/10 shrink-0">
+            {homepageConfig.announcementBanner.type}
+          </span>
+        </div>
+      )}
+
+      {/* ── Homepage Hero Banner (Admin Dynamic CMS) ──────────── */}
+      {isSectionVisible("hero_banner") && (
+        <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-amber-500/30 bg-gradient-to-r from-amber-950/50 via-neutral-950 to-neutral-900 p-5 sm:p-8 shadow-2xl space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="space-y-2 max-w-3xl">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-amber-400">
+                <Sparkles className="h-3.5 w-3.5" /> {homepageConfig.heroBadgeText}
+              </span>
+              <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
+                {homepageConfig.heroTitle}
+              </h1>
+              <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed">
+                {homepageConfig.heroSubtitle}
+              </p>
+            </div>
+
+            {onOpenLoginModal && homepageConfig.heroCtaVisible && (
+              <button 
+                onClick={onOpenLoginModal}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs shadow-lg shadow-amber-500/20 transition shrink-0"
+              >
+                <LogIn className="h-4 w-4" /> {homepageConfig.heroCtaText}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Search & Subject Filter Bar (Admin Dynamic Filters) ─ */}
+      {isSectionVisible("search_filters") && (
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 sm:gap-4 bg-neutral-950 border border-neutral-800 rounded-2xl p-3 sm:p-4">
+          <div className="relative flex-1 min-w-0">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" />
+            <input 
+              type="text" 
+              placeholder="Search by Teacher Name, Curriculum Package, or Grade..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-neutral-900 border border-neutral-700 rounded-xl py-2.5 pl-10 pr-4 text-xs text-white outline-none focus:border-amber-500"
+            />
           </div>
 
-          {onOpenLoginModal && (
-            <button 
-              onClick={onOpenLoginModal}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs shadow-lg shadow-amber-500/20 transition shrink-0"
-            >
-              <LogIn className="h-4 w-4" /> Sign In to Workspace
-            </button>
-          )}
+          <div className="flex flex-wrap gap-1.5 sm:gap-2 overflow-x-auto pb-1 md:pb-0">
+            {homepageConfig.subjectFilters.filter(f => f.visible).map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setSubjectFilter(tab.matchKey)}
+                className={`px-3 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+                  subjectFilter === tab.matchKey
+                    ? "bg-amber-500 text-black shadow-md shadow-amber-500/10"
+                    : "bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* ── Search & Subject Filter Bar ──────────────────────── */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 sm:gap-4 bg-neutral-950 border border-neutral-800 rounded-2xl p-3 sm:p-4">
-        <div className="relative flex-1 min-w-0">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" />
-          <input 
-            type="text" 
-            placeholder="Search by Teacher Name, Curriculum Package, or Grade..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-neutral-900 border border-neutral-700 rounded-xl py-2.5 pl-10 pr-4 text-xs text-white outline-none focus:border-amber-500"
-          />
-        </div>
-
-        <div className="flex flex-wrap gap-1.5 sm:gap-2 overflow-x-auto pb-1 md:pb-0">
-          {[
-            { id: "ALL", label: "All Curriculums" },
-            { id: "physics", label: "Physics 2nd Year" },
-            { id: "0580", label: "Cambridge 0580 Math" },
-            { id: "integrated-science", label: "Integrated Science" }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setSubjectFilter(tab.id)}
-              className={`px-3 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
-                subjectFilter === tab.id
-                  ? "bg-amber-500 text-black shadow-md shadow-amber-500/10"
-                  : "bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Package Announcements Grid ────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+      {/* ── Package Announcements Grid (Admin Controlled) ───── */}
+      {isSectionVisible("package_grid") && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {filteredAnnouncements.map((pkg) => {
           const ann: TeacherAnnouncement = pkg.announcement;
 
@@ -258,6 +286,14 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage, onOpenLog
           </div>
         )}
       </div>
+      )}
+
+      {/* ── Dynamic Footer (Admin Governed) ───────────────────── */}
+      {isSectionVisible("footer") && homepageConfig.footerVisible && (
+        <footer className="border-t border-neutral-800/80 pt-6 pb-4 text-center text-xs text-neutral-500 font-medium">
+          {homepageConfig.footerText}
+        </footer>
+      )}
 
       {/* ── REGISTRATION MODAL WITH REQUIREMENTS CHECK ──────────── */}
       {selectedPackage && (

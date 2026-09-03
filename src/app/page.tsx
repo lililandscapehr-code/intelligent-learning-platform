@@ -154,7 +154,7 @@ export default function EngineSimulator() {
 
   // ── Curriculum Filter based on Role & Teacher Governance ───────────────────
   const activeTeacherId = session?.role === "TEACHER" 
-    ? (session.email.includes("mariam") ? "teacher_2" : "teacher_1")
+    ? (ClassRegistry.getTeacherByEmail(session.email)?.teacherId || (session.email.includes("mariam") ? "teacher_2" : "teacher_1"))
     : null;
 
   const allowedCurriculums = useMemo(() => {

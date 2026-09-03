@@ -601,6 +601,10 @@ export interface TeacherAssignment {
   teacherId: string;
   teacherName: string;
   teacherEmail: string;
+  password?: string;
+  initialPassword?: string;
+  lastPasswordChangedAt?: string;
+  createdAt?: string;
   approvedCurriculumIds: string[];
   curriculumStatuses?: Record<string, TeacherCurriculumStatus>; // curriculumId -> "ACTIVE" | "SUSPENDED"
   excludedLessonIds?: Record<string, string[]>; // curriculumId -> list of lessonIds soft-hidden by teacher
@@ -1098,6 +1102,9 @@ let mockTeacherAssignments: TeacherAssignment[] = [
     teacherId: "teacher_1",
     teacherName: "Dr. Hassan Youssef",
     teacherEmail: "teacher@platform.com",
+    password: "teacher123",
+    initialPassword: "teacher123",
+    createdAt: "2026-09-01T08:00:00Z",
     approvedCurriculumIds: [
       "egypt-baccalaureate-second-year-physics-part1",
       "egypt-baccalaureate-second-year-physics-part2",
@@ -1120,6 +1127,9 @@ let mockTeacherAssignments: TeacherAssignment[] = [
     teacherId: "teacher_2",
     teacherName: "Eng. Mariam Adel",
     teacherEmail: "mariam.adel@platform.com",
+    password: "teacher123",
+    initialPassword: "teacher123",
+    createdAt: "2026-09-01T08:00:00Z",
     approvedCurriculumIds: [
       "cambridge-igcse-0580",
       "egypt-secondary1-integrated-science"
@@ -1602,6 +1612,114 @@ export const ClassRegistry = {
 
   revokeCurriculumFromTeacher(teacherId: string, curriculumId: string): boolean {
     return this.setTeacherCurriculumStatus(teacherId, curriculumId, "REVOKED");
+  },
+
+  getTeacherByEmail(email: string): TeacherAssignment | undefined {
+    return mockTeacherAssignments.find(
+      t => t.teacherEmail.trim().toLowerCase() === email.trim().toLowerCase()
+    );
+  },
+
+  adminCreateTeacher(data: {
+    name: string;
+    email: string;
+    password?: string;
+    curriculumIds: string[];
+    permissions?: Partial<TeacherPermissions>;
+  }): { success: boolean; teacher: TeacherAssignment; message: string } {
+    const cleanEmail = data.email.trim().toLowerCase();
+    const existing = mockTeacherAssignments.find(t => t.teacherEmail.toLowerCase() === cleanEmail);
+    if (existing) {
+      return {
+        success: false,
+        teacher: existing,
+        message: `Teacher with email "${cleanEmail}" already exists (ID: ${existing.teacherId}).`
+      };
+    }
+
+    const teacherId = `teacher_${Date.now().toString(36).slice(-5)}`;
+    const initialPass = data.password && data.password.trim().length >= 4 ? data.password.trim() : `teach_${Math.random().toString(36).slice(2, 7)}`;
+
+    const curriculumStatuses: Record<string, TeacherCurriculumStatus> = {};
+    for (const cId of data.curriculumIds) {
+      curriculumStatuses[cId] = "ACTIVE";
+    }
+
+    const newTeacher: TeacherAssignment = {
+      teacherId,
+      teacherName: data.name.trim(),
+      teacherEmail: cleanEmail,
+      password: initialPass,
+      initialPassword: initialPass,
+      createdAt: new Date().toISOString(),
+      approvedCurriculumIds: [...data.curriculumIds],
+      curriculumStatuses,
+      permissions: {
+        ...DEFAULT_TEACHER_PERMISSIONS,
+        ...(data.permissions || {})
+      }
+    };
+
+    mockTeacherAssignments.push(newTeacher);
+
+    // Also register in sovereign rules for each selected curriculum
+    for (const cId of data.curriculumIds) {
+      const rules = this.getCurriculumRules(cId);
+      if (!rules.teacherRules.allowedTeacherIds.includes(teacherId)) {
+        rules.teacherRules.allowedTeacherIds.push(teacherId);
+      }
+    }
+
+    return {
+      success: true,
+      teacher: newTeacher,
+      message: `Teacher "${newTeacher.teacherName}" successfully provisioned with login "${cleanEmail}" and initial password "${initialPass}".`
+    };
+  },
+
+  adminResetTeacherPassword(teacherId: string, newPassword?: string): { success: boolean; newPassword: string; message: string } {
+    const assignment = mockTeacherAssignments.find(t => t.teacherId === teacherId);
+    if (!assignment) return { success: false, newPassword: "", message: `Teacher "${teacherId}" not found.` };
+
+    const resetPass = newPassword && newPassword.trim().length >= 4 ? newPassword.trim() : `teach_${Math.random().toString(36).slice(2, 7)}`;
+    assignment.password = resetPass;
+    assignment.lastPasswordChangedAt = new Date().toISOString();
+
+    return {
+      success: true,
+      newPassword: resetPass,
+      message: `Password for ${assignment.teacherName} reset to "${resetPass}".`
+    };
+  },
+
+  teacherChangePassword(teacherIdOrEmail: string, newPassword: string): { success: boolean; message: string } {
+    const clean = teacherIdOrEmail.trim().toLowerCase();
+    const assignment = mockTeacherAssignments.find(
+      t => t.teacherId === teacherIdOrEmail || t.teacherEmail.toLowerCase() === clean
+    );
+    if (!assignment) return { success: false, message: "Teacher account not found." };
+    if (!newPassword || newPassword.trim().length < 4) {
+      return { success: false, message: "New password must be at least 4 characters." };
+    }
+
+    assignment.password = newPassword.trim();
+    assignment.lastPasswordChangedAt = new Date().toISOString();
+
+    return {
+      success: true,
+      message: `Password updated successfully. Admin has visibility of the new security status.`
+    };
+  },
+
+  adminDeleteTeacher(teacherId: string): { success: boolean; message: string } {
+    const idx = mockTeacherAssignments.findIndex(t => t.teacherId === teacherId);
+    if (idx === -1) return { success: false, message: `Teacher "${teacherId}" not found.` };
+
+    const removed = mockTeacherAssignments.splice(idx, 1)[0];
+    return {
+      success: true,
+      message: `Teacher "${removed.teacherName}" (${removed.teacherEmail}) deleted.`
+    };
   },
 
   importOfficialCurriculumSpec(spec: CurriculumSpec): boolean {
@@ -2125,6 +2243,44 @@ export const ClassRegistry = {
       newCurriculumId: newId,
       message: `Successfully cloned "${source.name}" as new version "${clonedSpec.name}" (ID: ${newId}). All lessons, chapters, policies, and sovereign rules duplicated.`
     };
+  },
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // HOMEPAGE CMS — Admin Controls
+  // ══════════════════════════════════════════════════════════════════════════
+
+  getHomepageConfig(): HomepageConfig {
+    return homepageConfig;
+  },
+
+  updateHomepageConfig(patch: Partial<HomepageConfig>): { success: boolean; message: string } {
+    if (patch.heroTitle !== undefined) homepageConfig.heroTitle = patch.heroTitle;
+    if (patch.heroSubtitle !== undefined) homepageConfig.heroSubtitle = patch.heroSubtitle;
+    if (patch.heroBadgeText !== undefined) homepageConfig.heroBadgeText = patch.heroBadgeText;
+    if (patch.heroCtaText !== undefined) homepageConfig.heroCtaText = patch.heroCtaText;
+    if (patch.heroCtaVisible !== undefined) homepageConfig.heroCtaVisible = patch.heroCtaVisible;
+    if (patch.subjectFilters !== undefined) homepageConfig.subjectFilters = patch.subjectFilters;
+    if (patch.sections !== undefined) homepageConfig.sections = patch.sections;
+    if (patch.featuredPackageIds !== undefined) homepageConfig.featuredPackageIds = patch.featuredPackageIds;
+    if (patch.announcementBanner !== undefined) homepageConfig.announcementBanner = { ...homepageConfig.announcementBanner, ...patch.announcementBanner };
+    if (patch.footerText !== undefined) homepageConfig.footerText = patch.footerText;
+    if (patch.footerVisible !== undefined) homepageConfig.footerVisible = patch.footerVisible;
+    return { success: true, message: "Homepage configuration updated successfully." };
+  },
+
+  toggleHomepageSection(sectionId: string): boolean {
+    const section = homepageConfig.sections.find(s => s.id === sectionId);
+    if (!section) return false;
+    section.visible = !section.visible;
+    return section.visible;
+  },
+
+  addHomepageSubjectFilter(filter: HomepageSubjectFilter): void {
+    homepageConfig.subjectFilters.push(filter);
+  },
+
+  removeHomepageSubjectFilter(filterId: string): void {
+    homepageConfig.subjectFilters = homepageConfig.subjectFilters.filter(f => f.id !== filterId);
   }
 };
 
@@ -2145,3 +2301,81 @@ const DEFAULT_QUESTION_DNA_BANKS: Record<string, QuestionDNA[]> = {
 };
 
 let activeQuestionDNABanks: Record<string, QuestionDNA[]> = JSON.parse(JSON.stringify(DEFAULT_QUESTION_DNA_BANKS));
+
+// ══════════════════════════════════════════════════════════════════════════════
+// HOMEPAGE CMS — Admin-Governed Dynamic Public Homepage Configuration
+// ══════════════════════════════════════════════════════════════════════════════
+
+export interface HomepageSectionConfig {
+  id: string;
+  label: string;
+  visible: boolean;
+  order: number;
+}
+
+export interface HomepageSubjectFilter {
+  id: string;
+  label: string;
+  matchKey: string;
+  visible: boolean;
+}
+
+export interface HomepageConfig {
+  heroTitle: string;
+  heroSubtitle: string;
+  heroBadgeText: string;
+  heroCtaText: string;
+  heroCtaVisible: boolean;
+
+  subjectFilters: HomepageSubjectFilter[];
+
+  sections: HomepageSectionConfig[];
+
+  featuredPackageIds: string[];
+
+  announcementBanner: {
+    enabled: boolean;
+    message: string;
+    type: "info" | "warning" | "success" | "promo";
+  };
+
+  footerText: string;
+  footerVisible: boolean;
+}
+
+export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
+  heroTitle: "Teacher Announced Classes & Package Catalog",
+  heroSubtitle: "Search available packages by teacher name, subject, or grade level. Inspect package requirements, volume pricing, and register or log directly into your authorized package workspace.",
+  heroBadgeText: "Public Educational Information & Announcement Portal",
+  heroCtaText: "Sign In to Workspace",
+  heroCtaVisible: true,
+
+  subjectFilters: [
+    { id: "ALL", label: "All Curriculums", matchKey: "ALL", visible: true },
+    { id: "physics", label: "Physics 2nd Year", matchKey: "physics", visible: true },
+    { id: "0580", label: "Cambridge 0580 Math", matchKey: "0580", visible: true },
+    { id: "integrated-science", label: "Integrated Science", matchKey: "integrated-science", visible: true },
+    { id: "drama", label: "Drama & Arts", matchKey: "drama", visible: false }
+  ],
+
+  sections: [
+    { id: "hero_banner", label: "Hero Banner & Welcome", visible: true, order: 1 },
+    { id: "announcement_banner", label: "Global Announcement Banner", visible: false, order: 2 },
+    { id: "search_filters", label: "Search & Subject Filters", visible: true, order: 3 },
+    { id: "package_grid", label: "Package Announcements Grid", visible: true, order: 4 },
+    { id: "footer", label: "Homepage Footer", visible: true, order: 5 }
+  ],
+
+  featuredPackageIds: [],
+
+  announcementBanner: {
+    enabled: false,
+    message: "Welcome to the new academic year 2026/2027! Enrolment is now open.",
+    type: "promo"
+  },
+
+  footerText: "© 2026 Educational Learning Platform — Powered by AI-Driven Adaptive Learning",
+  footerVisible: true
+};
+
+let homepageConfig: HomepageConfig = JSON.parse(JSON.stringify(DEFAULT_HOMEPAGE_CONFIG));
