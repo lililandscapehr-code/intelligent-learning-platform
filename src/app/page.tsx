@@ -369,18 +369,18 @@ export default function EngineSimulator() {
     return (
       <div className="min-h-screen bg-neutral-900 text-neutral-100 flex flex-col" style={{ fontFamily: "system-ui, sans-serif" }}>
         {/* Minimal Public Header */}
-        <header className="border-b border-neutral-800 bg-neutral-950 px-6 py-4 flex items-center justify-between">
+        <header className="border-b border-neutral-800 bg-neutral-950 px-4 sm:px-6 py-3 sm:py-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-amber-500 flex items-center justify-center font-black text-xl text-neutral-950">Ω</div>
+            <div className="h-10 w-10 rounded-xl bg-amber-500 flex items-center justify-center font-black text-xl text-neutral-950 shrink-0">Ω</div>
             <div>
-              <h1 className="text-base font-black text-white flex items-center gap-2">
+              <h1 className="text-sm sm:text-base font-black text-white flex items-center gap-2 flex-wrap">
                 EDUCATIONAL LEARNING PLATFORM
-                <span className="text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold">PUBLIC HOMEPAGE</span>
+                <span className="text-[9px] sm:text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold">PUBLIC HOMEPAGE</span>
               </h1>
-              <p className="text-xs text-neutral-400">Teacher Package Catalog &amp; Public Announcements</p>
+              <p className="text-[11px] sm:text-xs text-neutral-400">Teacher Package Catalog &amp; Public Announcements</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {session ? (
               <>
                 <button
@@ -410,7 +410,7 @@ export default function EngineSimulator() {
         </header>
 
         {/* Full-width Public Catalog */}
-        <main className="flex-1 p-6 overflow-y-auto">
+        <main className="flex-1 p-3 sm:p-6 overflow-y-auto">
           <PublicTeacherShowcase
             onDirectLaunchPackage={(curriculumId, _classId) => {
               setSelectedCurriculumId(curriculumId as any);

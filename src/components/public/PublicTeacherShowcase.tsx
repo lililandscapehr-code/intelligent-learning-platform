@@ -93,18 +93,18 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage, onOpenLog
   };
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8 animate-in fade-in zoom-in-95 duration-200">
+    <div className="mx-auto max-w-6xl space-y-6 sm:space-y-8 animate-in fade-in zoom-in-95 duration-200">
       {/* ── Homepage Header Banner ────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-3xl border border-amber-500/30 bg-gradient-to-r from-amber-950/50 via-neutral-950 to-neutral-900 p-8 shadow-2xl space-y-4">
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-amber-500/30 bg-gradient-to-r from-amber-950/50 via-neutral-950 to-neutral-900 p-5 sm:p-8 shadow-2xl space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-2 max-w-3xl">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-amber-400">
               <Sparkles className="h-3.5 w-3.5" /> Public Educational Information & Announcement Portal
             </span>
-            <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+            <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
               Teacher Announced Classes & Package Catalog
             </h1>
-            <p className="text-sm text-neutral-300 leading-relaxed">
+            <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed">
               Search available packages by teacher name, subject, or grade level. Inspect package requirements, volume pricing, and register or log directly into your authorized package workspace.
             </p>
           </div>
@@ -112,7 +112,7 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage, onOpenLog
           {onOpenLoginModal && (
             <button 
               onClick={onOpenLoginModal}
-              className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs shadow-lg shadow-amber-500/20 transition shrink-0"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs shadow-lg shadow-amber-500/20 transition shrink-0"
             >
               <LogIn className="h-4 w-4" /> Sign In to Workspace
             </button>
@@ -121,8 +121,8 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage, onOpenLog
       </div>
 
       {/* ── Search & Subject Filter Bar ──────────────────────── */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-neutral-950 border border-neutral-800 rounded-2xl p-4">
-        <div className="relative flex-1 min-w-[280px]">
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 sm:gap-4 bg-neutral-950 border border-neutral-800 rounded-2xl p-3 sm:p-4">
+        <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" />
           <input 
             type="text" 
@@ -133,7 +133,7 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage, onOpenLog
           />
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5 sm:gap-2 overflow-x-auto pb-1 md:pb-0">
           {[
             { id: "ALL", label: "All Curriculums" },
             { id: "physics", label: "Physics 2nd Year" },
@@ -143,7 +143,7 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage, onOpenLog
             <button
               key={tab.id}
               onClick={() => setSubjectFilter(tab.id)}
-              className={`px-3 py-2 rounded-xl text-xs font-bold transition ${
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
                 subjectFilter === tab.id
                   ? "bg-amber-500 text-black shadow-md shadow-amber-500/10"
                   : "bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800"
@@ -156,18 +156,18 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage, onOpenLog
       </div>
 
       {/* ── Package Announcements Grid ────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {filteredAnnouncements.map((pkg) => {
           const ann: TeacherAnnouncement = pkg.announcement;
 
           return (
             <div 
               key={pkg.classId}
-              className="bg-neutral-950 border border-neutral-800 rounded-3xl p-6 hover:border-amber-500/40 transition-all shadow-xl flex flex-col justify-between space-y-6"
+              className="bg-neutral-950 border border-neutral-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 hover:border-amber-500/40 transition-all shadow-xl flex flex-col justify-between space-y-4 sm:space-y-6"
             >
               {/* Header Info */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
+              <div className="space-y-3 sm:space-y-4">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   {getScopeBadge(pkg.scope.scopeType)}
                   <span className="text-xs font-mono text-neutral-400">
                     Grade: <strong className="text-white">{pkg.gradeLevel}</strong>
@@ -175,20 +175,20 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage, onOpenLog
                 </div>
 
                 <div>
-                  <h3 className="text-xl font-bold text-white mb-1 leading-snug">{pkg.title}</h3>
+                  <h3 className="text-lg sm:text-xl font-bold text-white mb-1 leading-snug">{pkg.title}</h3>
                   <p className="text-xs font-semibold text-amber-400 flex items-center gap-1.5">
                     <BookOpen className="h-3.5 w-3.5" /> Base: {pkg.curriculumPackageName}
                   </p>
                 </div>
 
                 {/* Teacher Profile Box */}
-                <div className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-4 flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center font-bold text-amber-300 text-sm">
+                <div className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-3 sm:p-4 flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center font-bold text-amber-300 text-sm shrink-0">
                     {ann.teacherName.charAt(0)}
                   </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-white">{ann.teacherName}</h4>
-                    <p className="text-[11px] text-neutral-400">{ann.teacherTitle}</p>
+                  <div className="min-w-0">
+                    <h4 className="text-sm font-bold text-white truncate">{ann.teacherName}</h4>
+                    <p className="text-[11px] text-neutral-400 truncate">{ann.teacherTitle}</p>
                   </div>
                 </div>
 
@@ -197,7 +197,7 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage, onOpenLog
                 </p>
 
                 {/* Prerequisites & Requirements Box */}
-                <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4 space-y-2">
+                <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-3 sm:p-4 space-y-2">
                   <h4 className="text-[11px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
                     <ShieldCheck className="h-4 w-4" /> Student Requirements for Package Registration
                   </h4>
@@ -212,7 +212,7 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage, onOpenLog
                 </div>
 
                 {/* Package Metrics & Scope Specs */}
-                <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-xs">
                   <div className="bg-neutral-900/50 p-3 rounded-xl border border-neutral-800">
                     <span className="text-neutral-500 block text-[10px]">Live Sessions Included</span>
                     <strong className="text-purple-400 font-bold text-sm">
@@ -229,7 +229,7 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage, onOpenLog
               </div>
 
               {/* Package Direct Actions */}
-              <div className="border-t border-neutral-800 pt-4 flex gap-3">
+              <div className="border-t border-neutral-800 pt-4 flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <button 
                   onClick={() => setSelectedPackage(pkg)}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/20 transition"
@@ -262,15 +262,15 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage, onOpenLog
       {/* ── REGISTRATION MODAL WITH REQUIREMENTS CHECK ──────────── */}
       {selectedPackage && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-neutral-950 border border-neutral-800 rounded-3xl p-6 max-w-lg w-full space-y-5 animate-in fade-in zoom-in-95 shadow-2xl">
+          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 max-w-lg w-full max-h-[92vh] overflow-y-auto space-y-4 sm:space-y-5 animate-in fade-in zoom-in-95 shadow-2xl">
             <div className="flex justify-between items-center border-b border-neutral-800 pb-3">
               <div>
-                <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                  <UserPlus className="h-5 w-5 text-emerald-400" /> Package Student Registration
+                <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                  <UserPlus className="h-5 w-5 text-emerald-400 shrink-0" /> Package Student Registration
                 </h2>
                 <p className="text-xs text-neutral-400">{selectedPackage.title}</p>
               </div>
-              <button onClick={() => setSelectedPackage(null)} className="text-neutral-400 hover:text-white">
+              <button onClick={() => setSelectedPackage(null)} className="text-neutral-400 hover:text-white p-1">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -281,11 +281,11 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage, onOpenLog
               </div>
             ) : (
               <form onSubmit={handleRegisterPackage} className="space-y-4 text-xs">
-                <div className="p-2 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-[11px]">
+                <div className="p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-[11px] leading-relaxed">
                   📋 Your request will be sent to the teacher for review. Once approved, you'll be enrolled and the package rate will be auto-calculated.
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-neutral-400 font-semibold mb-1">Full Name</label>
                     <input 
@@ -309,24 +309,24 @@ export default function PublicTeacherShowcase({ onDirectLaunchPackage, onOpenLog
                   <label className="flex items-start gap-2.5 text-neutral-300 cursor-pointer">
                     <input 
                       type="checkbox" required checked={prereqMet} onChange={(e) => setPrereqMet(e.target.checked)}
-                      className="mt-0.5 accent-amber-500"
+                      className="mt-0.5 accent-amber-500 shrink-0"
                     />
-                    <span>
+                    <span className="leading-snug">
                       I confirm that I meet all stated prerequisites for this package ({selectedPackage.announcement.prerequisites.length} items verified).
                     </span>
                   </label>
                 </div>
 
-                <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-300 flex justify-between items-center font-bold">
+                <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-300 flex justify-between items-center font-bold flex-wrap gap-2">
                   <span>Current Volume Rate (if accepted):</span>
                   <span className="text-base">${selectedPackage.effectiveRate} USD / student</span>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-2 border-t border-neutral-800">
-                  <button type="button" onClick={() => setSelectedPackage(null)} className="px-4 py-2 rounded-lg bg-neutral-800 text-white font-semibold">
+                <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-2 border-t border-neutral-800">
+                  <button type="button" onClick={() => setSelectedPackage(null)} className="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-neutral-800 text-white font-semibold">
                     Cancel
                   </button>
-                  <button type="submit" disabled={!prereqMet} className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-bold disabled:opacity-50">
+                  <button type="submit" disabled={!prereqMet} className="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-bold disabled:opacity-50 transition">
                     Send Registration Request to Teacher
                   </button>
                 </div>
