@@ -480,17 +480,21 @@ export interface ExecutiveAuditReport {
   };
 }
 
+export type TeacherCurriculumStatus = "ACTIVE" | "SUSPENDED";
+
 export interface TeacherAssignment {
   teacherId: string;
   teacherName: string;
   teacherEmail: string;
   approvedCurriculumIds: string[];
+  curriculumStatuses?: Record<string, TeacherCurriculumStatus>; // curriculumId -> "ACTIVE" | "SUSPENDED"
   permissions: TeacherPermissions;
 }
 
 export interface ClassRecord {
   id: string;
   teacherId: string;
+  assignedTeacherIds?: string[];
   name: string;
   curriculumPackageId: string;
   curriculumPackageName: string;
@@ -499,6 +503,8 @@ export interface ClassRecord {
   financials: PackageFinancials;
   studentIds: string[];
   announcement?: TeacherAnnouncement;
+  isPrivate?: boolean;
+  specialNegotiatedPrice?: number;
   archivedAt?: string | null;
 }
 
@@ -979,9 +985,13 @@ let mockTeacherAssignments: TeacherAssignment[] = [
     approvedCurriculumIds: [
       "egypt-baccalaureate-second-year-physics-part1",
       "egypt-baccalaureate-second-year-physics-part2",
-      "cambridge-igcse-0580",
-      "egypt-secondary1-integrated-science"
+      "cambridge-igcse-0580"
     ],
+    curriculumStatuses: {
+      "egypt-baccalaureate-second-year-physics-part1": "ACTIVE",
+      "egypt-baccalaureate-second-year-physics-part2": "ACTIVE",
+      "cambridge-igcse-0580": "ACTIVE"
+    },
     permissions: {
       canAddCarousels: true,
       canContactParents: true,
@@ -998,6 +1008,10 @@ let mockTeacherAssignments: TeacherAssignment[] = [
       "cambridge-igcse-0580",
       "egypt-secondary1-integrated-science"
     ],
+    curriculumStatuses: {
+      "cambridge-igcse-0580": "ACTIVE",
+      "egypt-secondary1-integrated-science": "SUSPENDED" // Suspended by Admin for syllabus review
+    },
     permissions: {
       canAddCarousels: false,  // Restricted: Cannot create carousels
       canContactParents: false, // Restricted: Cannot contact parents directly
@@ -1204,7 +1218,7 @@ export const ClassRegistry = {
   // --- Public Package Announcement Portal ---
   getPublicPackageAnnouncements() {
     return mockClasses
-      .filter((c) => c.announcement && c.announcement.isPubliclyAnnounced && !c.archivedAt)
+      .filter((c) => c.announcement && c.announcement.isPubliclyAnnounced && !c.archivedAt && !c.isPrivate)
       .map((c) => {
         const effectiveRate = this.calculateEffectiveRate(c);
         return {
@@ -1217,9 +1231,68 @@ export const ClassRegistry = {
           effectiveRate,
           currency: c.financials.currency,
           studentCount: c.studentIds.length,
-          announcement: c.announcement!
+          announcement: c.announcement!,
+          assignedTeacherIds: c.assignedTeacherIds || [c.teacherId],
+          isPrivate: !!c.isPrivate
         };
       });
+  },
+
+  // --- Admin Master Package System ---
+  getAllMasterPackages(): ClassRecord[] {
+    return mockClasses;
+  },
+
+  adminCreatePackage(pkg: Omit<ClassRecord, "id" | "studentIds"> & { id?: string }): ClassRecord {
+    const newPkg: ClassRecord = {
+      ...pkg,
+      id: pkg.id || `cls_${Date.now()}`,
+      studentIds: [],
+      assignedTeacherIds: pkg.assignedTeacherIds && pkg.assignedTeacherIds.length > 0 ? pkg.assignedTeacherIds : [pkg.teacherId],
+      archivedAt: null,
+      isPrivate: !!pkg.isPrivate
+    };
+    mockClasses.unshift(newPkg);
+    return newPkg;
+  },
+
+  adminUpdatePackage(packageId: string, updates: Partial<ClassRecord>): ClassRecord | null {
+    const pkg = mockClasses.find(c => c.id === packageId);
+    if (!pkg) return null;
+    Object.assign(pkg, updates);
+    return pkg;
+  },
+
+  adminArchivePackage(packageId: string): boolean {
+    const pkg = mockClasses.find(c => c.id === packageId);
+    if (!pkg) return false;
+    pkg.archivedAt = new Date().toISOString();
+    if (pkg.announcement) pkg.announcement.isPubliclyAnnounced = false;
+    return true;
+  },
+
+  adminRestorePackage(packageId: string): boolean {
+    const pkg = mockClasses.find(c => c.id === packageId);
+    if (!pkg) return false;
+    pkg.archivedAt = null;
+    return true;
+  },
+
+  adminDeletePackagePermanently(packageId: string): boolean {
+    const idx = mockClasses.findIndex(c => c.id === packageId);
+    if (idx === -1) return false;
+    mockClasses.splice(idx, 1);
+    return true;
+  },
+
+  adminTogglePackageVisibility(packageId: string, isPublic: boolean): boolean {
+    const pkg = mockClasses.find(c => c.id === packageId);
+    if (!pkg) return false;
+    pkg.isPrivate = !isPublic;
+    if (pkg.announcement) {
+      pkg.announcement.isPubliclyAnnounced = isPublic;
+    }
+    return true;
   },
 
   enrollStudentInPublicPackage(studentId: string, classId: string) {
@@ -1328,12 +1401,67 @@ export const ClassRegistry = {
   },
 
   // --- Admin Curriculum Governance & Teacher Permissions ---
-  getApprovedCurriculumsForTeacher(teacherId: string): CurriculumSpec[] {
+  getApprovedCurriculumsForTeacher(teacherId: string, includeSuspended: boolean = false): CurriculumSpec[] {
     const assignment = mockTeacherAssignments.find(t => t.teacherId === teacherId);
-    if (!assignment) return Object.values(REGISTERED_CURRICULUM_SPECS); // Fallback to all if unassigned
+    if (!assignment) return []; // STRICT: If unassigned, return empty array!
+    
     return assignment.approvedCurriculumIds
+      .filter(id => {
+        // If includeSuspended is false, check curriculum status
+        if (!includeSuspended) {
+          const status = assignment.curriculumStatuses?.[id] || "ACTIVE";
+          if (status === "SUSPENDED") return false;
+        }
+        // Also ensure curriculum itself is not archived
+        const spec = REGISTERED_CURRICULUM_SPECS[id];
+        return spec && !spec.archivedAt;
+      })
       .map(id => REGISTERED_CURRICULUM_SPECS[id])
       .filter((c): c is CurriculumSpec => c !== undefined);
+  },
+
+  getTeacherCurriculumStatus(teacherId: string, curriculumId: string): TeacherCurriculumStatus | "UNASSIGNED" {
+    const assignment = mockTeacherAssignments.find(t => t.teacherId === teacherId);
+    if (!assignment || !assignment.approvedCurriculumIds.includes(curriculumId)) return "UNASSIGNED";
+    return assignment.curriculumStatuses?.[curriculumId] || "ACTIVE";
+  },
+
+  setTeacherCurriculumStatus(teacherId: string, curriculumId: string, status: "ACTIVE" | "SUSPENDED" | "REVOKED"): boolean {
+    let assignment = mockTeacherAssignments.find(t => t.teacherId === teacherId);
+    if (!assignment) {
+      if (status === "REVOKED") return true;
+      assignment = {
+        teacherId,
+        teacherName: "Teacher",
+        teacherEmail: `${teacherId}@platform.com`,
+        approvedCurriculumIds: [curriculumId],
+        curriculumStatuses: { [curriculumId]: status },
+        permissions: { ...DEFAULT_TEACHER_PERMISSIONS }
+      };
+      mockTeacherAssignments.push(assignment);
+      return true;
+    }
+
+    if (!assignment.curriculumStatuses) assignment.curriculumStatuses = {};
+
+    if (status === "REVOKED") {
+      assignment.approvedCurriculumIds = assignment.approvedCurriculumIds.filter(id => id !== curriculumId);
+      delete assignment.curriculumStatuses[curriculumId];
+    } else {
+      if (!assignment.approvedCurriculumIds.includes(curriculumId)) {
+        assignment.approvedCurriculumIds.push(curriculumId);
+      }
+      assignment.curriculumStatuses[curriculumId] = status;
+    }
+    return true;
+  },
+
+  isCurriculumActiveForTeacher(teacherId: string, curriculumId: string): boolean {
+    const assignment = mockTeacherAssignments.find(t => t.teacherId === teacherId);
+    if (!assignment || !assignment.approvedCurriculumIds.includes(curriculumId)) return false;
+    const status = assignment.curriculumStatuses?.[curriculumId] || "ACTIVE";
+    const spec = REGISTERED_CURRICULUM_SPECS[curriculumId];
+    return status === "ACTIVE" && !!spec && !spec.archivedAt;
   },
 
   getAllTeacherAssignments(): TeacherAssignment[] {
@@ -1352,29 +1480,12 @@ export const ClassRegistry = {
     return true;
   },
 
-  assignCurriculumToTeacher(teacherId: string, curriculumId: string): boolean {
-    let assignment = mockTeacherAssignments.find(t => t.teacherId === teacherId);
-    if (!assignment) {
-      assignment = {
-        teacherId,
-        teacherName: "Teacher",
-        teacherEmail: `${teacherId}@platform.com`,
-        approvedCurriculumIds: [],
-        permissions: { ...DEFAULT_TEACHER_PERMISSIONS }
-      };
-      mockTeacherAssignments.push(assignment);
-    }
-    if (!assignment.approvedCurriculumIds.includes(curriculumId)) {
-      assignment.approvedCurriculumIds.push(curriculumId);
-    }
-    return true;
+  assignCurriculumToTeacher(teacherId: string, curriculumId: string, status: TeacherCurriculumStatus = "ACTIVE"): boolean {
+    return this.setTeacherCurriculumStatus(teacherId, curriculumId, status);
   },
 
   revokeCurriculumFromTeacher(teacherId: string, curriculumId: string): boolean {
-    const assignment = mockTeacherAssignments.find(t => t.teacherId === teacherId);
-    if (!assignment) return false;
-    assignment.approvedCurriculumIds = assignment.approvedCurriculumIds.filter(id => id !== curriculumId);
-    return true;
+    return this.setTeacherCurriculumStatus(teacherId, curriculumId, "REVOKED");
   },
 
   importOfficialCurriculumSpec(spec: CurriculumSpec): boolean {

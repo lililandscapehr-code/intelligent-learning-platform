@@ -35,6 +35,7 @@ import {
   createContentDraft,
   publishContentDraftAction,
 } from "../../../app/actions";
+import { updateDynamicLessonCarousel } from "../../../core/services/lesson-registry";
 
 // ── Lazy-loaded panels ────────────────────────────────────────
 const SlideManagerPanel = React.lazy(() => import("./SlideManagerPanel"));
@@ -257,7 +258,8 @@ export default function CarouselStudio({
         return null;
       }
       setRegistryDraftId(result.data.id);
-      setRegistryStatus(`Saved as draft ${result.data.id}. Awaiting approval.`);
+      updateDynamicLessonCarousel(curriculumId, draft.id, prepared);
+      setRegistryStatus(`Saved as draft ${result.data.id} and updated in live memory.`);
       setIsDirty(false);
       return result.data.id;
     } catch {
@@ -279,7 +281,8 @@ export default function CarouselStudio({
         return;
       }
       const label = decision === "APPROVE" ? "approved" : decision === "REJECT" ? "rejected" : "returned for changes";
-      setRegistryStatus(`Draft ${label}.`);
+      updateDynamicLessonCarousel(curriculumId, draft.id, draft);
+      setRegistryStatus(`Draft ${label} & active in real-time.`);
       setReviewNote("");
     } finally {
       setRegistryBusy(false);
@@ -297,7 +300,8 @@ export default function CarouselStudio({
         setRegistryStatus(result.errors[0] || "Publish failed.");
         return;
       }
-      setRegistryStatus(`Published as ${result.data?.id ?? id}.`);
+      updateDynamicLessonCarousel(curriculumId, draft.id, draft);
+      setRegistryStatus(`✓ Published as ${result.data?.id ?? id}. Students see updates in real-time!`);
     } finally {
       setRegistryBusy(false);
     }

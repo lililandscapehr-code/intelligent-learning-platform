@@ -412,3 +412,23 @@ export function getSampleCarouselForSkill(curriculumId: string, skillId: string)
   }
   return undefined;
 }
+
+/**
+ * Real-time Carousel Hot-Update Engine:
+ * Allows teachers and authors to update a lesson carousel in real-time.
+ * The changes take effect immediately across all active student sessions.
+ */
+export function updateDynamicLessonCarousel(
+  curriculumId: string,
+  lessonIdOrCarouselId: string,
+  updatedCarousel: EduCarouselConfig
+): boolean {
+  const list = dynamicLessonRegistry[curriculumId];
+  if (!list) return false;
+  const entry = list.find(l => l.lessonId === lessonIdOrCarouselId || l.carousel?.id === lessonIdOrCarouselId);
+  if (entry) {
+    entry.carousel = updatedCarousel;
+    return true;
+  }
+  return false;
+}

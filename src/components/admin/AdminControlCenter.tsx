@@ -10,7 +10,7 @@ import {
   Sliders, Eye, EyeOff, Layers, ArrowUp, ArrowDown, Brain,
   Award, Zap, Check, Bell, Send, FileText, BarChart2,
   TrendingUp, DollarSign, Target, Radio, AlertOctagon, Filter,
-  Dna, RotateCcw, Copy
+  Dna, RotateCcw, Copy, Package, Globe
 } from "lucide-react";
 import { 
   uploadCurriculumPackage,
@@ -35,7 +35,9 @@ import {
   AdminAlarm,
   AdminBroadcast,
   AdminDirectiveNote,
-  ExecutiveAuditReport
+  ExecutiveAuditReport,
+  ClassRecord,
+  PackageScopeType
 } from "../../core/services/class-registry";
 import { 
   AIProviderEntry, 
@@ -49,7 +51,7 @@ interface AdminControlCenterProps {
   onCurriculumAdded: (curriculum: CurriculumPackage) => void;
 }
 
-type AdminTab = "reports" | "tanks" | "alarms" | "broadcasts" | "notes" | "registry" | "add" | "teachers" | "ai";
+type AdminTab = "reports" | "packages" | "tanks" | "alarms" | "broadcasts" | "notes" | "registry" | "add" | "teachers" | "ai";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function PolicyBadge({ on, label }: { on: boolean; label: string }) {
@@ -138,6 +140,169 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
   const [currentTank, setCurrentTank] = useState<QuestionDNA[]>(() => ClassRegistry.getQuestionDNABank("CAROUSEL-PHYS-EB-MECH-1-1"));
   const [expandedDNAId, setExpandedDNAId] = useState<string | null>(null);
   const [tankActionMsg, setTankActionMsg] = useState<string | null>(null);
+
+  // Master Packages State
+  const [masterPackages, setMasterPackages] = useState<ClassRecord[]>(() => ClassRegistry.getAllMasterPackages());
+  const [pkgFilter, setPkgFilter] = useState<"ALL" | "PUBLIC" | "PRIVATE" | "ARCHIVED">("ALL");
+  const [showCreatePkgModal, setShowCreatePkgModal] = useState(false);
+  const [editingPkg, setEditingPkg] = useState<ClassRecord | null>(null);
+
+  // Form state for package creation/editing
+  const [pkgTitle, setPkgTitle] = useState("");
+  const [pkgCurriculumId, setPkgCurriculumId] = useState("egypt-baccalaureate-second-year-physics-part1");
+  const [pkgScopeType, setPkgScopeType] = useState<PackageScopeType>("FULL_PACKAGE");
+  const [pkgTeacherIds, setPkgTeacherIds] = useState<string[]>(["teacher_1"]);
+  const [pkgBasePrice, setPkgBasePrice] = useState(50);
+  const [pkgIsPrivate, setPkgIsPrivate] = useState(false);
+  const [pkgSpecialPrice, setPkgSpecialPrice] = useState(35);
+  const [pkgLiveSessions, setPkgLiveSessions] = useState(4);
+  const [pkgDescription, setPkgDescription] = useState("");
+  const [pkgActionMsg, setPkgActionMsg] = useState("");
+
+  const refreshPackages = () => {
+    setMasterPackages([...ClassRegistry.getAllMasterPackages()]);
+  };
+
+  const handleTogglePackageVisibility = (pkgId: string, currentIsPrivate: boolean) => {
+    ClassRegistry.adminTogglePackageVisibility(pkgId, currentIsPrivate);
+    refreshPackages();
+    refreshExecutiveSuite();
+    setPkgActionMsg("✓ Package visibility updated.");
+    setTimeout(() => setPkgActionMsg(""), 3000);
+  };
+
+  const handleArchivePackage = (pkgId: string) => {
+    ClassRegistry.adminArchivePackage(pkgId);
+    refreshPackages();
+    refreshExecutiveSuite();
+    setPkgActionMsg("✓ Package archived.");
+    setTimeout(() => setPkgActionMsg(""), 3000);
+  };
+
+  const handleRestorePackage = (pkgId: string) => {
+    ClassRegistry.adminRestorePackage(pkgId);
+    refreshPackages();
+    refreshExecutiveSuite();
+    setPkgActionMsg("✓ Package restored.");
+    setTimeout(() => setPkgActionMsg(""), 3000);
+  };
+
+  const handleDeletePackage = (pkgId: string) => {
+    if (!window.confirm("Permanently delete this package? This cannot be undone.")) return;
+    ClassRegistry.adminDeletePackagePermanently(pkgId);
+    refreshPackages();
+    refreshExecutiveSuite();
+    setPkgActionMsg("✓ Package deleted permanently.");
+    setTimeout(() => setPkgActionMsg(""), 3000);
+  };
+
+  const handleOpenEditPkg = (pkg: ClassRecord) => {
+    setEditingPkg(pkg);
+    setPkgTitle(pkg.name);
+    setPkgCurriculumId(pkg.curriculumPackageId);
+    setPkgScopeType(pkg.scope.scopeType);
+    setPkgTeacherIds(pkg.assignedTeacherIds || [pkg.teacherId]);
+    setPkgBasePrice(pkg.financials.basePricePerStudent);
+    setPkgIsPrivate(!!pkg.isPrivate);
+    setPkgSpecialPrice(pkg.specialNegotiatedPrice ?? Math.round(pkg.financials.basePricePerStudent * 0.8));
+    setPkgLiveSessions(pkg.scope.includedLiveSessions ?? 4);
+    setPkgDescription(pkg.announcement?.description || "");
+    setShowCreatePkgModal(true);
+  };
+
+  const handleOpenCreatePkg = () => {
+    setEditingPkg(null);
+    setPkgTitle("");
+    setPkgCurriculumId(specs[0]?.id || "egypt-baccalaureate-second-year-physics-part1");
+    setPkgScopeType("FULL_PACKAGE");
+    setPkgTeacherIds(["teacher_1"]);
+    setPkgBasePrice(50);
+    setPkgIsPrivate(false);
+    setPkgSpecialPrice(35);
+    setPkgLiveSessions(4);
+    setPkgDescription("");
+    setShowCreatePkgModal(true);
+  };
+
+  const handleSavePackage = (e: React.FormEvent) => {
+    e.preventDefault();
+    const spec = specs.find(s => s.id === pkgCurriculumId) || specs[0];
+    const primaryTeacher = teacherAssignments.find(t => t.teacherId === pkgTeacherIds[0]) || teacherAssignments[0];
+
+    if (editingPkg) {
+      ClassRegistry.adminUpdatePackage(editingPkg.id, {
+        name: pkgTitle,
+        curriculumPackageId: spec.id,
+        curriculumPackageName: spec.name,
+        gradeLevel: spec.gradeLevel,
+        scope: {
+          scopeType: pkgScopeType,
+          semesterId: "full",
+          includedLiveSessions: pkgLiveSessions,
+          maxLessonCount: spec.lessons.length
+        },
+        financials: {
+          ...editingPkg.financials,
+          basePricePerStudent: pkgBasePrice
+        },
+        teacherId: primaryTeacher.teacherId,
+        assignedTeacherIds: pkgTeacherIds,
+        isPrivate: pkgIsPrivate,
+        specialNegotiatedPrice: pkgIsPrivate ? pkgSpecialPrice : undefined,
+        announcement: {
+          teacherName: pkgTeacherIds.map(id => teacherAssignments.find(t => t.teacherId === id)?.teacherName || id).join(" & "),
+          teacherTitle: "Authorized Master Faculty",
+          description: pkgDescription || `${spec.name} comprehensive package.`,
+          prerequisites: editingPkg.announcement?.prerequisites || [`Active ${spec.gradeLevel} standing`],
+          isPubliclyAnnounced: !pkgIsPrivate,
+          publishedAt: editingPkg.announcement?.publishedAt || new Date().toISOString().split("T")[0]
+        }
+      });
+      setPkgActionMsg("✓ Package updated successfully.");
+    } else {
+      ClassRegistry.adminCreatePackage({
+        name: pkgTitle,
+        curriculumPackageId: spec.id,
+        curriculumPackageName: spec.name,
+        gradeLevel: spec.gradeLevel,
+        teacherId: primaryTeacher.teacherId,
+        assignedTeacherIds: pkgTeacherIds,
+        isPrivate: pkgIsPrivate,
+        specialNegotiatedPrice: pkgIsPrivate ? pkgSpecialPrice : undefined,
+        scope: {
+          scopeType: pkgScopeType,
+          semesterId: "full",
+          includedLiveSessions: pkgLiveSessions,
+          maxLessonCount: spec.lessons.length
+        },
+        financials: {
+          pricingModel: "VOLUME_TIERED",
+          currency: "USD",
+          basePricePerStudent: pkgBasePrice,
+          tiers: [
+            { minStudents: 1, maxStudents: 20, pricePerStudent: pkgBasePrice },
+            { minStudents: 21, maxStudents: 50, pricePerStudent: Math.round(pkgBasePrice * 0.85) },
+            { minStudents: 51, maxStudents: 200, pricePerStudent: Math.round(pkgBasePrice * 0.70) }
+          ]
+        },
+        announcement: {
+          teacherName: pkgTeacherIds.map(id => teacherAssignments.find(t => t.teacherId === id)?.teacherName || id).join(" & "),
+          teacherTitle: "Authorized Master Faculty",
+          description: pkgDescription || `${spec.name} comprehensive package.`,
+          prerequisites: [`Active ${spec.gradeLevel} standing`, "Registration approval"],
+          isPubliclyAnnounced: !pkgIsPrivate,
+          publishedAt: new Date().toISOString().split("T")[0]
+        }
+      });
+      setPkgActionMsg("✓ New Master Package created successfully.");
+    }
+
+    refreshPackages();
+    refreshExecutiveSuite();
+    setShowCreatePkgModal(false);
+    setEditingPkg(null);
+    setTimeout(() => setPkgActionMsg(""), 3500);
+  };
 
   // Remove modal state
   const [removeTarget, setRemoveTarget] = useState<CurriculumSpec | null>(null);
@@ -340,9 +505,8 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
     }
   };
 
-  const handleToggleTeacherCurriculum = (teacherId: string, curriculumId: string, isAuthorized: boolean) => {
-    if (isAuthorized) ClassRegistry.revokeCurriculumFromTeacher(teacherId, curriculumId);
-    else ClassRegistry.assignCurriculumToTeacher(teacherId, curriculumId);
+  const handleSetTeacherCurriculumStatus = (teacherId: string, curriculumId: string, status: "ACTIVE" | "SUSPENDED" | "REVOKED") => {
+    ClassRegistry.setTeacherCurriculumStatus(teacherId, curriculumId, status);
     refreshTeachers();
     refreshExecutiveSuite();
   };
@@ -510,6 +674,7 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
 
   const tabs: { key: AdminTab; label: string; icon: React.ElementType; badge?: string; badgeColor?: string }[] = [
     { key: "reports", label: "📊 Executive Reports", icon: BarChart2 },
+    { key: "packages", label: "📦 Master Packages", icon: Package, badge: `${masterPackages.length} Pkgs` },
     { key: "tanks", label: "🧬 Question Tank Manager", icon: Dna, badge: `${currentTank.length} Items` },
     { 
       key: "alarms", 
@@ -649,6 +814,440 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 1.5: MASTER PACKAGE MANAGER ───────────────────────────────── */}
+      {activeTab === "packages" && (
+        <div className="space-y-6 animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-6 space-y-6">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-4 flex-wrap gap-4">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <Package className="h-5 w-5 text-amber-500" />
+                  Master Package & Commercial Offerings Manager
+                </h3>
+                <p className="text-xs text-neutral-400">
+                  Control curriculum scope parts, base and volume pricing, assigned faculty, and visibility on the public homepage.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleOpenCreatePkg}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black text-xs shadow-lg shadow-amber-500/10 transition"
+                >
+                  <PlusCircle className="h-4 w-4" /> Create Master Package
+                </button>
+              </div>
+            </div>
+
+            {pkgActionMsg && (
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-bold animate-in fade-in">
+                {pkgActionMsg}
+              </div>
+            )}
+
+            {/* Filter Pills */}
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-neutral-950 p-3 rounded-xl border border-neutral-800">
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { id: "ALL", label: `All Packages (${masterPackages.length})` },
+                  { id: "PUBLIC", label: `🌐 Public on Homepage (${masterPackages.filter(p => !p.isPrivate && p.announcement?.isPubliclyAnnounced && !p.archivedAt).length})` },
+                  { id: "PRIVATE", label: `🔒 Private / Negotiated (${masterPackages.filter(p => p.isPrivate && !p.archivedAt).length})` },
+                  { id: "ARCHIVED", label: `🗄️ Archived (${masterPackages.filter(p => p.archivedAt).length})` }
+                ].map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => setPkgFilter(f.id as any)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                      pkgFilter === f.id
+                        ? "bg-amber-500 text-black"
+                        : "bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800"
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+              <span className="text-[11px] text-neutral-500 font-mono">
+                Showing {masterPackages.filter(p => {
+                  if (pkgFilter === "PUBLIC") return !p.isPrivate && p.announcement?.isPubliclyAnnounced && !p.archivedAt;
+                  if (pkgFilter === "PRIVATE") return p.isPrivate && !p.archivedAt;
+                  if (pkgFilter === "ARCHIVED") return !!p.archivedAt;
+                  return true;
+                }).length} of {masterPackages.length}
+              </span>
+            </div>
+
+            {/* Package Cards List */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {masterPackages
+                .filter(p => {
+                  if (pkgFilter === "PUBLIC") return !p.isPrivate && p.announcement?.isPubliclyAnnounced && !p.archivedAt;
+                  if (pkgFilter === "PRIVATE") return p.isPrivate && !p.archivedAt;
+                  if (pkgFilter === "ARCHIVED") return !!p.archivedAt;
+                  return true;
+                })
+                .map((pkg) => {
+                  const isArchived = !!pkg.archivedAt;
+                  const isPrivate = !!pkg.isPrivate;
+                  const isPublic = !isPrivate && !isArchived && !!pkg.announcement?.isPubliclyAnnounced;
+
+                  return (
+                    <div
+                      key={pkg.id}
+                      className={`p-5 rounded-2xl border flex flex-col justify-between space-y-4 transition-all ${
+                        isArchived
+                          ? "bg-neutral-950/60 border-neutral-800/60 opacity-60"
+                          : isPrivate
+                          ? "bg-neutral-950 border-sky-500/30"
+                          : "bg-neutral-950 border-emerald-500/30 shadow-lg shadow-emerald-500/5"
+                      }`}
+                    >
+                      <div className="space-y-3">
+                        {/* Status Badges */}
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <span className="px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-300 font-bold text-[10px] uppercase border border-neutral-700">
+                            {pkg.scope.scopeType}
+                          </span>
+
+                          <div className="flex items-center gap-1.5">
+                            {isArchived ? (
+                              <span className="px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30 text-[10px] font-bold">
+                                🗄️ ARCHIVED
+                              </span>
+                            ) : isPrivate ? (
+                              <span className="px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-400 border border-sky-500/30 text-[10px] font-bold">
+                                🔒 PRIVATE (REGISTERED USERS)
+                              </span>
+                            ) : isPublic ? (
+                              <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
+                                🌐 PUBLIC ON HOMEPAGE
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-400 text-[10px] font-bold">
+                                ⚪ DRAFT / UNPUBLISHED
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Title & Curriculum Base */}
+                        <div>
+                          <h4 className="text-base font-bold text-white leading-snug">{pkg.name}</h4>
+                          <p className="text-xs text-amber-400 font-medium mt-0.5">
+                            📖 Base: {pkg.curriculumPackageName} ({pkg.gradeLevel})
+                          </p>
+                        </div>
+
+                        {/* Assigned Faculty */}
+                        <div className="p-2.5 bg-neutral-900/80 rounded-xl border border-neutral-800 flex items-center gap-2">
+                          <Users className="h-4 w-4 text-neutral-400 shrink-0" />
+                          <div className="text-xs">
+                            <span className="text-neutral-400">Assigned Faculty: </span>
+                            <strong className="text-white">
+                              {(pkg.assignedTeacherIds && pkg.assignedTeacherIds.length > 0
+                                ? pkg.assignedTeacherIds
+                                : [pkg.teacherId]
+                              ).map(id => teacherAssignments.find(t => t.teacherId === id)?.teacherName || id).join(", ")}
+                            </strong>
+                          </div>
+                        </div>
+
+                        {/* Financial & Scope Specs */}
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="p-2.5 bg-neutral-900/50 rounded-xl border border-neutral-800/80">
+                            <span className="text-neutral-500 block text-[10px]">Commercial Price</span>
+                            <strong className="text-emerald-400 font-bold text-sm">
+                              ${pkg.financials.basePricePerStudent} USD
+                            </strong>
+                            <span className="text-neutral-400 text-[10px] block">
+                              {pkg.financials.pricingModel === "VOLUME_TIERED" ? "Volume Tiered" : "Fixed Rate"}
+                            </span>
+                          </div>
+
+                          <div className="p-2.5 bg-neutral-900/50 rounded-xl border border-neutral-800/80">
+                            <span className="text-neutral-500 block text-[10px]">
+                              {isPrivate ? "Negotiated Group Price" : "Included Sessions"}
+                            </span>
+                            {isPrivate && pkg.specialNegotiatedPrice ? (
+                              <strong className="text-sky-400 font-bold text-sm">
+                                ${pkg.specialNegotiatedPrice} USD
+                              </strong>
+                            ) : (
+                              <strong className="text-purple-400 font-bold text-sm">
+                                {pkg.scope.includedLiveSessions === -1 ? "Unlimited" : `${pkg.scope.includedLiveSessions} Sessions`}
+                              </strong>
+                            )}
+                            <span className="text-neutral-400 text-[10px] block">
+                              {pkg.studentIds.length} students enrolled
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Admin Action Bar */}
+                      <div className="border-t border-neutral-800/80 pt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {!isArchived && (
+                            <button
+                              type="button"
+                              onClick={() => handleTogglePackageVisibility(pkg.id, isPrivate)}
+                              className={`px-2.5 py-1.5 rounded-lg font-bold text-[11px] transition ${
+                                isPrivate
+                                  ? "bg-sky-600 hover:bg-sky-500 text-white"
+                                  : "bg-neutral-800 hover:bg-neutral-700 text-neutral-300"
+                              }`}
+                              title={isPrivate ? "Make public on homepage catalog" : "Make private for registered users only"}
+                            >
+                              {isPrivate ? "🌐 Make Public" : "🔒 Make Private"}
+                            </button>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditPkg(pkg)}
+                            className="px-2.5 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-[11px] transition"
+                          >
+                            <Edit3 className="h-3 w-3 inline mr-1" /> Edit
+                          </button>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          {isArchived ? (
+                            <button
+                              type="button"
+                              onClick={() => handleRestorePackage(pkg.id)}
+                              className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] transition"
+                            >
+                              <RotateCcw className="h-3 w-3 inline mr-1" /> Restore
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleArchivePackage(pkg.id)}
+                              className="px-2 py-1.5 rounded-lg bg-neutral-900 hover:bg-amber-500/20 text-neutral-400 hover:text-amber-400 font-semibold text-[11px] border border-neutral-800 transition"
+                              title="Archive package (hidden from catalog but preserved)"
+                            >
+                              🗄️ Archive
+                            </button>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeletePackage(pkg.id)}
+                            className="px-2 py-1.5 rounded-lg bg-neutral-900 hover:bg-red-500/20 text-neutral-500 hover:text-red-400 text-[11px] border border-neutral-800 transition"
+                            title="Delete permanently"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── CREATE / EDIT MASTER PACKAGE MODAL ─────────────────────────────────── */}
+      {showCreatePkgModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="bg-neutral-950 border border-neutral-800 rounded-3xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto space-y-5 animate-in fade-in zoom-in-95 shadow-2xl">
+            <div className="flex justify-between items-center border-b border-neutral-800 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <Package className="h-5 w-5 text-amber-500" />
+                  {editingPkg ? "Edit Master Package & Offerings" : "Create Master Package"}
+                </h3>
+                <p className="text-xs text-neutral-400">
+                  Configure curriculum base, faculty assignments, commercial pricing plans, and public or private visibility.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setShowCreatePkgModal(false); setEditingPkg(null); }}
+                className="text-neutral-400 hover:text-white p-1"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSavePackage} className="space-y-4 text-xs">
+              {/* Package Title */}
+              <div>
+                <label className="block text-neutral-400 font-semibold mb-1">Package Title</label>
+                <input
+                  type="text"
+                  required
+                  value={pkgTitle}
+                  onChange={(e) => setPkgTitle(e.target.value)}
+                  placeholder="e.g. Grade 11 Physics Mastery - Term 1 Honors"
+                  className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2.5 text-white outline-none focus:border-amber-500"
+                />
+              </div>
+
+              {/* Curriculum Base & Scope */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-neutral-400 font-semibold mb-1">Curriculum Specification</label>
+                  <select
+                    value={pkgCurriculumId}
+                    onChange={(e) => setPkgCurriculumId(e.target.value)}
+                    className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-white outline-none focus:border-amber-500"
+                  >
+                    {specs.map(s => (
+                      <option key={s.id} value={s.id}>{s.name} ({s.gradeLevel})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-neutral-400 font-semibold mb-1">Curriculum Part / Scope</label>
+                  <select
+                    value={pkgScopeType}
+                    onChange={(e) => setPkgScopeType(e.target.value as PackageScopeType)}
+                    className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-white outline-none focus:border-amber-500"
+                  >
+                    <option value="FULL_PACKAGE">Full Curriculum Package</option>
+                    <option value="SEMESTER">Semester / Term Bundle</option>
+                    <option value="CHAPTER_BUNDLE">Chapter Specific Bundle</option>
+                    <option value="LESSON_QUANTITY">Lesson Quota Pass</option>
+                    <option value="SINGLE_SESSION">Single Intensive Workshop</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Assigned Faculty Checkboxes */}
+              <div className="p-3 bg-neutral-900/80 rounded-xl border border-neutral-800 space-y-2">
+                <label className="block text-neutral-400 font-semibold text-[11px]">
+                  Assigned Faculty / Teachers (Multi-Teacher Enabled)
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {teacherAssignments.map(t => {
+                    const isChecked = pkgTeacherIds.includes(t.teacherId);
+                    return (
+                      <label
+                        key={t.teacherId}
+                        className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-xs transition ${
+                          isChecked ? "bg-amber-500/10 border-amber-500/40 text-amber-300" : "bg-neutral-900 border-neutral-800 text-neutral-400"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setPkgTeacherIds([...pkgTeacherIds, t.teacherId]);
+                            } else {
+                              if (pkgTeacherIds.length > 1) {
+                                setPkgTeacherIds(pkgTeacherIds.filter(id => id !== t.teacherId));
+                              }
+                            }
+                          }}
+                          className="accent-amber-500"
+                        />
+                        <span className="font-bold">{t.teacherName}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Pricing & Visibility Plans */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-neutral-400 font-semibold mb-1">Base Price ($ USD / student)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    required
+                    value={pkgBasePrice}
+                    onChange={(e) => setPkgBasePrice(Number(e.target.value))}
+                    className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-white outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-neutral-400 font-semibold mb-1">Included Live Sessions (-1 for Unlimited)</label>
+                  <input
+                    type="number"
+                    min="-1"
+                    required
+                    value={pkgLiveSessions}
+                    onChange={(e) => setPkgLiveSessions(Number(e.target.value))}
+                    className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-white outline-none focus:border-amber-500"
+                  />
+                </div>
+              </div>
+
+              {/* Private Visibility & Special Pricing Box */}
+              <div className="p-4 bg-neutral-900/90 rounded-2xl border border-neutral-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <strong className="text-white text-xs block">Private Group / Special Negotiated Offer</strong>
+                    <p className="text-[11px] text-neutral-400">
+                      When enabled, this package is invisible on the public homepage and reserved for registered/invited students.
+                    </p>
+                  </div>
+                  <Toggle value={pkgIsPrivate} onChange={(v) => setPkgIsPrivate(v)} />
+                </div>
+
+                {pkgIsPrivate && (
+                  <div className="pt-2 border-t border-neutral-800 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sky-400 font-semibold mb-1 text-[11px]">
+                        Special Negotiated Price ($ USD)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={pkgSpecialPrice}
+                        onChange={(e) => setPkgSpecialPrice(Number(e.target.value))}
+                        className="w-full bg-neutral-950 border border-sky-500/40 rounded-xl px-3 py-2 text-white outline-none focus:border-sky-400"
+                      />
+                    </div>
+                    <div className="text-[11px] text-neutral-400 flex items-center">
+                      ℹ️ Students registering for this private offering will be charged the locked special negotiated rate.
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-neutral-400 font-semibold mb-1">Package Description & Bio</label>
+                <textarea
+                  rows={3}
+                  value={pkgDescription}
+                  onChange={(e) => setPkgDescription(e.target.value)}
+                  placeholder="Describe what is covered, teaching approach, and student preparation..."
+                  className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-white outline-none focus:border-amber-500"
+                />
+              </div>
+
+              {/* Buttons */}
+              <div className="flex justify-end gap-2 pt-3 border-t border-neutral-800">
+                <button
+                  type="button"
+                  onClick={() => { setShowCreatePkgModal(false); setEditingPkg(null); }}
+                  className="px-4 py-2.5 rounded-xl bg-neutral-800 text-white font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black transition shadow-lg shadow-amber-500/10"
+                >
+                  {editingPkg ? "Save Package Updates" : "Publish Master Package"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
@@ -1527,24 +2126,85 @@ export default function AdminControlCenter({ onCurriculumAdded }: AdminControlCe
                   </span>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     {specs.map(spec => {
-                      const isAuthorized = assignment.approvedCurriculumIds.includes(spec.id);
+                      const status = ClassRegistry.getTeacherCurriculumStatus(assignment.teacherId, spec.id);
+                      const isActive = status === "ACTIVE";
+                      const isSuspended = status === "SUSPENDED";
+                      const isUnassigned = status === "UNASSIGNED";
+
                       return (
                         <div key={spec.id} className={`p-3 rounded-xl border flex items-center justify-between text-xs transition ${
-                          isAuthorized ? "bg-emerald-950/30 border-emerald-500/40" : "bg-neutral-950 border-neutral-800"
+                          isActive ? "bg-emerald-950/30 border-emerald-500/40" :
+                          isSuspended ? "bg-amber-950/30 border-amber-500/40" :
+                          "bg-neutral-950 border-neutral-800 opacity-70"
                         }`}>
                           <div className="truncate pr-2">
-                            <p className="font-bold text-white truncate">{spec.name}</p>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <p className="font-bold text-white truncate">{spec.name}</p>
+                              <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full border ${
+                                isActive ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" :
+                                isSuspended ? "bg-amber-500/20 text-amber-400 border-amber-500/30" :
+                                "bg-neutral-800 text-neutral-400 border-neutral-700"
+                              }`}>
+                                {isActive ? "🟢 ACTIVE" : isSuspended ? "⏸️ SUSPENDED" : "⚪ UNASSIGNED"}
+                              </span>
+                            </div>
                             <p className="text-[10px] text-neutral-400">{spec.gradeLevel}</p>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => handleToggleTeacherCurriculum(assignment.teacherId, spec.id, isAuthorized)}
-                            className={`shrink-0 px-3 py-1 rounded-lg font-bold text-[11px] transition ${
-                              isAuthorized ? "bg-emerald-600 hover:bg-red-600 text-white" : "bg-neutral-800 hover:bg-emerald-600 text-neutral-300 hover:text-white"
-                            }`}
-                          >
-                            {isAuthorized ? "✓ Authorized" : "+ Authorize"}
-                          </button>
+                          
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {isActive && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSetTeacherCurriculumStatus(assignment.teacherId, spec.id, "SUSPENDED")}
+                                  className="px-2.5 py-1 rounded-lg font-bold text-[10px] bg-amber-950/80 hover:bg-amber-500 hover:text-black text-amber-300 border border-amber-500/40 transition"
+                                  title="Suspend access for this teacher"
+                                >
+                                  ⏸️ Suspend
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSetTeacherCurriculumStatus(assignment.teacherId, spec.id, "REVOKED")}
+                                  className="px-2 py-1 rounded-lg font-bold text-[10px] bg-neutral-800 hover:bg-red-600 text-neutral-400 hover:text-white transition"
+                                  title="Revoke authorization completely"
+                                >
+                                  ✕ Revoke
+                                </button>
+                              </>
+                            )}
+
+                            {isSuspended && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSetTeacherCurriculumStatus(assignment.teacherId, spec.id, "ACTIVE")}
+                                  className="px-2.5 py-1 rounded-lg font-bold text-[10px] bg-emerald-600 hover:bg-emerald-500 text-white transition"
+                                  title="Re-activate access for this teacher"
+                                >
+                                  ▶️ Activate
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSetTeacherCurriculumStatus(assignment.teacherId, spec.id, "REVOKED")}
+                                  className="px-2 py-1 rounded-lg font-bold text-[10px] bg-neutral-800 hover:bg-red-600 text-neutral-400 hover:text-white transition"
+                                  title="Revoke authorization completely"
+                                >
+                                  ✕ Revoke
+                                </button>
+                              </>
+                            )}
+
+                            {isUnassigned && (
+                              <button
+                                type="button"
+                                onClick={() => handleSetTeacherCurriculumStatus(assignment.teacherId, spec.id, "ACTIVE")}
+                                className="px-3 py-1 rounded-lg font-bold text-[10px] bg-neutral-800 hover:bg-emerald-600 text-neutral-300 hover:text-white transition"
+                                title="Authorize and mark active"
+                              >
+                                + Authorize
+                              </button>
+                            )}
+                          </div>
                         </div>
                       );
                     })}

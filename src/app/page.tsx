@@ -93,6 +93,7 @@ const dnaMap: Record<string, any[]> = {
 
 import AdminControlCenter from "../components/admin/AdminControlCenter";
 import SourceAnalysisExplorer from "../components/admin/SourceAnalysisExplorer";
+import { ClassRegistry } from "../core/services/class-registry";
 import { CarouselSessionResult } from "../components/carousel/CarouselTypes";
 import type { CurriculumPackage } from "../contracts/curriculum";
 import {
@@ -150,6 +151,43 @@ export default function EngineSimulator() {
 
   const selectedCurriculum: CurriculumPackage = curriculumOptions[selectedCurriculumId] || Object.values(curriculumOptions)[0];
   const validationReport = validateCurriculumPackage(selectedCurriculum);
+
+  // ── Curriculum Filter based on Role & Teacher Governance ───────────────────
+  const activeTeacherId = session?.role === "TEACHER" 
+    ? (session.email.includes("mariam") ? "teacher_2" : "teacher_1")
+    : null;
+
+  const allowedCurriculums = useMemo(() => {
+    if (session?.role === "TEACHER" && activeTeacherId) {
+      const authorizedSpecs = ClassRegistry.getApprovedCurriculumsForTeacher(activeTeacherId, false); // ONLY ACTIVE
+      const authorizedIds = new Set(authorizedSpecs.map(s => s.id));
+      const filtered: Record<string, CurriculumPackage> = {};
+      for (const [id, pkg] of Object.entries(curriculumOptions)) {
+        if (authorizedIds.has(id)) {
+          filtered[id] = pkg;
+        }
+      }
+      return Object.keys(filtered).length > 0 ? filtered : curriculumOptions;
+    }
+    return curriculumOptions;
+  }, [session, activeTeacherId, curriculumOptions]);
+
+  const teacherSuspendedCurriculums = useMemo(() => {
+    if (session?.role !== "TEACHER" || !activeTeacherId) return [];
+    const allTeacherSpecs = ClassRegistry.getApprovedCurriculumsForTeacher(activeTeacherId, true);
+    return allTeacherSpecs.filter(spec => 
+      ClassRegistry.getTeacherCurriculumStatus(activeTeacherId, spec.id) === "SUSPENDED"
+    );
+  }, [session, activeTeacherId]);
+
+  useEffect(() => {
+    if (session?.role === "TEACHER" && activeTeacherId) {
+      const allowedKeys = Object.keys(allowedCurriculums);
+      if (allowedKeys.length > 0 && !allowedKeys.includes(selectedCurriculumId)) {
+        setSelectedCurriculumId(allowedKeys[0] as CurriculumId);
+      }
+    }
+  }, [session, activeTeacherId, allowedCurriculums, selectedCurriculumId]);
 
   const [activeTab, setActiveTab] = useState<"curriculum" | "readiness" | "carousel" | "authoring" | "teacher" | "student" | "student-diagnostic" | "parent" | "admin" | "services" | "diagnostic" | "state" | "platform" | "source-analysis" | "public-showcase" | "live-sessions">("public-showcase");
   const [activeCaseKey, setActiveCaseKey] = useState<string>("A");
@@ -492,7 +530,7 @@ export default function EngineSimulator() {
           <label className="flex items-center gap-2 text-neutral-400">
             Active Track
             <select value={selectedCurriculumId} onChange={(event) => selectCurriculum(event.target.value as CurriculumId)} className="rounded-lg border border-neutral-700 bg-neutral-900 px-2 py-1.5 text-xs text-neutral-200 outline-none focus:border-amber-500">
-              {Object.entries(curriculumOptions).map(([id, curriculum]) => (
+              {Object.entries(allowedCurriculums).map(([id, curriculum]) => (
                 <option key={id} value={id}>{curriculum.identity.name}</option>
               ))}
             </select>
@@ -515,6 +553,22 @@ export default function EngineSimulator() {
           </div>
         </div>
       </header>
+
+      {/* Teacher Suspended Curriculums Notice */}
+      {session.role === "TEACHER" && teacherSuspendedCurriculums.length > 0 && (
+        <div className="bg-amber-950/50 border-b border-amber-500/30 px-6 py-2.5 flex items-center justify-between text-xs text-amber-300">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />
+            <span>
+              <strong>Administrative Governance Notice:</strong> The following curriculum track(s) have been <strong>SUSPENDED</strong> for your profile:{" "}
+              <strong>{teacherSuspendedCurriculums.map(s => s.name).join(", ")}</strong>. You cannot author new carousels or create public packages until re-activated by Administrator.
+            </span>
+          </div>
+          <span className="text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2.5 py-0.5 rounded-full shrink-0">
+            ⏸️ SUSPENDED BY ADMIN
+          </span>
+        </div>
+      )}
 
       {/* Student Enrolled Track Header */}
       {session.role === "STUDENT" && (
