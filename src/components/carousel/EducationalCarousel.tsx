@@ -91,13 +91,14 @@ export default function EducationalCarousel({ config, onComplete, viewerRole = "
     || (policy.scope === "SELECTED_STUDENTS" && !!studentId && policy.studentIds?.includes(studentId))
     || (policy.scope === "SELECTED_SUBSCRIPTION" && !!subscriptionId && policy.subscriptionIds?.includes(subscriptionId));
 
-  const isInteractive = slide?.type === "question_mcq"
+  const isQuestion = slide?.type === "question_mcq"
     || slide?.type === "question_text"
-    || slide?.type === "question_numeric"
-    || slide?.type === "upload_zone";
+    || slide?.type === "question_numeric";
 
-  const isAnswered = answers.some((a) => a.slideId === slide?.id);
-  const isLocked = (isInteractive && !isAnswered && !config.allowSkipQuestions) || needsSupport;
+  const isInteractive = isQuestion || slide?.type === "upload_zone";
+
+  const isAnswered = isQuestion && answers.some((a) => a.slideId === slide?.id);
+  const isLocked = (isQuestion && !isAnswered && !config.allowSkipQuestions) || needsSupport;
   const isSequentiallyClosed = config.sequenceMode === "SEQUENTIAL" && currentIndex > highestOpenIndex;
 
   const questionSlides = config.slides.filter((s) =>
@@ -147,7 +148,7 @@ export default function EducationalCarousel({ config, onComplete, viewerRole = "
 
     const timerSecs = slide?.timerSeconds ?? 0;
     if (!timerSecs || timerSecs <= 0) return;
-    if (!isInteractive) return;
+    if (!isQuestion) return;
     if (isAnswered) return;
 
     let remaining = timerSecs;

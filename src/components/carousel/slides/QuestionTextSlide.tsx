@@ -256,19 +256,37 @@ export function QuestionTextSlideView({
 
       {/* ── Status Feedback Banner ────────────────────────────── */}
       {statusMessage && (
-        <div
-          className={`flex items-center gap-2 rounded-xl p-3 text-xs font-semibold ${
-            statusMessage.type === "correct"
-              ? "border border-emerald-500/30 bg-emerald-950/40 text-emerald-300"
-              : "border border-rose-500/30 bg-rose-950/40 text-rose-300"
-          }`}
-        >
-          {statusMessage.type === "correct" ? (
-            <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
-          ) : (
-            <XCircle className="h-4 w-4 text-rose-400 shrink-0" />
+        <div className="space-y-2">
+          <div
+            className={`flex items-center gap-2 rounded-xl p-3 text-xs font-semibold ${
+              statusMessage.type === "correct"
+                ? "border border-emerald-500/30 bg-emerald-950/40 text-emerald-300"
+                : "border border-rose-500/30 bg-rose-950/40 text-rose-300"
+            }`}
+          >
+            {statusMessage.type === "correct" ? (
+              <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+            ) : (
+              <XCircle className="h-4 w-4 text-rose-400 shrink-0" />
+            )}
+            <span>{statusMessage.text}</span>
+          </div>
+
+          {/* Solution & Target Answer Reveal */}
+          {slide.type === "question_numeric" && (
+            <div className="p-3 bg-neutral-900 border border-neutral-800 rounded-xl text-xs space-y-1">
+              <span className="font-bold text-amber-400">Target Value: </span>
+              <span className="text-white font-mono font-bold">{slide.correctValue} {slide.unit || ""}</span>
+              {slide.tolerance ? <span className="text-neutral-500 text-[11px]"> (±{slide.tolerance} acceptable tolerance)</span> : null}
+            </div>
           )}
-          <span>{statusMessage.text}</span>
+
+          {slide.type === "question_text" && slide.sampleAnswer && (
+            <div className="p-3 bg-neutral-900 border border-neutral-800 rounded-xl text-xs space-y-1">
+              <span className="font-bold text-amber-400">Sample Solution / Key Points: </span>
+              <p className="text-neutral-300 leading-relaxed pt-0.5">{slide.sampleAnswer}</p>
+            </div>
+          )}
         </div>
       )}
 

@@ -239,9 +239,60 @@ export function QuestionMCQSlideView({
       )}
 
       {isAnswered && (
-        <div className="p-3 bg-neutral-900/80 rounded-xl border border-neutral-800 text-xs text-neutral-300 animate-in fade-in duration-300">
-          <span className="font-bold text-amber-400">Feedback: </span>
-          {slide.choices.find((c) => c.id === (existingAnswer?.value || selected))?.explanation || "Evidence recorded."}
+        <div className="space-y-2 pt-2 animate-in fade-in duration-300">
+          {(() => {
+            const userChoice = slide.choices.find((c) => c.id === (existingAnswer?.value || selected));
+            const correctChoice = slide.choices.find((c) => c.isCorrect);
+            const isUserCorrect = userChoice?.isCorrect ?? existingAnswer?.isCorrect ?? false;
+
+            if (isUserCorrect) {
+              return (
+                <div className="p-4 bg-emerald-950/40 rounded-xl border border-emerald-500/40 text-xs text-emerald-200 space-y-1.5 shadow-md">
+                  <div className="flex items-center gap-2 font-black text-emerald-400 text-sm">
+                    <CheckCircle className="h-4 w-4" /> Correct! (+{slide.points ?? 1} pts)
+                  </div>
+                  <p className="leading-relaxed text-neutral-200">
+                    <strong className="text-emerald-300 font-bold">Choice {userChoice?.id}:</strong> {userChoice?.text}
+                  </p>
+                  {userChoice?.explanation && (
+                    <p className="text-[11px] text-emerald-300/80 pt-1 border-t border-emerald-500/20 leading-relaxed">
+                      💡 {userChoice.explanation}
+                    </p>
+                  )}
+                </div>
+              );
+            } else {
+              return (
+                <div className="space-y-2">
+                  {userChoice && (
+                    <div className="p-3 bg-red-950/30 rounded-xl border border-red-500/30 text-xs text-red-200 space-y-1">
+                      <div className="flex items-center gap-1.5 font-bold text-red-400">
+                        <XCircle className="h-3.5 w-3.5" /> Your Choice ({userChoice.id}): {userChoice.text}
+                      </div>
+                      {userChoice.explanation && (
+                        <p className="text-[11px] text-neutral-400 pl-5">
+                          {userChoice.explanation}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {correctChoice && (
+                    <div className="p-3 bg-emerald-950/30 rounded-xl border border-emerald-500/30 text-xs text-emerald-200 space-y-1">
+                      <div className="flex items-center gap-1.5 font-bold text-emerald-400">
+                        <CheckCircle className="h-3.5 w-3.5" /> Correct Answer: Choice {correctChoice.id} ({correctChoice.text})
+                      </div>
+                      {correctChoice.explanation && (
+                        <p className="text-[11px] text-emerald-300/90 pl-5 leading-relaxed">
+                          💡 {correctChoice.explanation}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+          })()}
         </div>
       )}
     </div>

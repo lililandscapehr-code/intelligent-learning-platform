@@ -32,10 +32,10 @@ export const sampleLessonCarousels: Record<string, EduCarouselConfig> = {
         points: 2,
         skillId: "SK-PREREQ-LCM",
         choices: [
-          { id: "A", text: "2 (Greatest Common Divisor)", isCorrect: false, misconceptionId: "GAP-MATH-LCM-CONFUSED-GCD" },
-          { id: "B", text: "12 (Smallest common multiple)", isCorrect: true },
-          { id: "C", text: "24 (Product of 4 × 6)", isCorrect: false, misconceptionId: "GAP-MATH-LCM-PRODUCT" },
-          { id: "D", text: "10 (Sum of 4 + 6)", isCorrect: false, misconceptionId: "GAP-MATH-LCM-SUM" }
+          { id: "A", text: "2 (Greatest Common Divisor)", isCorrect: false, misconceptionId: "GAP-MATH-LCM-CONFUSED-GCD", explanation: "Incorrect. 2 is the greatest common divisor (GCD/HCF), not the least common multiple." },
+          { id: "B", text: "12 (Smallest common multiple)", isCorrect: true, explanation: "Correct! The multiples of 4 are 4, 8, 12, 16... and multiples of 6 are 6, 12, 18... The least common multiple is 12." },
+          { id: "C", text: "24 (Product of 4 × 6)", isCorrect: false, misconceptionId: "GAP-MATH-LCM-PRODUCT", explanation: "Incorrect. 24 is a common multiple, but not the LEAST common multiple because 12 is smaller." },
+          { id: "D", text: "10 (Sum of 4 + 6)", isCorrect: false, misconceptionId: "GAP-MATH-LCM-SUM", explanation: "Incorrect. 10 is the sum of 4 + 6, not a multiple of either number." }
         ]
       },
       {
@@ -92,10 +92,10 @@ export const sampleLessonCarousels: Record<string, EduCarouselConfig> = {
         points: 2,
         skillId: "SK-NUM-FRAC-ADD",
         choices: [
-          { id: "A", text: "2/10 (Added numerators & denominators)", isCorrect: false, misconceptionId: "GAP-MATH-ADD-DENOM" },
-          { id: "B", text: "5/12 (Common denominator 12)", isCorrect: true },
-          { id: "C", text: "5/24 (Sub-optimal denominator)", isCorrect: false, misconceptionId: "GAP-MATH-LCM-FAIL" },
-          { id: "D", text: "1/24 (Multiplied instead of adding)", isCorrect: false, misconceptionId: "GAP-MATH-MULT-OP" }
+          { id: "A", text: "2/10 (Added numerators & denominators)", isCorrect: false, misconceptionId: "GAP-MATH-ADD-DENOM", explanation: "Incorrect. You cannot add denominators directly (1/4 + 1/6 ≠ 2/10). You must find a common denominator first." },
+          { id: "B", text: "5/12 (Common denominator 12)", isCorrect: true, explanation: "Correct! The LCM of 4 and 6 is 12. Converting: 1/4 = 3/12 and 1/6 = 2/12. Adding: 3/12 + 2/12 = 5/12." },
+          { id: "C", text: "5/24 (Sub-optimal denominator)", isCorrect: false, misconceptionId: "GAP-MATH-LCM-FAIL", explanation: "Incorrect. While 24 is a common denominator, 1/4 + 1/6 = 6/24 + 4/24 = 10/24 = 5/12, not 5/24." },
+          { id: "D", text: "1/24 (Multiplied instead of adding)", isCorrect: false, misconceptionId: "GAP-MATH-MULT-OP", explanation: "Incorrect. 1/24 is the result of multiplying (1/4 × 1/6), not adding." }
         ]
       },
       {
